@@ -1,0 +1,18 @@
+# Python temporary files anywhere in the project
+**/__pycache__/
+**/*.pyc
+**/*.pyo
+
+# Virtual environments
+venv/
+.venv/
+
+# Environment variables and secrets
+.env
+
+# VS Code personal settings
+.vscode/
+
+# Operating system files
+Thumbs.db
+.DS_Store
