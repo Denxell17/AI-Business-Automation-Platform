@@ -13,6 +13,58 @@ def display_menu():
     print("4. Exit")
     print()
 
+
+def get_positive_integer(prompt, field_name):
+    while True:
+        try:
+            value = int(input(prompt))
+
+            if value <= 0:
+                print(f"{field_name} must be greater than zero.")
+                continue
+
+            return value
+
+        except ValueError:
+            print(f"Invalid {field_name}. Please enter a whole number.")
+
+
+def get_integer_in_range(
+        prompt,
+        field_name,
+        minimum,
+        maximum
+):
+    while True:
+        try:
+            value = int(input(prompt))
+
+            if minimum <= value <= maximum:
+                return value
+
+            print(
+                f"{field_name} must be between "
+                f"{minimum} and {maximum}."
+            )
+
+        except ValueError:
+            print(
+                f"Invalid {field_name}. "
+                "Please enter a whole number."
+            )
+
+
+def get_required_text(prompt, field_name):
+    while True:
+        value = input(prompt).strip()
+
+        if value:
+            return value
+
+        print(f"{field_name} cannot be blank.")
+
+
+
 def register_employee():
     print()
     print("=" * 40)
@@ -20,18 +72,58 @@ def register_employee():
     print("=" * 40)
 
     employee = {
-        "employee_id"         : input("Enter Employee ID: "),
-        "name"                : input("Enter Employee Name: "),
-        "department"          : input("Enter Department: "),
-        "position"            : input("Position: "),
-        "country"             : input("Enter Country: "),
-        "salary"              : int(input("Enter Monthly Salary: ")),
-        "email"               : input("Enter Email: "),
-        "phone_number"        : input("Enter Phone Number: "),
-        "years_of_experience" : int(input("Enter Years of Experience: ")),
-        "company"             : input("Enter Company: "),
-        "employment_status"   : input("Employment Status: "),
-        "performance_score"   : int(input("Enter Performance Score (0-100): ")),
+        "employee_id": get_required_text(
+            "Enter Employee ID: ",
+            "Employee ID"
+        ),
+        "name": get_required_text(
+            "Enter Employee Name: ",
+            "Employee name"
+        ),
+        "department": get_required_text(
+            "Enter Department: ",
+            "Department"
+        ),
+        "position": get_required_text(
+            "Enter Position: ",
+            "Position"
+        ),
+        "country": get_required_text(   
+            "Enter Country: ",
+            "Country"
+        ),
+        "salary": get_positive_integer(
+            "Enter Monthly Salary: ",
+            "Salary"
+        ),
+        "email": get_required_text(
+            "Enter Email: ",
+            "Email"
+        ),
+        "phone_number": get_required_text(
+            "Enter Phone Number: ",
+            "Phone number"
+        ),
+        "years_of_experience": get_integer_in_range(
+            "Enter Years of Experience: ",
+            "Years of experience",
+            0,
+            60
+        ),
+        "company": get_required_text(
+            "Enter Company: ",
+            "Company"
+        ),
+        "employment_status": get_required_text(
+            "Enter Employment Status: ",
+            "Employment status"
+        ),
+        "performance_score": get_integer_in_range(
+            "Enter Performance Score: ",
+            "Performance score",
+            0,
+            100
+        ),
     }
 
     print()
