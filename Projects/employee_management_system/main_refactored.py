@@ -1,3 +1,21 @@
+
+from activity_logger import log_activity
+from payroll import (
+    calculate_payroll,
+    determine_performance,
+)
+from storage import (
+    load_employees,
+    save_employees,
+)
+from validators import (
+    get_integer_in_range,
+    get_positive_integer,
+    get_required_text,
+)
+
+
+
 def display_header():
     print()
     print("=" * 40)
@@ -5,77 +23,43 @@ def display_header():
     print("=" * 40)
 
 
+
 def display_menu():
     print()
     print("1. Register Employee")
     print("2. View Employee Profile")
     print("3. View Payroll")
-    print("4. Exit")
+    print("4. Update Employee")
+    print("5. Delete Employee")
+    print("6. View All Employees")
+    print("7. Exit")
     print()
 
 
-def get_positive_integer(prompt, field_name):
-    while True:
-        try:
-            value = int(input(prompt))
 
-            if value <= 0:
-                print(f"{field_name} must be greater than zero.")
-                continue
-
-            return value
-
-        except ValueError:
-            print(f"Invalid {field_name}. Please enter a whole number.")
-
-
-def get_integer_in_range(
-        prompt,
-        field_name,
-        minimum,
-        maximum
-):
-    while True:
-        try:
-            value = int(input(prompt))
-
-            if minimum <= value <= maximum:
-                return value
-
-            print(
-                f"{field_name} must be between "
-                f"{minimum} and {maximum}."
-            )
-
-        except ValueError:
-            print(
-                f"Invalid {field_name}. "
-                "Please enter a whole number."
-            )
-
-
-def get_required_text(prompt, field_name):
-    while True:
-        value = input(prompt).strip()
-
-        if value:
-            return value
-
-        print(f"{field_name} cannot be blank.")
-
-
-
-def register_employee():
+def register_employee(employee_list):
     print()
     print("=" * 40)
     print("REGISTER EMPLOYEE".center(40))
     print("=" * 40)
 
+    employee_id = get_required_text(
+        "Enter Employee ID: ",
+        "Employee ID"
+    ).upper()
+
+    existing_employee = find_employee_by_id(
+        employee_list,
+        employee_id
+    )
+
+    if existing_employee is not None:
+        print("An Employee with that ID already exists.")
+        return None
+
     employee = {
-        "employee_id": get_required_text(
-            "Enter Employee ID: ",
-            "Employee ID"
-        ),
+        "employee_id": employee_id, 
+
         "name": get_required_text(
             "Enter Employee Name: ",
             "Employee name"
@@ -126,11 +110,8 @@ def register_employee():
         ),
     }
 
-    print()
-    print(f"Welcome, {employee['name']}!")
-    print("Employee successfully registered.")
-
     return employee
+
 
 def display_employee_profile(employee):
     print()
@@ -151,55 +132,6 @@ def display_employee_profile(employee):
     print(f"Employment Status   : {employee['employment_status']}")
     print(f"Performance Score   : {employee['performance_score']}")
 
-def determine_performance(performance_score):
-    if performance_score < 0 or performance_score > 100:
-        return "Invalid Score", 0
-    elif performance_score >= 90:
-        return "Outstanding", 0.15
-    elif performance_score >= 80:
-        return "Very Good", 0.10
-    elif performance_score >= 70:
-        return "Good", 0.05
-    else:
-        return "Needs Improvement", 0
-
-def calculate_payroll(employee):
-    salary = employee["salary"]
-    performance_rating, bonus_rate = determine_performance(
-        employee["performance_score"]
-    )
-
-    annual_salary        = salary * 12
-    thirteenth_month_pay = salary
-    estimated_bonus      = annual_salary * bonus_rate
-    monthly_tax          = salary * 0.05
-    net_monthly_salary   = salary - monthly_tax
-    allowance            = 5000
-    overtime             = 3000
-    monthly_income       = salary + allowance
-    net_monthly_income   = salary + allowance + overtime - monthly_tax
-
-    total_compensation = (
-        annual_salary 
-        + thirteenth_month_pay 
-        + estimated_bonus
-        )
-
-    payroll = {
-        "performance_rating"   : performance_rating,
-        "bonus_rate"           : bonus_rate,
-        "annual_salary"        : annual_salary,
-        "thirteenth_month_pay" : thirteenth_month_pay,
-        "estimated_bonus"      : estimated_bonus,
-        "monthly_tax"          : monthly_tax,
-        "net_monthly_salary"   : net_monthly_salary,
-        "allowance"            : allowance,
-        "overtime"             : overtime,
-        "monthly_income"       : monthly_income,
-        "net_monthly_income"   : net_monthly_income,
-        "total_compensation"   : total_compensation,
-    }
-    return payroll
 
 def display_payroll(employee):
     payroll = calculate_payroll(employee)
@@ -224,8 +156,191 @@ def display_payroll(employee):
     print(f"Net Monthly Income  : ₱{payroll['net_monthly_income']:,.2f}")
     print(f"Total Compensation  : ₱{payroll['total_compensation']:,.2f}")
 
+
+
+def find_employee_by_id(employee_list, employee_id):
+    employee_id = employee_id.strip().upper()
+
+    for employee in employee_list:
+        if employee["employee_id"].upper() == employee_id:
+            return employee
+
+    return None
+
+
+
+def update_employee(employee_list):
+    print()
+    print("=" * 40)
+    print("UPDATE EMPLOYEE".center(40))
+    print("=" * 40)
+
+    employee_id = input(
+        "Enter Employee ID to update: "
+    )
+
+    employee = find_employee_by_id(
+        employee_list,
+        employee_id
+    )
+
+    if employee is None:
+        print("Employee not found.")
+        return False
+
+    print()
+    print(f"Current Department : {employee['department']}")
+    print(f"Current Position   : {employee['position']}")
+
+    new_department = input(
+        "Enter new department "
+        "(press Enter to keep current): "
+    ).strip()
+
+    new_position = input(
+        "Enter new position "
+        "(press Enter to keep current): "
+    ).strip()
+
+    if not new_department and not new_position:
+        print("No changes entered. Employee was not updated.")
+        return False
+
+    if new_department:
+        employee["department"] = new_department
+
+    if new_position:
+        employee["position"] = new_position
+
+    print("Employee updated successfully.")
+    return employee
+
+
+
+def delete_employee(employee_list):
+    print()
+    print("=" * 40)
+    print("DELETE EMPLOYEE".center(40))
+    print("=" * 40)
+
+    employee_id = input(
+        "Enter Employee ID to delete: "
+    )
+
+    employee = find_employee_by_id(
+        employee_list,
+        employee_id
+    )
+
+    if employee is None:
+        print("Employee not found.")
+        return False
+
+    print(f"Employee ID  : {employee['employee_id']}")
+    print(f"Name         : {employee['name']}")
+
+    confirmation = input(
+        "Type YES to confirm deletion: "
+    ).strip().upper()
+
+    if confirmation != "YES":
+        print("Deletion cancelled.")
+        return False
+
+    employee_list.remove(employee)
+    print("Employee deleted successfully.")
+    return employee
+
+
+
+def display_all_employees(employee_list):
+    print()
+    print("=" * 60)
+    print("EMPLOYEE DIRECTORY".center(60))
+    print("=" * 60)
+    print()
+
+    if not employee_list:
+        print("No employees registered yet.")
+        return
+
+    print(f"Total Employees: {len(employee_list)}")
+    print()
+
+    total_monthly_payroll = 0
+    highest_paid_employee = employee_list[0]
+    department_counts = {}
+
+    for employee_number, employee in enumerate(
+        employee_list,
+        start=1
+    ):
+
+        total_monthly_payroll += employee["salary"]
+
+        if employee["salary"] > highest_paid_employee["salary"]:
+            highest_paid_employee = employee
+
+        department = employee["department"]
+
+        if department in department_counts:
+            department_counts[department] += 1
+        else:
+            department_counts[department] = 1
+
+
+        print("-" * 60)
+        print(f"Employee #{employee_number}")
+        print(f"Employee ID : {employee['employee_id']}")
+        print(f"Name        : {employee['name']}")
+        print(f"Department  : {employee['department']}")
+        print(f"Position    : {employee['position']}")
+        print(f"Salary      : ₱{employee['salary']:,.2f}")
+
+    average_salary = (
+        total_monthly_payroll / len(employee_list)
+    )
+
+    print("-" * 60)
+    print("WORKFORCE SUMMARY".center(60))
+    print("-" * 60)
+    print(
+        f"Total Monthly Payroll : "
+        f"₱{total_monthly_payroll:,.2f}"
+    )
+    print(
+        f"Average Salary        : "
+        f"₱{average_salary:,.2f}"
+    )
+    print(
+        f"Highest-Paid Employee : "
+        f"{highest_paid_employee['name']}"
+    )
+    print(
+        f"Highest Salary        : "
+        f"₱{highest_paid_employee['salary']:,.2f}"
+    )
+
+    print()
+    print("EMPLOYEES BY DEPARTMENT")
+    print("-" * 60)
+
+    for department, employee_count in department_counts.items():
+        print(f"{department}: {employee_count}")
+
+    print("-" * 60)
+
+
 def run_program():
     display_header()
+    log_activity("Application started.")
+
+    employees = load_employees()
+
+    if employees is None:
+        print("Employee Management System could not start safely.")
+        return
+    
     employee = None
 
     while True:
@@ -233,22 +348,109 @@ def run_program():
         choice = input("Choose an Option: ")
 
         if choice == "1":
-            employee = register_employee()
+            new_employee = register_employee(employees)
+
+            if new_employee is not None:
+                employees.append(new_employee)
+                employee = new_employee
+
+                records_saved = save_employees(employees)
+
+                print()
+                print(f"Welcome, {employee['name']}!")
+
+                if records_saved:
+                    print("Employee successfully registered and saved.")
+                    log_activity(
+                        f"Employee {employee['employee_id']} "
+                        "registered and saved."
+                    )
+                else:
+                    print(
+                        "WARNING: Employee was added to the current session."
+                        "but was not saved to the data file."
+                    )
         elif choice == "2":
+            employee_id = input(
+                "Enter employee ID to view: "
+            )
+
+            employee = find_employee_by_id(
+                employees,
+                employee_id
+            )
+
             if employee is None:
-                print("No Employee Registered Yet.")
+                print("Employee not found.")
             else:
                 display_employee_profile(employee)
+                log_activity(
+                    f"Employee {employee['employee_id']} "
+                    "profile viewed."
+                )
         elif choice == "3":
+            employee_id = input(
+                "Enter Employee ID for payroll: "
+            )
+
+            employee = find_employee_by_id(
+                employees,
+                employee_id
+            )
+
             if employee is None:
-                print("No employee registered yet.")
+                print("Employee not found.")
             else:
-                display_payroll(employee)        
+                display_payroll(employee)
+                log_activity(
+                    f"Payroll viewed for employee "
+                    f"{employee['employee_id']}."
+                )
         elif choice == "4":
+            employee_updated = update_employee(employees)
+
+            if employee_updated:
+                records_saved = save_employees(employees)
+
+                if records_saved:
+                    print("Employee changes saved.")
+                    log_activity(
+                        f"Employee {employee_updated['employee_id']} "
+                        "updated and saved."
+                    )
+                else:
+                    print(
+                        "WARNING: Changes exist in the current session "
+                        "but were not saved to the data file."
+                    )
+
+        elif choice == "5":
+            employee_deleted = delete_employee(employees)
+
+            if employee_deleted:
+                records_saved = save_employees(employees)
+
+                if records_saved:
+                    print("Updated employee records saved.")
+                    log_activity(
+                        f"Employee {employee_deleted['employee_id']} "
+                        "deleted and saved."
+                    )
+                else:
+                    print(
+                        "WARNING: The employee was removed from the "
+                        "current session, but the deletion was not saved. "
+                    )
+
+        elif choice == "6":
+            display_all_employees(employees)
+
+        elif choice == "7":
             print("Closing the program...")
-            break
+            log_activity("Application closed.")
+            break   
         else:
-            print("Invalid option. Please choose 1, 2, 3, or 4.")
+            print("Invalid option. Please choose 1, 2, 3, 4, 5, 6, or 7.")
 
     print("Program closed successfully.")
 
