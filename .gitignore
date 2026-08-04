@@ -16,3 +16,11 @@ venv/
 # Operating system files
 Thumbs.db
 .DS_Store
+
+# Application log files
+*.log
+
+# Local and generated employee data
+Lessons/employees.json
+Lessons/employees_test.json
+Projects/employee_management_system/employees.json
