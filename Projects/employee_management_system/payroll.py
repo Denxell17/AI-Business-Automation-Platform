@@ -1,4 +1,18 @@
-def determine_performance(performance_score):
+from config import (
+    DEFAULT_ALLOWANCE,
+    DEFAULT_OVERTIME,
+    MONTHS_PER_YEAR,
+    TAX_RATE,
+)
+from models import (
+    Employee,
+    PayrollSummary,
+)
+
+
+def determine_performance(
+    performance_score: int,
+) -> tuple[str, float]:
     if performance_score < 0 or performance_score > 100:
         return "Invalid Score", 0
     elif performance_score >= 90:
@@ -11,20 +25,22 @@ def determine_performance(performance_score):
         return "Needs Improvement", 0
 
 
-def calculate_payroll(employee):
+def calculate_payroll(
+    employee: Employee,
+) -> PayrollSummary:
     salary = employee["salary"]
 
     performance_rating, bonus_rate = determine_performance(
         employee["performance_score"]
     )
 
-    annual_salary = salary * 12
+    annual_salary = salary * MONTHS_PER_YEAR
     thirteenth_month_pay = salary
     estimated_bonus = annual_salary * bonus_rate
-    monthly_tax = salary * 0.05
+    monthly_tax = salary * TAX_RATE
     net_monthly_salary = salary - monthly_tax
-    allowance = 5000
-    overtime = 3000
+    allowance = DEFAULT_ALLOWANCE
+    overtime = DEFAULT_OVERTIME
     monthly_income = salary + allowance
 
     net_monthly_income = (
@@ -39,7 +55,6 @@ def calculate_payroll(employee):
         + thirteenth_month_pay
         + estimated_bonus
     )
-
 
     return {
         "performance_rating": performance_rating,

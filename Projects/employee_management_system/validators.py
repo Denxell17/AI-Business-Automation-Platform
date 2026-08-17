@@ -1,4 +1,7 @@
-def get_positive_integer(prompt, field_name):
+def get_positive_integer(
+    prompt: str,
+    field_name: str,
+) -> int:
     while True:
         try:
             value = int(input(prompt))
@@ -16,7 +19,12 @@ def get_positive_integer(prompt, field_name):
 
 
 
-def get_integer_in_range(prompt, field_name, minimum, maximum):
+def get_integer_in_range(
+    prompt: str,
+    field_name: str,
+    minimum: int,
+    maximum: int,
+) -> int:
     while True:
         try:
             value = int(input(prompt))
@@ -37,7 +45,10 @@ def get_integer_in_range(prompt, field_name, minimum, maximum):
 
 
             
-def get_required_text(prompt, field_name):
+def get_required_text(
+    prompt: str,
+    field_name: str,
+) -> str:
     while True:
         value = input(prompt).strip()
 

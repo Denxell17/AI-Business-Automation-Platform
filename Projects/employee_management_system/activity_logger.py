@@ -1,9 +1,8 @@
 import logging
 from pathlib import Path
 
-
-
-LOG_FILE = Path(__file__).with_name("activity.log")
+LOG_DIRECTORY = Path(__file__).with_name("logs")
+LOG_FILE = LOG_DIRECTORY / "activity.log"
 
 
 logging.basicConfig(
