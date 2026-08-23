@@ -4,7 +4,10 @@ from pathlib import Path
 from models import Employee
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
-DATABASE_FILE = DATA_DIRECTORY / "employees.db" 
+DATABASE_FILE = DATA_DIRECTORY / "employees.db"
+DATABASE_BACKUP_FILE = (
+    DATA_DIRECTORY / "employees_backup.db"
+)
 
 
 def get_database_connection(
@@ -40,6 +43,94 @@ def initialize_database(
         connection.commit()
     finally:
         connection.close()
+
+
+def backup_database(
+    database_file: Path = DATABASE_FILE,
+    backup_file: Path = DATABASE_BACKUP_FILE,
+) -> bool:
+    if not database_file.exists():
+        print("The SQLite employee database was not found.")
+        return False
+
+    source_connection: sqlite3.Connection | None = None
+    backup_connection: sqlite3.Connection | None = None
+
+    try:
+        backup_file.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        source_connection = get_database_connection(
+            database_file
+        )
+        backup_connection = get_database_connection(
+            backup_file
+        )
+
+        source_connection.backup(backup_connection)
+        return True
+    except (sqlite3.Error, OSError) as error:
+        print("The SQLite database backup failed.")
+        print(f"Details: {error}")
+        return False
+    finally:
+        if backup_connection is not None:
+            backup_connection.close()
+
+        if source_connection is not None:
+            source_connection.close()
+
+
+def restore_database_from_backup(
+    database_file: Path = DATABASE_FILE,
+    backup_file: Path = DATABASE_BACKUP_FILE,
+) -> bool:
+    if not backup_file.exists():
+        print("The SQLite database backup was not found.")
+        return False
+
+    backup_connection: sqlite3.Connection | None = None
+    database_connection: sqlite3.Connection | None = None
+
+    try:
+        database_file.parent.mkdir(
+            parents=True,
+            exist_ok=True,
+        )
+        backup_connection = get_database_connection(
+            backup_file,
+        )
+
+        integrity_result = backup_connection.execute(
+            "PRAGMA integrity_check"
+        ).fetchone()
+
+        if (
+            integrity_result is None
+            or integrity_result[0] != "ok"
+        ):
+            print(
+                "The SQLite database backup failed "
+                "its integrity check."
+            )
+            return False
+
+        database_connection = get_database_connection(
+            database_file,
+        )
+        backup_connection.backup(database_connection)
+        return True
+    except (sqlite3.Error, OSError) as error:
+        print("The SQLite database restoration failed.")
+        print(f"Details: {error}")
+        return False
+    finally:
+        if database_connection is not None:
+            database_connection.close()
+
+        if backup_connection is not None:
+            backup_connection.close()
 
 
 def insert_employee(
@@ -225,3 +316,64 @@ def migrate_employees_to_database(
             migrated_count += 1
 
     return migrated_count
+
+
+def synchronize_employees_to_database(
+    employee_list: list[Employee],
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+
+    employee_values = []
+
+    for employee in employee_list:
+        employee_values.append(
+            (
+                employee["employee_id"],
+                employee["name"],
+                employee["department"],
+                employee["position"],
+                employee["country"],
+                employee["salary"],
+                employee["email"],
+                employee["phone_number"],
+                employee["years_of_experience"],
+                employee["company"],
+                employee["employment_status"],
+                employee["performance_score"],
+            )
+        )
+
+    connection = get_database_connection(database_file)
+
+    try:
+        connection.execute("DELETE FROM employees")
+
+        connection.executemany(
+            """
+            INSERT INTO employees (
+                employee_id,
+                name,
+                department,
+                position,
+                country,
+                salary,
+                email,
+                phone_number,
+                years_of_experience,
+                company,
+                employment_status,
+                performance_score
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            employee_values,
+        )
+
+        connection.commit()
+        return True
+    except sqlite3.Error:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()

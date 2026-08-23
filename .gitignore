@@ -25,6 +25,7 @@ Lessons/employees.json
 Lessons/employees_test.json
 Projects/employee_management_system/data/employees.json
 Projects/employee_management_system/data/employees.db
+Projects/employee_management_system/data/employees_backup.db
 
 # Generated CSV reports
 Projects/employee_management_system/exports/employee_report.csv

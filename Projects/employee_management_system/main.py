@@ -1,12 +1,9 @@
 
 from activity_logger import log_activity
+from database_backup import run_database_backup
+from database_restore import run_database_restoration
 from payroll import calculate_payroll
 from models import WorkforceSummary
-from storage import (
-    load_employees,
-    restore_employees_from_backup,
-    save_employees,
-)
 from validators import (
     get_integer_in_range,
     get_positive_integer,
@@ -22,6 +19,10 @@ from employee_service import (
     sort_employees_by_salary,
     update_employee_details,
 )
+from employee_repository import (
+    load_employee_records,
+    save_employee_records,
+)
 from reports import calculate_workforce_summary
 from exporter import (
     EXPORT_FILE,
@@ -34,7 +35,6 @@ def display_header():
     print("=" * 40)
     print("EMPLOYEE MANAGEMENT SYSTEM".center(40))
     print("=" * 40)
-
 
 
 def display_menu():
@@ -50,9 +50,9 @@ def display_menu():
     print("9. Search Employees by Name")
     print("10. Filter Employees by Salary Range")
     print("11. Export Employee Report")
-    print("12. Restore Employee Backup")
-    print("13. Exit")
-
+    print("12. Create SQLite Database Backup")
+    print("13. Restore SQLite Database Backup")
+    print("14. Exit")
 
 
 def register_employee(employee_list):
@@ -461,7 +461,7 @@ def run_program():
     display_header()
     log_activity("Application started.")
 
-    employees = load_employees()
+    employees = load_employee_records()
 
     if employees is None:
         print("Employee Management System could not start safely.")
@@ -480,7 +480,9 @@ def run_program():
                 employees.append(new_employee)
                 employee = new_employee
 
-                records_saved = save_employees(employees)
+                records_saved = save_employee_records(
+                    employees
+                )
 
                 print()
                 print(f"Welcome, {employee['name']}!")
@@ -536,7 +538,9 @@ def run_program():
             employee_updated = update_employee(employees)
 
             if employee_updated:
-                records_saved = save_employees(employees)
+                records_saved = save_employee_records(
+                    employees
+                )
 
                 if records_saved:
                     print("Employee changes saved.")
@@ -554,7 +558,9 @@ def run_program():
             employee_deleted = delete_employee(employees)
 
             if employee_deleted:
-                records_saved = save_employees(employees)
+                records_saved = save_employee_records(
+                    employees
+                )
 
                 if records_saved:
                     print("Updated employee records saved.")
@@ -675,42 +681,56 @@ def run_program():
                     )
 
         elif choice == "12":
+            backup_successful = run_database_backup()
+
+            if backup_successful:
+                log_activity(
+                    "SQLite database backup created."
+                )
+
+        elif choice == "13":
             print()
-            print("WARNING: This will replace the current employee data.")
+            print(
+                "WARNING: This will replace the primary "
+                "SQLite database."
+            )
             confirmation = input(
                 "Type RESTORE to continue: "
             ).strip().upper()
 
             if confirmation != "RESTORE":
-                print("Backup restoration cancelled.")
+                print("SQLite database restoration cancelled.")
             else:
-                restore_successful = restore_employees_from_backup()
+                restoration_successful = (
+                    run_database_restoration()
+                )
 
-                if restore_successful:
-                    restored_employees = load_employees()
+                if restoration_successful:
+                    restored_employees = (
+                        load_employee_records("sqlite")
+                    )
 
                     if restored_employees is None:
                         print(
-                            "The restored employee data could not be loaded."
+                            "The restored SQLite employee "
+                            "data could not be loaded."
                         )
                     else:
                         employees = restored_employees
                         employee = None
 
-                        print("Employee backup restored successfully.")
                         log_activity(
-                            "Employee data restored from backup."
+                            "SQLite database restored "
+                            "from backup."
                         )
-                else:
-                    print("Employee backup restoration failed.")
 
-        elif choice == "13":
+        elif choice == "14":
             print("Closing the program...")
             log_activity("Application closed.")
             break
         else:
             print("Invalid option. "
-                  "Please choose a number from 1 to 13.")
+                  "Please choose a number from 1 to 14.")
 
     print("Program closed successfully.")
 
