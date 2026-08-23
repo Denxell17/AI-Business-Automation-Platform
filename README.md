@@ -9,13 +9,25 @@ A Python learning and portfolio project focused on building practical business a
 The current console application can:
 
 - Register, view, update, and delete employee records
-- Store multiple employees in JSON
+- Use SQLite as the configured primary employee storage for
+  normal console loading and saving without modifying the
+  legacy JSON file during SQLite-primary saves
 - Initialize a tested SQLite employee database schema,
-  perform complete CRUD operations, and safely migrate
-  and verify existing JSON employee records
+  perform complete CRUD operations, synchronize complete
+  employee lists, and safely migrate and verify existing
+  JSON employee records
+- Use a tested employee repository throughout the console
+  application to separate employee workflows from SQLite
+  loading and saving details
+- Compare the complete JSON and SQLite employee lists using
+  a read-only consistency check that reports missing,
+  different, invalid, or matching storage data
 - Validate loaded employee records and business rules
-- Save employee data atomically using temporary files
-- Create and restore employee-data backups
+- Retain tested legacy JSON loading, atomic saving, backup
+  restoration, migration, and verification utilities
+- Create, safely refresh, and restore SQLite database backups
+  through commands or interactive console options using native
+  backup operations, integrity checks, and confirmation prompts
 - Calculate payroll, tax, allowances, bonuses, and compensation
 - Display workforce summaries, total department count,
   department headcounts, payroll totals, and average salaries,
@@ -59,6 +71,9 @@ AI-Business-Automation-Platform/
 │       ├── config.py
 │       ├── data_validation.py
 │       ├── database.py
+│       ├── database_backup.py
+│       ├── database_restore.py
+│       ├── employee_repository.py
 │       ├── employee_service.py
 │       ├── exporter.py
 │       ├── main.py
@@ -69,6 +84,7 @@ AI-Business-Automation-Platform/
 │       ├── reports.py
 │       ├── run_tests.py
 │       ├── storage.py
+│       ├── storage_verification.py
 │       └── validators.py
 └── README.md
 ```
@@ -87,6 +103,29 @@ python Projects\employee_management_system\main.py
 python Projects\employee_management_system\performance_boundary_demo.py
 ```
 
+## Creating a SQLite Database Backup
+
+From the main project folder, run:
+
+```powershell
+python Projects\employee_management_system\database_backup.py
+```
+
+## Restoring a SQLite Database Backup
+
+```powershell
+python Projects\employee_management_system\database_restore.py
+```
+
+Type `RESTORE` when prompted to confirm replacing the primary
+SQLite database.
+
+## Verifying JSON and SQLite Consistency
+
+```powershell
+python Projects\employee_management_system\storage_verification.py
+```
+
 ## Running the Automated Tests
 
 ```powershell
@@ -101,12 +140,31 @@ python Projects\employee_management_system\run_tests.py
 - Functions, parameters, and return values
 - Lists, dictionaries, sets, and sorting
 - Modules, imports, and separation of responsibilities
+- Repository pattern, configurable storage backends,
+  console-to-repository integration, default primary-storage
+  selection, supported-value checks, and synchronization rules
 - Refactoring large functions into focused helper functions
 - Type hints and `TypedDict`
 - JSON storage and runtime data validation
-- SQLite CRUD operations, duplicate-safe migrations,
+- SQLite CRUD operations, complete-list synchronization,
+  transactions, commits, rollbacks, duplicate-safe migrations,
   JSON-to-SQLite verification, file-existence checks,
   main guards, and process exit codes
+- SQLite native backup and restoration operations, source and
+  destination connections, backup replacement, integrity
+  checks, parent-directory creation, and guaranteed connection
+  cleanup with `finally`
+- Console backup and restoration integration, destructive-action
+  confirmation, post-restoration session reload, secondary JSON
+  synchronization, and mocked success, cancellation, and failure
+  workflow testing
+- Read-only cross-storage verification, normalized list
+  comparison, missing-file checks, and database-error handling
+- Transitional dual-storage saves, startup synchronization,
+  `None`-versus-empty-list handling, and mocked dependency testing
+- Single-source-of-truth transitions, retirement of dual writes,
+  SQLite-only primary saves, legacy-storage compatibility,
+  configuration-default testing, and storage-dependency auditing
 - CSV report generation
 - File and directory paths with `pathlib`
 - Exception handling
@@ -120,8 +178,6 @@ python Projects\employee_management_system\run_tests.py
 Future versions will introduce:
 
 - Additional filtering and reporting options
-- Connect the console application to SQLite
-  and retire JSON storage after regression testing
 - User authentication and access control
 - REST APIs
 - Web interface
@@ -132,4 +188,4 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed console application. Core employee management, validated JSON storage, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, and 58 existing automated tests are complete. SQLite integration now includes a tested schema, complete CRUD operations, and a verified JSON-to-SQLite migration process. Twelve database tests and three migration tests bring the complete suite to 73 automated tests. Two existing employee records were successfully migrated and verified in SQLite. The next milestone is connecting the console application to SQLite.
+The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration now includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Twenty-one database tests, one database-backup command test, two database-restoration command tests, three migration tests, ten console-integration tests, six storage-verification tests, and nine repository tests bring the complete suite to 110 automated tests. The real console successfully loaded and displayed two employee records from SQLite after the SQLite-only transition. Legacy JSON utilities remain available for migration, verification, and historical compatibility, but normal SQLite-primary saves no longer modify the JSON file.
