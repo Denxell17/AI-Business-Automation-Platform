@@ -40,6 +40,21 @@ def initialize_database(
             )
             """
         )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS users (
+                user_id INTEGER PRIMARY KEY AUTOINCREMENT,
+                username TEXT COLLATE NOCASE NOT NULL UNIQUE,
+                password_hash TEXT NOT NULL,
+                role TEXT NOT NULL CHECK (
+                    role IN ('admin', 'viewer')
+                ),
+                is_active INTEGER NOT NULL DEFAULT 1 CHECK (
+                    is_active IN (0, 1)
+                )
+            )
+            """
+        )
         connection.commit()
     finally:
         connection.close()

@@ -16,6 +16,10 @@ The current console application can:
   perform complete CRUD operations, synchronize complete
   employee lists, and safely migrate and verify existing
   JSON employee records
+- Provide a tested authentication foundation with SQLite user
+  accounts, case-insensitive unique usernames, controlled
+  account roles, active-status rules, salted password hashing,
+  and secure password verification
 - Use a tested employee repository throughout the console
   application to separate employee workflows from SQLite
   loading and saving details
@@ -145,6 +149,11 @@ python Projects\employee_management_system\run_tests.py
   selection, supported-value checks, and synchronization rules
 - Refactoring large functions into focused helper functions
 - Type hints and `TypedDict`
+- User-account data modeling, case-insensitive unique usernames,
+  controlled role and active-status constraints, PBKDF2-HMAC-SHA256
+  password hashing, unique random salts, iteration work factors,
+  hexadecimal encoding, secure hash comparison, and malformed-hash
+  rejection
 - JSON storage and runtime data validation
 - SQLite CRUD operations, complete-list synchronization,
   transactions, commits, rollbacks, duplicate-safe migrations,
@@ -188,4 +197,4 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration now includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Twenty-one database tests, one database-backup command test, two database-restoration command tests, three migration tests, ten console-integration tests, six storage-verification tests, and nine repository tests bring the complete suite to 110 automated tests. The real console successfully loaded and displayed two employee records from SQLite after the SQLite-only transition. Legacy JSON utilities remain available for migration, verification, and historical compatibility, but normal SQLite-primary saves no longer modify the JSON file.
+The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. The authentication foundation now includes a typed user-account model, a tested SQLite `users` table, case-insensitive unique usernames, controlled `admin` and `viewer` roles, active-account defaults, salted PBKDF2-HMAC-SHA256 password hashing, secure password verification, and safe malformed-hash rejection. Twenty-five database tests, one database-backup command test, two database-restoration command tests, three migration tests, ten console-integration tests, six storage-verification tests, nine repository tests, and five authentication tests bring the complete suite to 119 automated tests. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. Console login is not connected yet; the next authentication milestone is tested user-account creation and retrieval.
