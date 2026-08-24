@@ -16,6 +16,14 @@ class Employee(TypedDict):
     performance_score: int
 
 
+class UserAccount(TypedDict):
+    user_id: int
+    username: str
+    password_hash: str
+    role: str
+    is_active: bool
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float

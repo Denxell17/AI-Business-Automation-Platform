@@ -1,3 +1,4 @@
+import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -320,6 +321,146 @@ class TestEmployeeDatabase(unittest.TestCase):
                 connection.close()
 
             self.assertIsNotNone(table)
+
+    def test_initialize_database_creates_users_table(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+
+            connection = get_database_connection(database_file)
+
+            try:
+                table = connection.execute(
+                    """
+                    SELECT name
+                    FROM sqlite_master
+                    WHERE type = 'table'
+                    AND name = 'users'
+                    """
+                ).fetchone()
+            finally:
+                connection.close()
+
+            self.assertIsNotNone(table)
+
+    def test_users_table_rejects_duplicate_username_case(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+            connection = get_database_connection(database_file)
+
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO users (
+                        username,
+                        password_hash,
+                        role
+                    )
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        "Dennis",
+                        "temporary_hash",
+                        "admin",
+                    ),
+                )
+                connection.commit()
+
+                with self.assertRaises(sqlite3.IntegrityError):
+                    connection.execute(
+                        """
+                        INSERT INTO users (
+                            username,
+                            password_hash,
+                            role
+                        )
+                        VALUES (?, ?, ?)
+                        """,
+                        (
+                            "dennis",
+                            "another_temporary_hash",
+                            "viewer",
+                        ),
+                    )
+            finally:
+                connection.close()
+
+    def test_users_table_rejects_unsupported_role(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+            connection = get_database_connection(database_file)
+
+            try:
+                with self.assertRaises(sqlite3.IntegrityError):
+                    connection.execute(
+                        """
+                        INSERT INTO users (
+                            username,
+                            password_hash,
+                            role
+                        )
+                        VALUES (?, ?, ?)
+                        """,
+                        (
+                            "Dennis",
+                            "temporary_hash",
+                            "manager",
+                        ),
+                    )
+            finally:
+                connection.close()
+
+    def test_new_user_is_active_by_default(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+            connection = get_database_connection(database_file)
+
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO users (
+                        username,
+                        password_hash,
+                        role
+                    )
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        "Dennis",
+                        "temporary_hash",
+                        "admin",
+                    ),
+                )
+                connection.commit()
+
+                stored_user = connection.execute(
+                    """
+                    SELECT is_active
+                    FROM users
+                    WHERE username = ?
+                    """,
+                    ("Dennis",),
+                ).fetchone()
+            finally:
+                connection.close()
+
+            self.assertIsNotNone(stored_user)
+            self.assertEqual(stored_user[0], 1)
 
     def test_insert_employee_saves_record(self):
         employee = {
