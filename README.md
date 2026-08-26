@@ -16,10 +16,12 @@ The current console application can:
   perform complete CRUD operations, synchronize complete
   employee lists, and safely migrate and verify existing
   JSON employee records
-- Provide a tested authentication foundation with SQLite user
-  accounts, case-insensitive unique usernames, controlled
-  account roles, active-status rules, salted password hashing,
-  and secure password verification
+- Protect the interactive console with credential authentication
+  before employee records are loaded or the menu is displayed,
+  while supporting SQLite user accounts, protected password storage,
+  inactive-account enforcement, security activity logging, and a
+  secure one-time administrator setup command with hidden password
+  entry, confirmation checking, and duplicate-setup protection
 - Use a tested employee repository throughout the console
   application to separate employee workflows from SQLite
   loading and saving details
@@ -72,6 +74,8 @@ AI-Business-Automation-Platform/
 │       ├── logs/
 │       ├── tests/
 │       ├── activity_logger.py
+│       ├── admin_setup.py
+│       ├── authentication.py
 │       ├── config.py
 │       ├── data_validation.py
 │       ├── database.py
@@ -89,6 +93,7 @@ AI-Business-Automation-Platform/
 │       ├── run_tests.py
 │       ├── storage.py
 │       ├── storage_verification.py
+│       ├── user_service.py
 │       └── validators.py
 └── README.md
 ```
@@ -100,6 +105,18 @@ From the main project folder, run:
 ```powershell
 python Projects\employee_management_system\main.py
 ```
+
+## Creating the Initial Administrator
+
+To create the first SQLite administrator account, run:
+
+```powershell
+python Projects\employee_management_system\admin_setup.py
+```
+
+Enter a username, then enter and confirm the hidden password.
+The setup succeeds only when the SQLite `users` table contains
+no existing accounts. Later setup attempts are rejected.
 
 ## Running the Performance Test
 
@@ -149,11 +166,16 @@ python Projects\employee_management_system\run_tests.py
   selection, supported-value checks, and synchronization rules
 - Refactoring large functions into focused helper functions
 - Type hints and `TypedDict`
-- User-account data modeling, case-insensitive unique usernames,
-  controlled role and active-status constraints, PBKDF2-HMAC-SHA256
-  password hashing, unique random salts, iteration work factors,
-  hexadecimal encoding, secure hash comparison, and malformed-hash
-  rejection
+- User-account data modeling, SQLite account insertion and
+  case-insensitive retrieval, account counting, service-layer
+  password protection, duplicate-username rejection, credential
+  authentication, inactive-account enforcement, one-time initial
+  administrator setup, hidden password entry with `getpass`,
+  password confirmation, command-layer separation, process exit
+  codes, uniform authentication failure, controlled role and
+  active-status constraints, PBKDF2-HMAC-SHA256 password hashing,
+  unique random salts, iteration work factors, hexadecimal
+  encoding, secure hash comparison, and malformed-hash rejection
 - JSON storage and runtime data validation
 - SQLite CRUD operations, complete-list synchronization,
   transactions, commits, rollbacks, duplicate-safe migrations,
@@ -187,7 +209,6 @@ python Projects\employee_management_system\run_tests.py
 Future versions will introduce:
 
 - Additional filtering and reporting options
-- User authentication and access control
 - REST APIs
 - Web interface
 - AI document processing
@@ -197,4 +218,4 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. The authentication foundation now includes a typed user-account model, a tested SQLite `users` table, case-insensitive unique usernames, controlled `admin` and `viewer` roles, active-account defaults, salted PBKDF2-HMAC-SHA256 password hashing, secure password verification, and safe malformed-hash rejection. Twenty-five database tests, one database-backup command test, two database-restoration command tests, three migration tests, ten console-integration tests, six storage-verification tests, nine repository tests, and five authentication tests bring the complete suite to 119 automated tests. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. Console login is not connected yet; the next authentication milestone is tested user-account creation and retrieval.
+The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Authentication now includes a typed user-account model, protected password storage, case-insensitive account retrieval, credential authentication, inactive-account enforcement, controlled `admin` and `viewer` roles, and uniform authentication failure. The interactive console now requires successful credential authentication before employee records are loaded or the menu is displayed. Successful logins, failed login attempts, and denied application access are recorded in the activity log. A tested one-time administrator setup command counts existing accounts, rejects repeated setup, hides password entry with `getpass`, confirms matching passwords, validates required input, and reports success or failure through process exit codes. Thirty database tests, six administrator-setup command tests, one database-backup command test, two database-restoration command tests, three migration tests, thirteen console-integration tests, six storage-verification tests, nine repository tests, five authentication tests, and eight user-service tests bring the complete suite to 141 automated tests. A real administrator successfully authenticated through the console, while an incorrect password was verified to deny access before displaying the menu. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. The next authentication milestone is role-based authorization that controls which console actions administrators and viewers may use.
