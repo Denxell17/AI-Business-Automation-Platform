@@ -5,11 +5,14 @@ from tempfile import TemporaryDirectory
 
 from database import (
     backup_database,
+    count_user_accounts,
     delete_employee_from_database,
     get_database_connection,
     initialize_database,
     insert_employee,
+    insert_user_account,
     load_employees_from_database,
+    load_user_account_by_username,
     migrate_employees_to_database,
     restore_database_from_backup,
     synchronize_employees_to_database,
@@ -462,6 +465,128 @@ class TestEmployeeDatabase(unittest.TestCase):
             self.assertIsNotNone(stored_user)
             self.assertEqual(stored_user[0], 1)
 
+    def test_insert_user_account_saves_protected_record(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            insert_result = insert_user_account(
+                "Dennis",
+                "protected_hash",
+                "admin",
+                database_file,
+            )
+
+            connection = get_database_connection(database_file)
+
+            try:
+                stored_user = connection.execute(
+                    """
+                    SELECT
+                        user_id,
+                        username,
+                        password_hash,
+                        role,
+                        is_active
+                    FROM users
+                    WHERE username = ?
+                    """,
+                    ("Dennis",),
+                ).fetchone()
+            finally:
+                connection.close()
+
+            self.assertTrue(insert_result)
+            self.assertEqual(
+                stored_user,
+                (
+                    1,
+                    "Dennis",
+                    "protected_hash",
+                    "admin",
+                    1,
+                ),
+            )
+
+    def test_insert_user_account_rejects_duplicate_username(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            first_result = insert_user_account(
+                "Dennis",
+                "first_protected_hash",
+                "admin",
+                database_file,
+            )
+            duplicate_result = insert_user_account(
+                "dennis",
+                "second_protected_hash",
+                "viewer",
+                database_file,
+            )
+
+            connection = get_database_connection(database_file)
+
+            try:
+                user_count = connection.execute(
+                    """
+                    SELECT COUNT(*)
+                    FROM users
+                    """
+                ).fetchone()[0]
+            finally:
+                connection.close()
+
+            self.assertTrue(first_result)
+            self.assertFalse(duplicate_result)
+            self.assertEqual(user_count, 1)
+
+    def test_load_user_account_by_username_returns_account(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            insert_result = insert_user_account(
+                "Dennis",
+                "protected_hash",
+                "admin",
+                database_file,
+            )
+            loaded_user = load_user_account_by_username(
+                "dennis",
+                database_file,
+            )
+
+            self.assertTrue(insert_result)
+            self.assertEqual(
+                loaded_user,
+                {
+                    "user_id": 1,
+                    "username": "Dennis",
+                    "password_hash": "protected_hash",
+                    "role": "admin",
+                    "is_active": True,
+                },
+            )
+
+    def test_load_user_account_returns_none_when_missing(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            loaded_user = load_user_account_by_username(
+                "MissingUser",
+                database_file,
+            )
+
+            self.assertIsNone(loaded_user)
+            self.assertTrue(database_file.exists())
+
     def test_insert_employee_saves_record(self):
         employee = {
             "employee_id": "EMP001",
@@ -892,6 +1017,29 @@ class TestEmployeeDatabase(unittest.TestCase):
             self.assertTrue(first_result)
             self.assertTrue(clear_result)
             self.assertEqual(saved_employees, [])
+
+    def test_count_user_accounts_returns_current_total(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            empty_count = count_user_accounts(
+                database_file
+            )
+            insert_result = insert_user_account(
+                "Dennis",
+                "protected_hash",
+                "admin",
+                database_file,
+            )
+            account_count = count_user_accounts(
+                database_file
+            )
+
+            self.assertEqual(empty_count, 0)
+            self.assertTrue(insert_result)
+            self.assertEqual(account_count, 1)
 
 
 if __name__ == "__main__":

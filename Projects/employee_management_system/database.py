@@ -1,7 +1,7 @@
 import sqlite3
 from pathlib import Path
 
-from models import Employee
+from models import Employee, UserAccount
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
 DATABASE_FILE = DATA_DIRECTORY / "employees.db"
@@ -390,5 +390,95 @@ def synchronize_employees_to_database(
     except sqlite3.Error:
         connection.rollback()
         return False
+    finally:
+        connection.close()
+
+
+def insert_user_account(
+    username: str,
+    password_hash: str,
+    role: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        connection.execute(
+            """
+            INSERT INTO users (
+                username,
+                password_hash,
+                role
+            )
+            VALUES (?, ?, ?)
+            """,
+            (
+                username,
+                password_hash,
+                role,
+            ),
+        )
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_user_account_by_username(
+    username: str,
+    database_file: Path = DATABASE_FILE,
+) -> UserAccount | None:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        stored_user = connection.execute(
+            """
+            SELECT
+                user_id,
+                username,
+                password_hash,
+                role,
+                is_active
+            FROM users
+            WHERE username = ?
+            """,
+            (username,),
+        ).fetchone()
+
+        if stored_user is None:
+            return None
+
+        return {
+            "user_id": stored_user["user_id"],
+            "username": stored_user["username"],
+            "password_hash": stored_user["password_hash"],
+            "role": stored_user["role"],
+            "is_active": bool(stored_user["is_active"]),
+        }
+    finally:
+        connection.close()
+
+
+def count_user_accounts(
+    database_file: Path = DATABASE_FILE,
+) -> int:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        stored_count = connection.execute(
+            """
+            SELECT count(*)
+            FROM users
+            """
+        ).fetchone()
+
+        return stored_count[0]
     finally:
         connection.close()

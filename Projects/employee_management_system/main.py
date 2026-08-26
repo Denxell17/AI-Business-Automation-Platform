@@ -1,9 +1,9 @@
-
+from getpass import getpass
 from activity_logger import log_activity
 from database_backup import run_database_backup
 from database_restore import run_database_restoration
 from payroll import calculate_payroll
-from models import WorkforceSummary
+from models import UserAccount, WorkforceSummary
 from validators import (
     get_integer_in_range,
     get_positive_integer,
@@ -23,11 +23,39 @@ from employee_repository import (
     load_employee_records,
     save_employee_records,
 )
+from user_service import authenticate_user_account
 from reports import calculate_workforce_summary
 from exporter import (
     EXPORT_FILE,
     export_employees_to_csv,
 )
+
+
+def login_user() -> UserAccount | None:
+    print()
+    print("USER LOGIN")
+
+    username = input("Username: ").strip()
+    password = getpass("Password: ")
+
+    authenticated_user = authenticate_user_account(
+        username,
+        password,
+    )
+
+    if authenticated_user is None:
+        print("Authentication failed.")
+        log_activity("Failed login attempt.")
+        return None
+
+    print(
+        f"Signed in as {authenticated_user['username']} "
+        f"({authenticated_user['role']})."
+    )
+    log_activity(
+        f"User {authenticated_user['username']} logged in."
+    )
+    return authenticated_user
 
 
 def display_header():
@@ -460,6 +488,13 @@ def display_all_employees(employee_list):
 def run_program():
     display_header()
     log_activity("Application started.")
+
+    authenticated_user = login_user()
+
+    if authenticated_user is None:
+        print("Employee Management System access denied.")
+        log_activity("Application access denied.")
+        return
 
     employees = load_employee_records()
 
