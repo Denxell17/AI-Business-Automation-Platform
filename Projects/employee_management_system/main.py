@@ -1,4 +1,16 @@
 from getpass import getpass
+
+from authorization import (
+    BACKUP_DATABASE,
+    DELETE_EMPLOYEE,
+    EXPORT_REPORT,
+    REGISTER_EMPLOYEE,
+    RESTORE_DATABASE,
+    UPDATE_EMPLOYEE,
+    VIEW_EMPLOYEE,
+    VIEW_PAYROLL,
+    user_has_permission,
+)
 from activity_logger import log_activity
 from database_backup import run_database_backup
 from database_restore import run_database_restoration
@@ -29,6 +41,22 @@ from exporter import (
     EXPORT_FILE,
     export_employees_to_csv,
 )
+
+MENU_PERMISSIONS = {
+    "1": REGISTER_EMPLOYEE,
+    "2": VIEW_EMPLOYEE,
+    "3": VIEW_PAYROLL,
+    "4": UPDATE_EMPLOYEE,
+    "5": DELETE_EMPLOYEE,
+    "6": VIEW_EMPLOYEE,
+    "7": VIEW_EMPLOYEE,
+    "8": VIEW_EMPLOYEE,
+    "9": VIEW_EMPLOYEE,
+    "10": VIEW_EMPLOYEE,
+    "11": EXPORT_REPORT,
+    "12": BACKUP_DATABASE,
+    "13": RESTORE_DATABASE,
+}
 
 
 def login_user() -> UserAccount | None:
@@ -507,6 +535,22 @@ def run_program():
     while True:
         display_menu()
         choice = input("Choose an Option: ")
+
+        required_permission = MENU_PERMISSIONS.get(choice)
+
+        if (
+            required_permission is not None
+            and not user_has_permission(
+                authenticated_user,
+                required_permission,
+            )
+        ):
+            print("You do not have permission to use this option.")
+            log_activity(
+                f"User {authenticated_user['username']} was denied "
+                f"permission {required_permission}."
+            )
+            continue
 
         if choice == "1":
             new_employee = register_employee(employees)

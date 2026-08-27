@@ -137,6 +137,88 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
             ]
         )
 
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.register_employee")
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_viewer_cannot_register_employee(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_register_employee,
+        mock_log_activity,
+        mock_print,
+    ):
+        self.mock_login_user.return_value = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "1",
+            "14",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_register_employee.assert_not_called()
+        mock_print.assert_any_call(
+            "You do not have permission to use this option."
+        )
+        mock_log_activity.assert_any_call(
+            "User Viewer was denied permission employee.register."
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.display_all_employees")
+    @patch(
+        "main.sort_employees_by_name",
+        return_value=[],
+    )
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_viewer_can_view_all_employees(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_sort_employees,
+        mock_display_all_employees,
+        mock_log_activity,
+        mock_print,
+    ):
+        self.mock_login_user.return_value = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "6",
+            "14",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_sort_employees.assert_called_once_with([])
+        mock_display_all_employees.assert_called_once_with([])
+        self.assertNotIn(
+            call("You do not have permission to use this option."),
+            mock_print.mock_calls,
+        )
+
     @patch("main.log_activity")
     @patch("main.load_employee_records")
     @patch("builtins.input", return_value="14")
