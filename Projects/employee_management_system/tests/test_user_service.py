@@ -11,6 +11,7 @@ from user_service import (
     authenticate_user_account,
     register_initial_administrator,
     register_user_account,
+    register_viewer_account,
 )
 
 
@@ -296,6 +297,174 @@ class TestUserService(unittest.TestCase):
             self.assertFalse(second_result)
             self.assertIsNotNone(first_user)
             self.assertIsNone(second_user)
+
+    def test_administrator_can_register_viewer_account(self):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        password = "ViewerPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            registration_result = register_viewer_account(
+                administrator,
+                "Analyst",
+                password,
+                database_file,
+            )
+            stored_viewer = load_user_account_by_username(
+                "Analyst",
+                database_file,
+            )
+
+            self.assertTrue(registration_result)
+            self.assertIsNotNone(stored_viewer)
+
+            if stored_viewer is None:
+                self.fail("The viewer account was not found.")
+
+            self.assertEqual(
+                stored_viewer["role"],
+                "viewer",
+            )
+            self.assertTrue(stored_viewer["is_active"])
+            self.assertNotEqual(
+                stored_viewer["password_hash"],
+                password,
+            )
+            self.assertTrue(
+                verify_password(
+                    password,
+                    stored_viewer["password_hash"],
+                )
+            )
+
+    def test_viewer_cannot_register_viewer_account(self):
+        viewer = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            registration_result = register_viewer_account(
+                viewer,
+                "BlockedUser",
+                "BlockedPassword123!",
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "BlockedUser",
+                database_file,
+            )
+
+            self.assertFalse(registration_result)
+            self.assertIsNone(stored_user)
+
+    def test_inactive_administrator_cannot_register_viewer_account(
+        self,
+    ):
+        inactive_administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": False,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            registration_result = register_viewer_account(
+                inactive_administrator,
+                "BlockedUser",
+                "BlockedPassword123!",
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "BlockedUser",
+                database_file,
+            )
+
+            self.assertFalse(registration_result)
+            self.assertIsNone(stored_user)
+
+    def test_administrator_cannot_register_duplicate_viewer_username(
+        self,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        original_password = "FirstViewerPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            first_result = register_viewer_account(
+                administrator,
+                "Analyst",
+                original_password,
+                database_file,
+            )
+            duplicate_result = register_viewer_account(
+                administrator,
+                "analyst",
+                "SecondViewerPassword123!",
+                database_file,
+            )
+            stored_viewer = load_user_account_by_username(
+                "Analyst",
+                database_file,
+            )
+
+            self.assertTrue(first_result)
+            self.assertFalse(duplicate_result)
+            self.assertIsNotNone(stored_viewer)
+
+            if stored_viewer is None:
+                self.fail("The original viewer account was not found.")
+
+            self.assertEqual(
+                stored_viewer["username"],
+                "Analyst",
+            )
+            self.assertEqual(
+                stored_viewer["role"],
+                "viewer",
+            )
+            self.assertTrue(
+                verify_password(
+                    original_password,
+                    stored_viewer["password_hash"],
+                )
+            )
+            self.assertFalse(
+                verify_password(
+                    "SecondViewerPassword123!",
+                    stored_viewer["password_hash"],
+                )
+            )
 
 
 if __name__ == "__main__":

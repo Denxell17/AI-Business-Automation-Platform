@@ -4,6 +4,7 @@ from authorization import (
     BACKUP_DATABASE,
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
+    MANAGE_USER_ACCOUNTS,
     REGISTER_EMPLOYEE,
     RESTORE_DATABASE,
     UPDATE_EMPLOYEE,
@@ -29,6 +30,7 @@ class TestUserAuthorization(unittest.TestCase):
             UPDATE_EMPLOYEE,
             DELETE_EMPLOYEE,
             EXPORT_REPORT,
+            MANAGE_USER_ACCOUNTS,
             BACKUP_DATABASE,
             RESTORE_DATABASE,
         ]
@@ -61,6 +63,7 @@ class TestUserAuthorization(unittest.TestCase):
             DELETE_EMPLOYEE,
             BACKUP_DATABASE,
             RESTORE_DATABASE,
+            MANAGE_USER_ACCOUNTS,
         ]
 
         for permission in allowed_permissions:
@@ -104,6 +107,7 @@ class TestUserAuthorization(unittest.TestCase):
             EXPORT_REPORT,
             BACKUP_DATABASE,
             RESTORE_DATABASE,
+            MANAGE_USER_ACCOUNTS,
         ]
 
         for permission in permissions:

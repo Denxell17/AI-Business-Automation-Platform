@@ -23,6 +23,11 @@ The current console application can:
   employee, payroll, and report actions; unknown roles and permissions
   are denied by default, and denied actions are recorded in the
   activity log
+- Allow active administrators to create fixed-role viewer accounts
+  through a protected console option with hidden password entry,
+  password confirmation, required-input validation, duplicate-username
+  rejection, success-only activity logging, and default-deny access
+  for viewers and inactive administrators
 - Use a tested employee repository throughout the console
   application to separate employee workflows from SQLite
   loading and saving details
@@ -77,6 +82,7 @@ AI-Business-Automation-Platform/
 │       ├── activity_logger.py
 │       ├── admin_setup.py
 │       ├── authentication.py
+│       ├── authorization.py
 │       ├── config.py
 │       ├── data_validation.py
 │       ├── database.py
@@ -94,6 +100,7 @@ AI-Business-Automation-Platform/
 │       ├── run_tests.py
 │       ├── storage.py
 │       ├── storage_verification.py
+│       ├── user_account_setup.py
 │       ├── user_service.py
 │       └── validators.py
 └── README.md
@@ -181,6 +188,10 @@ python Projects\employee_management_system\run_tests.py
   role-to-permission sets, menu-to-permission mapping,
   default-deny security rules, permission membership checks,
   denied-action logging, `for` loops, and `subTest()` coverage
+- Administrator-only viewer-account creation, fixed-role assignment,
+  service and command-layer authorization, hidden password confirmation,
+  required-input validation, duplicate-account protection, success-only
+  audit logging, menu integration, and end-to-end authorization testing
 - JSON storage and runtime data validation
 - SQLite CRUD operations, complete-list synchronization,
   transactions, commits, rollbacks, duplicate-safe migrations,
@@ -223,4 +234,4 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Authentication includes a typed user-account model, protected password storage, case-insensitive account retrieval, credential authentication, inactive-account enforcement, controlled `admin` and `viewer` roles, uniform authentication failure, and required interactive login before employee records are loaded or the menu is displayed. Role-based authorization now uses named permission constants, role-to-permission sets, and a menu-to-permission mapping. Administrators receive every explicitly mapped console permission, while viewers receive read-only employee, payroll, and report permissions. Unknown roles, unknown permissions, and unauthorized menu actions are denied by default, protected functions are skipped, and denied attempts are recorded in the activity log. A tested one-time administrator setup command counts existing accounts, rejects repeated setup, hides password entry with `getpass`, confirms matching passwords, validates required input, and reports success or failure through process exit codes. Thirty database tests, six administrator-setup command tests, one database-backup command test, two database-restoration command tests, three migration tests, fifteen console-integration tests, six storage-verification tests, nine repository tests, five authentication tests, eight user-service tests, and four authorization-policy tests bring the complete suite to 147 automated tests. A real administrator successfully authenticated through the console, and an incorrect password was verified to deny access before displaying the menu. Automated console tests confirm that viewers cannot register employees but can use allowed read-only employee views. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. The next account-security milestone is a secure administrator-only workflow for creating and managing viewer accounts.
+The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Authentication includes a typed user-account model, protected password storage, case-insensitive account retrieval, credential authentication, inactive-account enforcement, controlled `admin` and `viewer` roles, uniform authentication failure, and required interactive login before employee records are loaded or the menu is displayed. Role-based authorization uses named permission constants, role-to-permission sets, a menu-to-permission mapping, and default-deny protection. Administrators receive every explicitly mapped console permission, while viewers receive read-only employee, payroll, and report permissions. Active administrators can now create fixed-role viewer accounts through protected console option 14 with hidden password entry, password confirmation, required-input validation, duplicate-username protection, service and command-layer authorization, and success-only activity logging. Viewers and inactive administrators cannot create accounts, unknown roles and permissions remain denied by default, and denied menu actions are recorded in the activity log. A tested one-time administrator setup command counts existing accounts, rejects repeated setup, hides password entry with `getpass`, confirms matching passwords, validates required input, and reports success or failure through process exit codes. Thirty database tests, six administrator-setup command tests, one database-backup command test, two database-restoration command tests, three migration tests, twenty-one console-integration tests, six storage-verification tests, nine repository tests, five authentication tests, twelve user-service tests, four authorization-policy tests, and two viewer-account command tests bring the complete suite to 159 automated tests. In manual verification, administrator Dennis created the `ReportViewer` account, the new viewer authenticated successfully, read employee information, was denied the `users.manage` permission, and exited normally. The successful account creation and denied viewer action were recorded in the activity log, and the updated SQLite database was backed up. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. The next account-security milestone is tested administrator-only account-status management with safe viewer deactivation and reactivation.
