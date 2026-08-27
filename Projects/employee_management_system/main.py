@@ -4,6 +4,7 @@ from authorization import (
     BACKUP_DATABASE,
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
+    MANAGE_USER_ACCOUNTS,
     REGISTER_EMPLOYEE,
     RESTORE_DATABASE,
     UPDATE_EMPLOYEE,
@@ -36,6 +37,7 @@ from employee_repository import (
     save_employee_records,
 )
 from user_service import authenticate_user_account
+from user_account_setup import run_viewer_account_registration
 from reports import calculate_workforce_summary
 from exporter import (
     EXPORT_FILE,
@@ -56,6 +58,7 @@ MENU_PERMISSIONS = {
     "11": EXPORT_REPORT,
     "12": BACKUP_DATABASE,
     "13": RESTORE_DATABASE,
+    "14": MANAGE_USER_ACCOUNTS,
 }
 
 
@@ -108,7 +111,8 @@ def display_menu():
     print("11. Export Employee Report")
     print("12. Create SQLite Database Backup")
     print("13. Restore SQLite Database Backup")
-    print("14. Exit")
+    print("14. Register Viewer Account")
+    print("15. Exit")
 
 
 def register_employee(employee_list):
@@ -513,6 +517,41 @@ def display_all_employees(employee_list):
     display_department_summary(summary)
 
 
+def register_viewer_user(
+    current_user: UserAccount,
+) -> bool:
+    print()
+    print("REGISTER VIEWER ACCOUNT")
+
+    username = input("Viewer username: ").strip()
+    password = getpass("Viewer password: ")
+    password_confirmation = getpass(
+        "Confirm viewer password: "
+    )
+
+    if not username or not password:
+        print("Viewer username and password are required.")
+        return False
+
+    if password != password_confirmation:
+        print("Viewer passwords do not match.")
+        return False
+
+    registration_succeeded = run_viewer_account_registration(
+        current_user,
+        username,
+        password,
+    )
+
+    if registration_succeeded:
+        log_activity(
+            f"User {current_user['username']} registered "
+            f"viewer account {username}."
+        )
+
+    return registration_succeeded
+
+
 def run_program():
     display_header()
     log_activity("Application started.")
@@ -804,12 +843,15 @@ def run_program():
                         )
 
         elif choice == "14":
+            register_viewer_user(authenticated_user)
+
+        elif choice == "15":
             print("Closing the program...")
             log_activity("Application closed.")
             break
         else:
             print("Invalid option. "
-                  "Please choose a number from 1 to 14.")
+                  "Please choose a number from 1 to 15.")
 
     print("Program closed successfully.")
 

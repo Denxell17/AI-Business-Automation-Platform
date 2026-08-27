@@ -1,5 +1,9 @@
 from pathlib import Path
 
+from authorization import (
+    MANAGE_USER_ACCOUNTS,
+    user_has_permission,
+)
 from authentication import (
     hash_password,
     verify_password,
@@ -72,5 +76,28 @@ def register_initial_administrator(
         username,
         password,
         "admin",
+        database_file,
+    )
+
+
+def register_viewer_account(
+    current_user: UserAccount,
+    username: str,
+    password: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    if (
+        not current_user["is_active"]
+        or not user_has_permission(
+            current_user,
+            MANAGE_USER_ACCOUNTS,
+        )
+    ):
+        return False
+
+    return register_user_account(
+        username,
+        password,
+        "viewer",
         database_file,
     )

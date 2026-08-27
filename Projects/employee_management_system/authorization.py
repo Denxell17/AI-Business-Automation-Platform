@@ -9,6 +9,7 @@ DELETE_EMPLOYEE = "employee.delete"
 EXPORT_REPORT = "report.export"
 BACKUP_DATABASE = "database.backup"
 RESTORE_DATABASE = "database.restore"
+MANAGE_USER_ACCOUNTS = "users.manage"
 
 
 ROLE_PERMISSIONS = {
@@ -21,6 +22,7 @@ ROLE_PERMISSIONS = {
         EXPORT_REPORT,
         BACKUP_DATABASE,
         RESTORE_DATABASE,
+        MANAGE_USER_ACCOUNTS,
     },
     "viewer": {
         VIEW_EMPLOYEE,
