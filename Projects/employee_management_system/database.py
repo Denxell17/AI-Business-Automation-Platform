@@ -494,6 +494,35 @@ def update_user_account_active_status(
         connection.close()
 
 
+def update_user_account_password_hash(
+    username: str,
+    password_hash: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        update_result = connection.execute(
+            """
+            UPDATE users
+            SET password_hash = ?
+            WHERE username = ?
+            """,
+            (
+                password_hash,
+                username,
+            ),
+        )
+        connection.commit()
+        return update_result.rowcount == 1
+    except sqlite3.Error:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
 def count_user_accounts(
     database_file: Path = DATABASE_FILE,
 ) -> int:
