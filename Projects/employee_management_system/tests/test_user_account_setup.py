@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from user_account_setup import (
+    run_viewer_account_password_reset,
     run_viewer_account_registration,
     run_viewer_account_status_change,
 )
@@ -193,6 +194,81 @@ class TestViewerAccountSetupCommand(unittest.TestCase):
         mock_print.assert_called_once_with(
             "Viewer account status was not changed."
         )
+
+    @patch("builtins.print")
+    @patch(
+        "user_account_setup.reset_viewer_account_password",
+        return_value=True,
+    )
+    def test_successful_viewer_account_password_reset(
+        self,
+        mock_reset_viewer_account_password,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        database_file = Path("temporary.db")
+
+        result = run_viewer_account_password_reset(
+            administrator,
+            "ReportViewer",
+            "ReplacementPassword123!",
+            database_file,
+        )
+
+        self.assertTrue(result)
+        mock_reset_viewer_account_password.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            "ReplacementPassword123!",
+            database_file,
+        )
+        mock_print.assert_called_once_with(
+            "Viewer account password reset successfully."
+        )
+
+    @patch("builtins.print")
+    @patch(
+        "user_account_setup.reset_viewer_account_password",
+        return_value=False,
+    )
+    def test_failed_viewer_account_password_reset(
+        self,
+        mock_reset_viewer_account_password,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        database_file = Path("temporary.db")
+
+        result = run_viewer_account_password_reset(
+            administrator,
+            "ReportViewer",
+            "ReplacementPassword123!",
+            database_file,
+        )
+
+        self.assertFalse(result)
+        mock_reset_viewer_account_password.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            "ReplacementPassword123!",
+            database_file,
+        )
+        mock_print.assert_called_once_with(
+            "Viewer account password was not reset."
+        )
+
 
 if __name__ == "__main__":
     unittest.main()
