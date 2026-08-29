@@ -37,7 +37,10 @@ from employee_repository import (
     save_employee_records,
 )
 from user_service import authenticate_user_account
-from user_account_setup import run_viewer_account_registration
+from user_account_setup import (
+    run_viewer_account_registration,
+    run_viewer_account_status_change,
+)
 from reports import calculate_workforce_summary
 from exporter import (
     EXPORT_FILE,
@@ -59,6 +62,7 @@ MENU_PERMISSIONS = {
     "12": BACKUP_DATABASE,
     "13": RESTORE_DATABASE,
     "14": MANAGE_USER_ACCOUNTS,
+    "15":MANAGE_USER_ACCOUNTS,
 }
 
 
@@ -112,7 +116,8 @@ def display_menu():
     print("12. Create SQLite Database Backup")
     print("13. Restore SQLite Database Backup")
     print("14. Register Viewer Account")
-    print("15. Exit")
+    print("15. Change Viewer Account Status")
+    print("16. Exit")
 
 
 def register_employee(employee_list):
@@ -552,6 +557,52 @@ def register_viewer_user(
     return registration_succeeded
 
 
+def change_viewer_account_status(
+    current_user: UserAccount,
+) -> bool:
+    print()
+    print("CHANGE VIEWER ACCOUNT STATUS")
+
+    target_username = input(
+        "Viewer username: "
+    ).strip()
+
+    if not target_username:
+        print("Viewer username is required.")
+        return False
+
+    status_action = input(
+        "Type ACTIVATE or DEACTIVATE: "
+    ).strip().upper()
+
+    if status_action == "ACTIVATE":
+        is_active = True
+    elif status_action == "DEACTIVATE":
+        is_active = False
+    else:
+        print("Invalid viewer account status action.")
+        return False
+
+    status_changed = run_viewer_account_status_change(
+        current_user,
+        target_username,
+        is_active,
+    )
+
+    if status_changed:
+        status_text = (
+            "activated"
+            if is_active
+            else "deactivated"
+        )
+        log_activity(
+            f"User {current_user['username']} {status_text} "
+            f"viewer account {target_username}."
+        )
+
+    return status_changed
+
+
 def run_program():
     display_header()
     log_activity("Application started.")
@@ -846,12 +897,19 @@ def run_program():
             register_viewer_user(authenticated_user)
 
         elif choice == "15":
+            change_viewer_account_status(
+                authenticated_user
+            )
+
+        elif choice == "16":
             print("Closing the program...")
             log_activity("Application closed.")
             break
         else:
-            print("Invalid option. "
-                  "Please choose a number from 1 to 15.")
+            print(
+                "Invalid option. "
+                "Please choose a number from 1 to 16."
+            )
 
     print("Program closed successfully.")
 

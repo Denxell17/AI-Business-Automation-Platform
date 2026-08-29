@@ -12,6 +12,7 @@ from user_service import (
     register_initial_administrator,
     register_user_account,
     register_viewer_account,
+    set_viewer_account_active_status,
 )
 
 
@@ -465,6 +466,293 @@ class TestUserService(unittest.TestCase):
                     stored_viewer["password_hash"],
                 )
             )
+
+    def test_administrator_can_deactivate_viewer_account(self):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            viewer_inserted = register_user_account(
+                "ReportViewer",
+                "ViewerPassword123!",
+                "viewer",
+                database_file,
+            )
+            status_changed = set_viewer_account_active_status(
+                administrator,
+                "ReportViewer",
+                False,
+                database_file,
+            )
+            stored_viewer = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(viewer_inserted)
+            self.assertTrue(status_changed)
+            self.assertIsNotNone(stored_viewer)
+
+            if stored_viewer is None:
+                self.fail("The viewer account was not found.")
+
+            self.assertFalse(stored_viewer["is_active"])
+
+    def test_administrator_can_reactivate_viewer_account(self):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            viewer_inserted = register_user_account(
+                "ReportViewer",
+                "ViewerPassword123!",
+                "viewer",
+                database_file,
+            )
+            deactivation_result = (
+                set_viewer_account_active_status(
+                    administrator,
+                    "ReportViewer",
+                    False,
+                    database_file,
+                )
+            )
+            reactivation_result = (
+                set_viewer_account_active_status(
+                    administrator,
+                    "ReportViewer",
+                    True,
+                    database_file,
+                )
+            )
+            stored_viewer = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(viewer_inserted)
+            self.assertTrue(deactivation_result)
+            self.assertTrue(reactivation_result)
+            self.assertIsNotNone(stored_viewer)
+
+            if stored_viewer is None:
+                self.fail("The viewer account was not found.")
+
+            self.assertTrue(stored_viewer["is_active"])
+
+    def test_viewer_cannot_change_viewer_account_status(self):
+        current_viewer = {
+            "user_id": 2,
+            "username": "CurrentViewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            target_inserted = register_user_account(
+                "TargetViewer",
+                "ViewerPassword123!",
+                "viewer",
+                database_file,
+            )
+            status_changed = set_viewer_account_active_status(
+                current_viewer,
+                "TargetViewer",
+                False,
+                database_file,
+            )
+            stored_target = load_user_account_by_username(
+                "TargetViewer",
+                database_file,
+            )
+
+            self.assertTrue(target_inserted)
+            self.assertFalse(status_changed)
+            self.assertIsNotNone(stored_target)
+
+            if stored_target is None:
+                self.fail("The target viewer account was not found.")
+
+            self.assertTrue(stored_target["is_active"])
+
+    def test_inactive_administrator_cannot_change_viewer_status(
+        self,
+    ):
+        inactive_administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": False,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            target_inserted = register_user_account(
+                "ReportViewer",
+                "ViewerPassword123!",
+                "viewer",
+                database_file,
+            )
+            status_changed = set_viewer_account_active_status(
+                inactive_administrator,
+                "ReportViewer",
+                False,
+                database_file,
+            )
+            stored_target = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(target_inserted)
+            self.assertFalse(status_changed)
+            self.assertIsNotNone(stored_target)
+
+            if stored_target is None:
+                self.fail("The target viewer account was not found.")
+
+            self.assertTrue(stored_target["is_active"])
+
+    def test_administrator_cannot_change_administrator_status(
+        self,
+    ):
+        current_administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            target_inserted = register_user_account(
+                "SecondAdmin",
+                "AdminPassword123!",
+                "admin",
+                database_file,
+            )
+            status_changed = set_viewer_account_active_status(
+                current_administrator,
+                "SecondAdmin",
+                False,
+                database_file,
+            )
+            stored_target = load_user_account_by_username(
+                "SecondAdmin",
+                database_file,
+            )
+
+            self.assertTrue(target_inserted)
+            self.assertFalse(status_changed)
+            self.assertIsNotNone(stored_target)
+
+            if stored_target is None:
+                self.fail("The target administrator was not found.")
+
+            self.assertTrue(stored_target["is_active"])
+
+    def test_administrator_cannot_change_missing_viewer_status(
+        self,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            status_changed = set_viewer_account_active_status(
+                administrator,
+                "MissingViewer",
+                False,
+                database_file,
+            )
+            stored_target = load_user_account_by_username(
+                "MissingViewer",
+                database_file,
+            )
+
+            self.assertFalse(status_changed)
+            self.assertIsNone(stored_target)
+
+    def test_administrator_cannot_apply_unchanged_viewer_status(
+        self,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            viewer_inserted = register_user_account(
+                "ReportViewer",
+                "ViewerPassword123!",
+                "viewer",
+                database_file,
+            )
+            status_changed = set_viewer_account_active_status(
+                administrator,
+                "ReportViewer",
+                True,
+                database_file,
+            )
+            stored_viewer = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(viewer_inserted)
+            self.assertFalse(status_changed)
+            self.assertIsNotNone(stored_viewer)
+
+            if stored_viewer is None:
+                self.fail("The viewer account was not found.")
+
+            self.assertTrue(stored_viewer["is_active"])
 
 
 if __name__ == "__main__":

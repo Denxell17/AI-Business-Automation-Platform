@@ -17,6 +17,7 @@ from database import (
     restore_database_from_backup,
     synchronize_employees_to_database,
     update_employee_in_database,
+    update_user_account_active_status,
 )
 
 
@@ -1040,6 +1041,103 @@ class TestEmployeeDatabase(unittest.TestCase):
             self.assertEqual(empty_count, 0)
             self.assertTrue(insert_result)
             self.assertEqual(account_count, 1)
+
+    def test_update_user_account_active_status_deactivates_account(
+        self,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            insert_result = insert_user_account(
+                "ReportViewer",
+                "protected_hash",
+                "viewer",
+                database_file,
+            )
+            update_result = update_user_account_active_status(
+                "ReportViewer",
+                False,
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(insert_result)
+            self.assertTrue(update_result)
+            self.assertIsNotNone(stored_user)
+
+            if stored_user is None:
+                self.fail("The updated user account was not found.")
+
+            self.assertFalse(stored_user["is_active"])
+
+    def test_update_user_account_active_status_reactivates_account(
+        self,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            insert_result = insert_user_account(
+                "ReportViewer",
+                "protected_hash",
+                "viewer",
+                database_file,
+            )
+            deactivation_result = (
+                update_user_account_active_status(
+                    "ReportViewer",
+                    False,
+                    database_file,
+                )
+            )
+            reactivation_result = (
+                update_user_account_active_status(
+                    "ReportViewer",
+                    True,
+                    database_file,
+                )
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(insert_result)
+            self.assertTrue(deactivation_result)
+            self.assertTrue(reactivation_result)
+            self.assertIsNotNone(stored_user)
+
+            if stored_user is None:
+                self.fail("The reactivated user account was not found.")
+
+            self.assertTrue(stored_user["is_active"])
+
+    def test_update_user_account_active_status_returns_false_when_missing(
+        self,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            update_result = update_user_account_active_status(
+                "MissingUser",
+                False,
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "MissingUser",
+                database_file,
+            )
+
+            self.assertFalse(update_result)
+            self.assertIsNone(stored_user)
 
 
 if __name__ == "__main__":

@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import call, patch
 
 from main import (
+    change_viewer_account_status,
     login_user,
     register_viewer_user,
     run_program,
@@ -180,6 +181,196 @@ class TestMainViewerRegistration(unittest.TestCase):
         )
         mock_log_activity.assert_not_called()
 
+    @patch("main.log_activity")
+    @patch(
+        "main.run_viewer_account_status_change",
+        return_value=True,
+    )
+    @patch("builtins.input")
+    def test_change_viewer_status_accepts_deactivation(
+        self,
+        mock_input,
+        mock_run_status_change,
+        mock_log_activity,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "  ReportViewer  ",
+            "  deactivate  ",
+        ]
+
+        result = change_viewer_account_status(
+            administrator
+        )
+
+        self.assertTrue(result)
+        mock_input.assert_has_calls(
+            [
+                call("Viewer username: "),
+                call("Type ACTIVATE or DEACTIVATE: "),
+            ]
+        )
+        mock_run_status_change.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            False,
+        )
+        mock_log_activity.assert_called_once_with(
+            "User Dennis deactivated viewer account "
+            "ReportViewer."
+        )
+
+    @patch("main.log_activity")
+    @patch(
+        "main.run_viewer_account_status_change",
+        return_value=True,
+    )
+    @patch("builtins.input")
+    def test_change_viewer_status_accepts_activation(
+        self,
+        mock_input,
+        mock_run_status_change,
+        mock_log_activity,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "  ReportViewer  ",
+            "  activate  ",
+        ]
+
+        result = change_viewer_account_status(
+            administrator
+        )
+
+        self.assertTrue(result)
+        mock_run_status_change.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            True,
+        )
+        mock_log_activity.assert_called_once_with(
+            "User Dennis activated viewer account "
+            "ReportViewer."
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.run_viewer_account_status_change")
+    @patch(
+        "builtins.input",
+        return_value="   ",
+    )
+    def test_change_viewer_status_rejects_missing_username(
+        self,
+        mock_input,
+        mock_run_status_change,
+        mock_log_activity,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+
+        result = change_viewer_account_status(
+            administrator
+        )
+
+        self.assertFalse(result)
+        mock_input.assert_called_once_with(
+            "Viewer username: "
+        )
+        mock_run_status_change.assert_not_called()
+        mock_log_activity.assert_not_called()
+        mock_print.assert_any_call(
+            "Viewer username is required."
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.run_viewer_account_status_change")
+    @patch("builtins.input")
+    def test_change_viewer_status_rejects_invalid_action(
+        self,
+        mock_input,
+        mock_run_status_change,
+        mock_log_activity,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "ReportViewer",
+            "REMOVE",
+        ]
+
+        result = change_viewer_account_status(
+            administrator
+        )
+
+        self.assertFalse(result)
+        mock_run_status_change.assert_not_called()
+        mock_log_activity.assert_not_called()
+        mock_print.assert_any_call(
+            "Invalid viewer account status action."
+        )
+
+    @patch("main.log_activity")
+    @patch(
+        "main.run_viewer_account_status_change",
+        return_value=False,
+    )
+    @patch("builtins.input")
+    def test_change_viewer_status_does_not_log_failed_change(
+        self,
+        mock_input,
+        mock_run_status_change,
+        mock_log_activity,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "ReportViewer",
+            "DEACTIVATE",
+        ]
+
+        result = change_viewer_account_status(
+            administrator
+        )
+
+        self.assertFalse(result)
+        mock_run_status_change.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            False,
+        )
+        mock_log_activity.assert_not_called()
+
 
 class TestMainAuthentication(unittest.TestCase):
     @patch("builtins.print")
@@ -336,7 +527,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "1",
-            "15",
+            "16",
         ]
 
         run_program()
@@ -380,7 +571,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "6",
-            "15",
+            "16",
         ]
 
         run_program()
@@ -395,7 +586,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
     @patch("main.log_activity")
     @patch("main.load_employee_records")
-    @patch("builtins.input", return_value="15")
+    @patch("builtins.input", return_value="16")
     def test_program_startup_loads_employee_records(
         self,
         mock_input,
@@ -445,7 +636,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "1",
-            "15",
+            "16",
         ]
         mock_load_employee_records.return_value = []
         mock_register_employee.return_value = new_employee
@@ -479,7 +670,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "4",
-            "15",
+            "16",
         ]
         mock_load_employee_records.return_value = employee_list
         mock_update_employee.return_value = employee
@@ -519,7 +710,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "5",
-            "15",
+            "16",
         ]
         mock_load_employee_records.return_value = employee_list
         mock_delete_employee.side_effect = pretend_delete
@@ -549,7 +740,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
     ):
         mock_input.side_effect = [
             "1",
-            "15",
+            "16",
         ]
         mock_load_employee_records.return_value = []
         mock_register_employee.return_value = None
@@ -572,7 +763,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
     ):
         mock_input.side_effect = [
             "12",
-            "15",
+            "16",
         ]
         mock_load_employee_records.return_value = []
         mock_run_database_backup.return_value = True
@@ -605,7 +796,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "RESTORE",
-            "15",
+            "16",
         ]
         mock_load_employee_records.side_effect = [
             [],
@@ -640,7 +831,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "CANCEL",
-            "15",
+            "16",
         ]
         mock_load_employee_records.return_value = []
 
@@ -668,7 +859,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "RESTORE",
-            "15",
+            "16",
         ]
         mock_load_employee_records.return_value = []
         mock_run_database_restoration.return_value = False
@@ -700,7 +891,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         administrator = self.mock_login_user.return_value
         mock_input.side_effect = [
             "14",
-            "15",
+            "16",
         ]
 
         run_program()
@@ -735,13 +926,79 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "14",
-            "15",
+            "16",
         ]
 
         run_program()
 
         mock_load_employee_records.assert_called_once_with()
         mock_register_viewer_user.assert_not_called()
+        mock_print.assert_any_call(
+            "You do not have permission to use this option."
+        )
+        mock_log_activity.assert_any_call(
+            "User Viewer was denied permission users.manage."
+        )
+
+    @patch("main.log_activity")
+    @patch("main.change_viewer_account_status")
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_administrator_can_open_viewer_status_management(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_change_viewer_status,
+        mock_log_activity,
+    ):
+        administrator = self.mock_login_user.return_value
+        mock_input.side_effect = [
+            "15",
+            "16",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_change_viewer_status.assert_called_once_with(
+            administrator
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.change_viewer_account_status")
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_viewer_cannot_open_viewer_status_management(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_change_viewer_status,
+        mock_log_activity,
+        mock_print,
+    ):
+        self.mock_login_user.return_value = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "15",
+            "16",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_change_viewer_status.assert_not_called()
         mock_print.assert_any_call(
             "You do not have permission to use this option."
         )

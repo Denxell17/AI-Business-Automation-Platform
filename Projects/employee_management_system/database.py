@@ -465,6 +465,35 @@ def load_user_account_by_username(
         connection.close()
 
 
+def update_user_account_active_status(
+    username: str,
+    is_active: bool,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        update_result = connection.execute(
+            """
+            UPDATE users
+            SET is_active = ?
+            WHERE username = ?
+            """,
+            (
+                int(is_active),
+                username,
+            ),
+        )
+        connection.commit()
+        return update_result.rowcount == 1
+    except sqlite3.Error:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
 def count_user_accounts(
     database_file: Path = DATABASE_FILE,
 ) -> int:
