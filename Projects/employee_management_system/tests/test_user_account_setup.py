@@ -3,6 +3,7 @@ from pathlib import Path
 from unittest.mock import patch
 
 from user_account_setup import (
+    run_current_user_password_change,
     run_viewer_account_password_reset,
     run_viewer_account_registration,
     run_viewer_account_status_change,
@@ -267,6 +268,80 @@ class TestViewerAccountSetupCommand(unittest.TestCase):
         )
         mock_print.assert_called_once_with(
             "Viewer account password was not reset."
+        )
+
+    @patch("builtins.print")
+    @patch(
+        "user_account_setup.change_current_user_password",
+        return_value=True,
+    )
+    def test_successful_current_user_password_change(
+        self,
+        mock_change_current_user_password,
+        mock_print,
+    ):
+        current_user = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        database_file = Path("temporary.db")
+
+        result = run_current_user_password_change(
+            current_user,
+            "CurrentPassword123!",
+            "NewPassword123!",
+            database_file,
+        )
+
+        self.assertTrue(result)
+        mock_change_current_user_password.assert_called_once_with(
+            current_user,
+            "CurrentPassword123!",
+            "NewPassword123!",
+            database_file,
+        )
+        mock_print.assert_called_once_with(
+            "Account password changed successfully."
+        )
+
+    @patch("builtins.print")
+    @patch(
+        "user_account_setup.change_current_user_password",
+        return_value=False,
+    )
+    def test_failed_current_user_password_change(
+        self,
+        mock_change_current_user_password,
+        mock_print,
+    ):
+        current_user = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        database_file = Path("temporary.db")
+
+        result = run_current_user_password_change(
+            current_user,
+            "WrongPassword123!",
+            "NewPassword123!",
+            database_file,
+        )
+
+        self.assertFalse(result)
+        mock_change_current_user_password.assert_called_once_with(
+            current_user,
+            "WrongPassword123!",
+            "NewPassword123!",
+            database_file,
+        )
+        mock_print.assert_called_once_with(
+            "Account password was not changed."
         )
 
 

@@ -38,6 +38,7 @@ from employee_repository import (
 )
 from user_service import authenticate_user_account
 from user_account_setup import (
+    run_current_user_password_change,
     run_viewer_account_password_reset,
     run_viewer_account_registration,
     run_viewer_account_status_change,
@@ -120,7 +121,8 @@ def display_menu():
     print("14. Register Viewer Account")
     print("15. Change Viewer Account Status")
     print("16. Reset Viewer Account Password")
-    print("17. Exit")
+    print("17. Change Your Password")
+    print("18. Exit")
 
 
 def register_employee(employee_list):
@@ -651,6 +653,48 @@ def reset_viewer_password(
     return password_reset
 
 
+def change_own_password(
+    current_user: UserAccount,
+) -> bool:
+    print()
+    print("CHANGE YOUR PASSWORD")
+
+    current_password = getpass(
+        "Current password: "
+    )
+    new_password = getpass(
+        "New password: "
+    )
+    password_confirmation = getpass(
+        "Confirm new password: "
+    )
+
+    if (
+        not current_password.strip()
+        or not new_password.strip()
+    ):
+        print("Current and new passwords are required.")
+        return False
+
+    if new_password != password_confirmation:
+        print("New passwords do not match.")
+        return False
+
+    password_changed = run_current_user_password_change(
+        current_user,
+        current_password,
+        new_password,
+    )
+
+    if password_changed:
+        log_activity(
+            f"User {current_user['username']} "
+            "changed their password."
+        )
+
+    return password_changed
+
+
 def run_program():
     display_header()
     log_activity("Application started.")
@@ -955,13 +999,18 @@ def run_program():
             )
 
         elif choice == "17":
+            change_own_password(
+                authenticated_user
+            )
+
+        elif choice == "18":
             print("Closing the program...")
             log_activity("Application closed.")
             break
         else:
             print(
                 "Invalid option. "
-                "Please choose a number from 1 to 17."
+                "Please choose a number from 1 to 18."
             )
 
     print("Program closed successfully.")

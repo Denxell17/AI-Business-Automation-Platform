@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import call, patch
 
 from main import (
+    change_own_password,
     change_viewer_account_status,
     login_user,
     register_viewer_user,
@@ -586,6 +587,193 @@ class TestMainViewerRegistration(unittest.TestCase):
         )
         mock_log_activity.assert_not_called()
 
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch(
+        "main.run_current_user_password_change",
+        return_value=True,
+    )
+    @patch("main.getpass")
+    def test_change_own_password_accepts_valid_input(
+        self,
+        mock_getpass,
+        mock_run_password_change,
+        mock_log_activity,
+        mock_print,
+    ):
+        current_user = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "CurrentPassword123!",
+            "NewPassword123!",
+            "NewPassword123!",
+        ]
+
+        result = change_own_password(current_user)
+
+        self.assertTrue(result)
+        mock_getpass.assert_has_calls(
+            [
+                call("Current password: "),
+                call("New password: "),
+                call("Confirm new password: "),
+            ]
+        )
+        mock_run_password_change.assert_called_once_with(
+            current_user,
+            "CurrentPassword123!",
+            "NewPassword123!",
+        )
+        mock_log_activity.assert_called_once_with(
+            "User Dennis changed their password."
+        )
+        mock_print.assert_has_calls(
+            [
+                call(),
+                call("CHANGE YOUR PASSWORD"),
+            ]
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.run_current_user_password_change")
+    @patch("main.getpass")
+    def test_change_own_password_rejects_blank_passwords(
+        self,
+        mock_getpass,
+        mock_run_password_change,
+        mock_log_activity,
+        mock_print,
+    ):
+        current_user = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        password_cases = [
+            (
+                "blank current password",
+                "   ",
+                "NewPassword123!",
+                "NewPassword123!",
+            ),
+            (
+                "blank new password",
+                "CurrentPassword123!",
+                "   ",
+                "   ",
+            ),
+        ]
+
+        for (
+            case_name,
+            current_password,
+            new_password,
+            password_confirmation,
+        ) in password_cases:
+            with self.subTest(case=case_name):
+                mock_getpass.reset_mock()
+                mock_run_password_change.reset_mock()
+                mock_log_activity.reset_mock()
+                mock_print.reset_mock()
+
+                mock_getpass.side_effect = [
+                    current_password,
+                    new_password,
+                    password_confirmation,
+                ]
+
+                result = change_own_password(current_user)
+
+                self.assertFalse(result)
+                mock_run_password_change.assert_not_called()
+                mock_log_activity.assert_not_called()
+                mock_print.assert_any_call(
+                    "Current and new passwords are required."
+                )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.run_current_user_password_change")
+    @patch("main.getpass")
+    def test_change_own_password_rejects_mismatched_passwords(
+        self,
+        mock_getpass,
+        mock_run_password_change,
+        mock_log_activity,
+        mock_print,
+    ):
+        current_user = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "CurrentPassword123!",
+            "FirstNewPassword123!",
+            "DifferentNewPassword123!",
+        ]
+
+        result = change_own_password(current_user)
+
+        self.assertFalse(result)
+        mock_getpass.assert_has_calls(
+            [
+                call("Current password: "),
+                call("New password: "),
+                call("Confirm new password: "),
+            ]
+        )
+        mock_run_password_change.assert_not_called()
+        mock_log_activity.assert_not_called()
+        mock_print.assert_any_call(
+            "New passwords do not match."
+        )
+
+    @patch("main.log_activity")
+    @patch(
+        "main.run_current_user_password_change",
+        return_value=False,
+    )
+    @patch("main.getpass")
+    def test_change_own_password_does_not_log_failed_change(
+        self,
+        mock_getpass,
+        mock_run_password_change,
+        mock_log_activity,
+    ):
+        current_user = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "WrongCurrentPassword123!",
+            "NewPassword123!",
+            "NewPassword123!",
+        ]
+
+        result = change_own_password(current_user)
+
+        self.assertFalse(result)
+        mock_run_password_change.assert_called_once_with(
+            current_user,
+            "WrongCurrentPassword123!",
+            "NewPassword123!",
+        )
+        mock_log_activity.assert_not_called()
+
 
 class TestMainAuthentication(unittest.TestCase):
     @patch("builtins.print")
@@ -742,7 +930,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "1",
-            "17",
+            "18",
         ]
 
         run_program()
@@ -786,7 +974,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "6",
-            "17",
+            "18",
         ]
 
         run_program()
@@ -801,7 +989,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
     @patch("main.log_activity")
     @patch("main.load_employee_records")
-    @patch("builtins.input", return_value="17")
+    @patch("builtins.input", return_value="18")
     def test_program_startup_loads_employee_records(
         self,
         mock_input,
@@ -851,7 +1039,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "1",
-            "17",
+            "18",
         ]
         mock_load_employee_records.return_value = []
         mock_register_employee.return_value = new_employee
@@ -885,7 +1073,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "4",
-            "17",
+            "18",
         ]
         mock_load_employee_records.return_value = employee_list
         mock_update_employee.return_value = employee
@@ -925,7 +1113,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "5",
-            "17",
+            "18",
         ]
         mock_load_employee_records.return_value = employee_list
         mock_delete_employee.side_effect = pretend_delete
@@ -955,7 +1143,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
     ):
         mock_input.side_effect = [
             "1",
-            "17",
+            "18",
         ]
         mock_load_employee_records.return_value = []
         mock_register_employee.return_value = None
@@ -978,7 +1166,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
     ):
         mock_input.side_effect = [
             "12",
-            "17",
+            "18",
         ]
         mock_load_employee_records.return_value = []
         mock_run_database_backup.return_value = True
@@ -1011,7 +1199,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "RESTORE",
-            "17",
+            "18",
         ]
         mock_load_employee_records.side_effect = [
             [],
@@ -1046,7 +1234,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "CANCEL",
-            "17",
+            "18",
         ]
         mock_load_employee_records.return_value = []
 
@@ -1074,7 +1262,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "RESTORE",
-            "17",
+            "18",
         ]
         mock_load_employee_records.return_value = []
         mock_run_database_restoration.return_value = False
@@ -1106,7 +1294,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         administrator = self.mock_login_user.return_value
         mock_input.side_effect = [
             "14",
-            "17",
+            "18",
         ]
 
         run_program()
@@ -1141,7 +1329,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "14",
-            "17",
+            "18",
         ]
 
         run_program()
@@ -1172,7 +1360,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         administrator = self.mock_login_user.return_value
         mock_input.side_effect = [
             "15",
-            "17",
+            "18",
         ]
 
         run_program()
@@ -1199,7 +1387,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         administrator = self.mock_login_user.return_value
         mock_input.side_effect = [
             "16",
-            "17",
+            "18",
         ]
 
         run_program()
@@ -1207,6 +1395,67 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_load_employee_records.assert_called_once_with()
         mock_reset_viewer_password.assert_called_once_with(
             administrator
+        )
+
+    @patch("main.log_activity")
+    @patch("main.change_own_password")
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_administrator_can_open_own_password_change(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_change_own_password,
+        mock_log_activity,
+    ):
+        administrator = self.mock_login_user.return_value
+        mock_input.side_effect = [
+            "17",
+            "18",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_change_own_password.assert_called_once_with(
+            administrator
+        )
+
+    @patch("main.log_activity")
+    @patch("main.change_own_password")
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_viewer_can_open_own_password_change(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_change_own_password,
+        mock_log_activity,
+    ):
+        viewer = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+        self.mock_login_user.return_value = viewer
+        mock_input.side_effect = [
+            "17",
+            "18",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_change_own_password.assert_called_once_with(
+            viewer
         )
 
     @patch("builtins.print")
@@ -1234,7 +1483,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "16",
-            "17",
+            "18",
         ]
 
         run_program()
@@ -1273,7 +1522,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "15",
-            "17",
+            "18",
         ]
 
         run_program()

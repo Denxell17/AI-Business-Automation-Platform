@@ -3,6 +3,7 @@ from pathlib import Path
 from database import DATABASE_FILE
 from models import UserAccount
 from user_service import (
+    change_current_user_password,
     register_viewer_account,
     reset_viewer_account_password,
     set_viewer_account_active_status,
@@ -77,4 +78,25 @@ def run_viewer_account_password_reset(
         return False
 
     print("Viewer account password reset successfully.")
+    return True
+
+
+def run_current_user_password_change(
+    current_user: UserAccount,
+    current_password: str,
+    new_password: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    password_changed = change_current_user_password(
+        current_user,
+        current_password,
+        new_password,
+        database_file,
+    )
+
+    if not password_changed:
+        print("Account password was not changed.")
+        return False
+
+    print("Account password changed successfully.")
     return True
