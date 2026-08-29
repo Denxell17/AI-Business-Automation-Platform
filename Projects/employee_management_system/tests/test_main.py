@@ -5,6 +5,7 @@ from main import (
     change_viewer_account_status,
     login_user,
     register_viewer_user,
+    reset_viewer_password,
     run_program,
 )
 
@@ -371,6 +372,220 @@ class TestMainViewerRegistration(unittest.TestCase):
         )
         mock_log_activity.assert_not_called()
 
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch(
+        "main.run_viewer_account_password_reset",
+        return_value=True,
+    )
+    @patch("main.getpass")
+    @patch(
+        "builtins.input",
+        return_value="  ReportViewer  ",
+    )
+    def test_reset_viewer_password_accepts_valid_input(
+        self,
+        mock_input,
+        mock_getpass,
+        mock_run_password_reset,
+        mock_log_activity,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "ReplacementPassword123!",
+            "ReplacementPassword123!",
+        ]
+
+        result = reset_viewer_password(administrator)
+
+        self.assertTrue(result)
+        mock_input.assert_called_once_with(
+            "Viewer username: "
+        )
+        mock_getpass.assert_has_calls(
+            [
+                call("New viewer password: "),
+                call("Confirm new viewer password: "),
+            ]
+        )
+        mock_run_password_reset.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            "ReplacementPassword123!",
+        )
+        mock_log_activity.assert_called_once_with(
+            "User Dennis reset password for viewer account "
+            "ReportViewer."
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.run_viewer_account_password_reset")
+    @patch("main.getpass")
+    @patch(
+        "builtins.input",
+        return_value="   ",
+    )
+    def test_reset_viewer_password_rejects_missing_username(
+        self,
+        mock_input,
+        mock_getpass,
+        mock_run_password_reset,
+        mock_log_activity,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "ReplacementPassword123!",
+            "ReplacementPassword123!",
+        ]
+
+        result = reset_viewer_password(administrator)
+
+        self.assertFalse(result)
+        mock_input.assert_called_once_with(
+            "Viewer username: "
+        )
+        self.assertEqual(mock_getpass.call_count, 2)
+        mock_run_password_reset.assert_not_called()
+        mock_log_activity.assert_not_called()
+        mock_print.assert_any_call(
+            "Viewer username and new password are required."
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.run_viewer_account_password_reset")
+    @patch("main.getpass")
+    @patch(
+        "builtins.input",
+        return_value="ReportViewer",
+    )
+    def test_reset_viewer_password_rejects_blank_password(
+        self,
+        mock_input,
+        mock_getpass,
+        mock_run_password_reset,
+        mock_log_activity,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "   ",
+            "   ",
+        ]
+
+        result = reset_viewer_password(administrator)
+
+        self.assertFalse(result)
+        self.assertEqual(mock_getpass.call_count, 2)
+        mock_run_password_reset.assert_not_called()
+        mock_log_activity.assert_not_called()
+        mock_print.assert_any_call(
+            "Viewer username and new password are required."
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.run_viewer_account_password_reset")
+    @patch("main.getpass")
+    @patch(
+        "builtins.input",
+        return_value="ReportViewer",
+    )
+    def test_reset_viewer_password_rejects_mismatched_passwords(
+        self,
+        mock_input,
+        mock_getpass,
+        mock_run_password_reset,
+        mock_log_activity,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "FirstPassword123!",
+            "DifferentPassword123!",
+        ]
+
+        result = reset_viewer_password(administrator)
+
+        self.assertFalse(result)
+        mock_getpass.assert_has_calls(
+            [
+                call("New viewer password: "),
+                call("Confirm new viewer password: "),
+            ]
+        )
+        mock_run_password_reset.assert_not_called()
+        mock_log_activity.assert_not_called()
+        mock_print.assert_any_call(
+            "Viewer passwords do not match."
+        )
+
+    @patch("main.log_activity")
+    @patch(
+        "main.run_viewer_account_password_reset",
+        return_value=False,
+    )
+    @patch("main.getpass")
+    @patch(
+        "builtins.input",
+        return_value="ReportViewer",
+    )
+    def test_reset_viewer_password_does_not_log_failed_reset(
+        self,
+        mock_input,
+        mock_getpass,
+        mock_run_password_reset,
+        mock_log_activity,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        mock_getpass.side_effect = [
+            "ReplacementPassword123!",
+            "ReplacementPassword123!",
+        ]
+
+        result = reset_viewer_password(administrator)
+
+        self.assertFalse(result)
+        mock_run_password_reset.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            "ReplacementPassword123!",
+        )
+        mock_log_activity.assert_not_called()
+
 
 class TestMainAuthentication(unittest.TestCase):
     @patch("builtins.print")
@@ -527,7 +742,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "1",
-            "16",
+            "17",
         ]
 
         run_program()
@@ -571,7 +786,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "6",
-            "16",
+            "17",
         ]
 
         run_program()
@@ -586,7 +801,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
     @patch("main.log_activity")
     @patch("main.load_employee_records")
-    @patch("builtins.input", return_value="16")
+    @patch("builtins.input", return_value="17")
     def test_program_startup_loads_employee_records(
         self,
         mock_input,
@@ -636,7 +851,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "1",
-            "16",
+            "17",
         ]
         mock_load_employee_records.return_value = []
         mock_register_employee.return_value = new_employee
@@ -670,7 +885,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "4",
-            "16",
+            "17",
         ]
         mock_load_employee_records.return_value = employee_list
         mock_update_employee.return_value = employee
@@ -710,7 +925,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
 
         mock_input.side_effect = [
             "5",
-            "16",
+            "17",
         ]
         mock_load_employee_records.return_value = employee_list
         mock_delete_employee.side_effect = pretend_delete
@@ -740,7 +955,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
     ):
         mock_input.side_effect = [
             "1",
-            "16",
+            "17",
         ]
         mock_load_employee_records.return_value = []
         mock_register_employee.return_value = None
@@ -763,7 +978,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
     ):
         mock_input.side_effect = [
             "12",
-            "16",
+            "17",
         ]
         mock_load_employee_records.return_value = []
         mock_run_database_backup.return_value = True
@@ -796,7 +1011,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "RESTORE",
-            "16",
+            "17",
         ]
         mock_load_employee_records.side_effect = [
             [],
@@ -831,7 +1046,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "CANCEL",
-            "16",
+            "17",
         ]
         mock_load_employee_records.return_value = []
 
@@ -859,7 +1074,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_input.side_effect = [
             "13",
             "RESTORE",
-            "16",
+            "17",
         ]
         mock_load_employee_records.return_value = []
         mock_run_database_restoration.return_value = False
@@ -891,7 +1106,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         administrator = self.mock_login_user.return_value
         mock_input.side_effect = [
             "14",
-            "16",
+            "17",
         ]
 
         run_program()
@@ -926,7 +1141,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "14",
-            "16",
+            "17",
         ]
 
         run_program()
@@ -957,7 +1172,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         administrator = self.mock_login_user.return_value
         mock_input.side_effect = [
             "15",
-            "16",
+            "17",
         ]
 
         run_program()
@@ -965,6 +1180,72 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         mock_load_employee_records.assert_called_once_with()
         mock_change_viewer_status.assert_called_once_with(
             administrator
+        )
+
+    @patch("main.log_activity")
+    @patch("main.reset_viewer_password")
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_administrator_can_open_viewer_password_reset(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_reset_viewer_password,
+        mock_log_activity,
+    ):
+        administrator = self.mock_login_user.return_value
+        mock_input.side_effect = [
+            "16",
+            "17",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_reset_viewer_password.assert_called_once_with(
+            administrator
+        )
+
+    @patch("builtins.print")
+    @patch("main.log_activity")
+    @patch("main.reset_viewer_password")
+    @patch(
+        "main.load_employee_records",
+        return_value=[],
+    )
+    @patch("builtins.input")
+    def test_viewer_cannot_open_viewer_password_reset(
+        self,
+        mock_input,
+        mock_load_employee_records,
+        mock_reset_viewer_password,
+        mock_log_activity,
+        mock_print,
+    ):
+        self.mock_login_user.return_value = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+        mock_input.side_effect = [
+            "16",
+            "17",
+        ]
+
+        run_program()
+
+        mock_load_employee_records.assert_called_once_with()
+        mock_reset_viewer_password.assert_not_called()
+        mock_print.assert_any_call(
+            "You do not have permission to use this option."
+        )
+        mock_log_activity.assert_any_call(
+            "User Viewer was denied permission users.manage."
         )
 
     @patch("builtins.print")
@@ -992,7 +1273,7 @@ class TestMainDatabaseSynchronization(unittest.TestCase):
         }
         mock_input.side_effect = [
             "15",
-            "16",
+            "17",
         ]
 
         run_program()

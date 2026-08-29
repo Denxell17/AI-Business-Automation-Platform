@@ -4,6 +4,7 @@ from database import DATABASE_FILE
 from models import UserAccount
 from user_service import (
     register_viewer_account,
+    reset_viewer_account_password,
     set_viewer_account_active_status,
 )
 
@@ -55,4 +56,25 @@ def run_viewer_account_status_change(
     print(
         f"Viewer account {status_text} successfully."
     )
+    return True
+
+
+def run_viewer_account_password_reset(
+    current_user: UserAccount,
+    target_username: str,
+    new_password: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    password_reset = reset_viewer_account_password(
+        current_user,
+        target_username,
+        new_password,
+        database_file,
+    )
+
+    if not password_reset:
+        print("Viewer account password was not reset.")
+        return False
+
+    print("Viewer account password reset successfully.")
     return True
