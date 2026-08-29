@@ -14,6 +14,7 @@ from database import (
     insert_user_account,
     load_user_account_by_username,
     update_user_account_active_status,
+    update_user_account_password_hash,
 )
 from models import UserAccount
 
@@ -136,5 +137,49 @@ def set_viewer_account_active_status(
     return update_user_account_active_status(
         target_username,
         is_active,
+        database_file,
+    )
+
+
+def reset_viewer_account_password(
+    current_user: UserAccount,
+    target_username: str,
+    new_password: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    if (
+        not current_user["is_active"]
+        or not user_has_permission(
+            current_user,
+            MANAGE_USER_ACCOUNTS,
+        )
+    ):
+        return False
+
+    if not new_password.strip():
+        return False
+
+    target_user = load_user_account_by_username(
+        target_username,
+        database_file,
+    )
+
+    if target_user is None:
+        return False
+
+    if target_user["role"] != "viewer":
+        return False
+
+    if verify_password(
+        new_password,
+        target_user["password_hash"],
+    ):
+        return False
+
+    new_password_hash = hash_password(new_password)
+
+    return update_user_account_password_hash(
+        target_username,
+        new_password_hash,
         database_file,
     )

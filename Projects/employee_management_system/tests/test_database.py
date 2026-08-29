@@ -18,6 +18,7 @@ from database import (
     synchronize_employees_to_database,
     update_employee_in_database,
     update_user_account_active_status,
+    update_user_account_password_hash,
 )
 
 
@@ -1138,6 +1139,69 @@ class TestEmployeeDatabase(unittest.TestCase):
 
             self.assertFalse(update_result)
             self.assertIsNone(stored_user)
+
+    def test_update_user_account_password_hash_replaces_saved_hash(
+        self,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            insert_result = insert_user_account(
+                "ReportViewer",
+                "original_protected_hash",
+                "viewer",
+                database_file,
+            )
+            update_result = update_user_account_password_hash(
+                "ReportViewer",
+                "replacement_protected_hash",
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(insert_result)
+            self.assertTrue(update_result)
+            self.assertIsNotNone(stored_user)
+
+            if stored_user is None:
+                self.fail("The updated user account was not found.")
+
+            self.assertEqual(
+                stored_user["password_hash"],
+                "replacement_protected_hash",
+            )
+            self.assertEqual(
+                stored_user["role"],
+                "viewer",
+            )
+            self.assertTrue(stored_user["is_active"])
+
+    def test_update_user_account_password_hash_returns_false_when_missing(
+        self,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            update_result = update_user_account_password_hash(
+                "MissingViewer",
+                "replacement_protected_hash",
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "MissingViewer",
+                database_file,
+            )
+
+            self.assertFalse(update_result)
+            self.assertIsNone(stored_user)
+
 
 
 if __name__ == "__main__":
