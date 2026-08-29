@@ -183,3 +183,53 @@ def reset_viewer_account_password(
         new_password_hash,
         database_file,
     )
+
+
+def change_current_user_password(
+    current_user: UserAccount,
+    current_password: str,
+    new_password: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    if not current_user["is_active"]:
+        return False
+
+    if (
+        not current_password.strip()
+        or not new_password.strip()
+    ):
+        return False
+
+    stored_user = load_user_account_by_username(
+        current_user["username"],
+        database_file,
+    )
+
+    if stored_user is None:
+        return False
+
+    if not stored_user["is_active"]:
+        return False
+
+    if stored_user["user_id"] != current_user["user_id"]:
+        return False
+
+    if not verify_password(
+        current_password,
+        stored_user["password_hash"],
+    ):
+        return False
+
+    if verify_password(
+        new_password,
+        stored_user["password_hash"],
+    ):
+        return False
+
+    new_password_hash = hash_password(new_password)
+
+    return update_user_account_password_hash(
+        stored_user["username"],
+        new_password_hash,
+        database_file,
+    )

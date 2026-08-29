@@ -9,6 +9,7 @@ from database import (
 )
 from user_service import (
     authenticate_user_account,
+    change_current_user_password,
     register_initial_administrator,
     register_user_account,
     register_viewer_account,
@@ -1182,6 +1183,561 @@ class TestUserService(unittest.TestCase):
                 verify_password(
                     replacement_password,
                     stored_target["password_hash"],
+                )
+            )
+
+    def test_administrator_can_change_own_password(self):
+        current_password = "CurrentAdminPassword123!"
+        new_password = "NewAdminPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            administrator_registered = register_user_account(
+                "Dennis",
+                current_password,
+                "admin",
+                database_file,
+            )
+            administrator = authenticate_user_account(
+                "Dennis",
+                current_password,
+                database_file,
+            )
+
+            self.assertTrue(administrator_registered)
+            self.assertIsNotNone(administrator)
+
+            if administrator is None:
+                self.fail("The administrator could not sign in.")
+
+            password_changed = change_current_user_password(
+                administrator,
+                current_password,
+                new_password,
+                database_file,
+            )
+            stored_administrator = load_user_account_by_username(
+                "Dennis",
+                database_file,
+            )
+
+            self.assertTrue(password_changed)
+            self.assertIsNotNone(stored_administrator)
+
+            if stored_administrator is None:
+                self.fail("The administrator account was not found.")
+
+            self.assertFalse(
+                verify_password(
+                    current_password,
+                    stored_administrator["password_hash"],
+                )
+            )
+            self.assertTrue(
+                verify_password(
+                    new_password,
+                    stored_administrator["password_hash"],
+                )
+            )
+            self.assertEqual(
+                stored_administrator["role"],
+                "admin",
+            )
+            self.assertTrue(
+                stored_administrator["is_active"]
+            )
+
+    def test_viewer_can_change_own_password(self):
+        current_password = "CurrentViewerPassword123!"
+        new_password = "NewViewerPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            viewer_registered = register_user_account(
+                "ReportViewer",
+                current_password,
+                "viewer",
+                database_file,
+            )
+            viewer = authenticate_user_account(
+                "ReportViewer",
+                current_password,
+                database_file,
+            )
+
+            self.assertTrue(viewer_registered)
+            self.assertIsNotNone(viewer)
+
+            if viewer is None:
+                self.fail("The viewer could not sign in.")
+
+            password_changed = change_current_user_password(
+                viewer,
+                current_password,
+                new_password,
+                database_file,
+            )
+            stored_viewer = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(password_changed)
+            self.assertIsNotNone(stored_viewer)
+
+            if stored_viewer is None:
+                self.fail("The viewer account was not found.")
+
+            self.assertFalse(
+                verify_password(
+                    current_password,
+                    stored_viewer["password_hash"],
+                )
+            )
+            self.assertTrue(
+                verify_password(
+                    new_password,
+                    stored_viewer["password_hash"],
+                )
+            )
+            self.assertEqual(
+                stored_viewer["role"],
+                "viewer",
+            )
+            self.assertTrue(stored_viewer["is_active"])
+
+    def test_user_cannot_change_password_with_wrong_current_password(
+        self,
+    ):
+        current_password = "CurrentPassword123!"
+        new_password = "NewPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_registered = register_user_account(
+                "ReportViewer",
+                current_password,
+                "viewer",
+                database_file,
+            )
+            current_user = authenticate_user_account(
+                "ReportViewer",
+                current_password,
+                database_file,
+            )
+
+            self.assertTrue(user_registered)
+            self.assertIsNotNone(current_user)
+
+            if current_user is None:
+                self.fail("The user could not sign in.")
+
+            password_changed = change_current_user_password(
+                current_user,
+                "WrongCurrentPassword123!",
+                new_password,
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertFalse(password_changed)
+            self.assertIsNotNone(stored_user)
+
+            if stored_user is None:
+                self.fail("The user account was not found.")
+
+            self.assertTrue(
+                verify_password(
+                    current_password,
+                    stored_user["password_hash"],
+                )
+            )
+            self.assertFalse(
+                verify_password(
+                    new_password,
+                    stored_user["password_hash"],
+                )
+            )
+
+    def test_user_cannot_change_password_with_blank_input(
+        self,
+    ):
+        current_password = "CurrentPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_registered = register_user_account(
+                "ReportViewer",
+                current_password,
+                "viewer",
+                database_file,
+            )
+            current_user = authenticate_user_account(
+                "ReportViewer",
+                current_password,
+                database_file,
+            )
+
+            self.assertTrue(user_registered)
+            self.assertIsNotNone(current_user)
+
+            if current_user is None:
+                self.fail("The user could not sign in.")
+
+            password_cases = [
+                (
+                    "blank current password",
+                    "   ",
+                    "NewPassword123!",
+                ),
+                (
+                    "blank new password",
+                    current_password,
+                    "   ",
+                ),
+            ]
+
+            for (
+                case_name,
+                supplied_current_password,
+                supplied_new_password,
+            ) in password_cases:
+                with self.subTest(case=case_name):
+                    password_changed = (
+                        change_current_user_password(
+                            current_user,
+                            supplied_current_password,
+                            supplied_new_password,
+                            database_file,
+                        )
+                    )
+                    stored_user = (
+                        load_user_account_by_username(
+                            "ReportViewer",
+                            database_file,
+                        )
+                    )
+
+                    self.assertFalse(password_changed)
+                    self.assertIsNotNone(stored_user)
+
+                    if stored_user is None:
+                        self.fail(
+                            "The user account was not found."
+                        )
+
+                    self.assertTrue(
+                        verify_password(
+                            current_password,
+                            stored_user["password_hash"],
+                        )
+                    )
+
+    def test_user_cannot_reuse_current_password(self):
+        current_password = "CurrentPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_registered = register_user_account(
+                "ReportViewer",
+                current_password,
+                "viewer",
+                database_file,
+            )
+            current_user = authenticate_user_account(
+                "ReportViewer",
+                current_password,
+                database_file,
+            )
+            user_before_change = (
+                load_user_account_by_username(
+                    "ReportViewer",
+                    database_file,
+                )
+            )
+
+            self.assertTrue(user_registered)
+            self.assertIsNotNone(current_user)
+            self.assertIsNotNone(user_before_change)
+
+            if current_user is None:
+                self.fail("The user could not sign in.")
+
+            if user_before_change is None:
+                self.fail("The user account was not found.")
+
+            password_changed = change_current_user_password(
+                current_user,
+                current_password,
+                current_password,
+                database_file,
+            )
+            user_after_change = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertFalse(password_changed)
+            self.assertIsNotNone(user_after_change)
+
+            if user_after_change is None:
+                self.fail("The user account was not found.")
+
+            self.assertEqual(
+                user_after_change["password_hash"],
+                user_before_change["password_hash"],
+            )
+            self.assertTrue(
+                verify_password(
+                    current_password,
+                    user_after_change["password_hash"],
+                )
+            )
+
+    def test_inactive_session_cannot_change_own_password(self):
+        current_password = "CurrentPassword123!"
+        new_password = "NewPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_registered = register_user_account(
+                "ReportViewer",
+                current_password,
+                "viewer",
+                database_file,
+            )
+            current_user = authenticate_user_account(
+                "ReportViewer",
+                current_password,
+                database_file,
+            )
+
+            self.assertTrue(user_registered)
+            self.assertIsNotNone(current_user)
+
+            if current_user is None:
+                self.fail("The user could not sign in.")
+
+            current_user["is_active"] = False
+
+            password_changed = change_current_user_password(
+                current_user,
+                current_password,
+                new_password,
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertFalse(password_changed)
+            self.assertIsNotNone(stored_user)
+
+            if stored_user is None:
+                self.fail("The user account was not found.")
+
+            self.assertTrue(
+                verify_password(
+                    current_password,
+                    stored_user["password_hash"],
+                )
+            )
+            self.assertFalse(
+                verify_password(
+                    new_password,
+                    stored_user["password_hash"],
+                )
+            )
+
+    def test_deactivated_saved_user_cannot_change_own_password(
+        self,
+    ):
+        current_password = "CurrentPassword123!"
+        new_password = "NewPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_registered = register_user_account(
+                "ReportViewer",
+                current_password,
+                "viewer",
+                database_file,
+            )
+            current_user = authenticate_user_account(
+                "ReportViewer",
+                current_password,
+                database_file,
+            )
+
+            self.assertTrue(user_registered)
+            self.assertIsNotNone(current_user)
+
+            if current_user is None:
+                self.fail("The user could not sign in.")
+
+            connection = get_database_connection(
+                database_file
+            )
+
+            try:
+                connection.execute(
+                    """
+                    UPDATE users
+                    SET is_active = 0
+                    WHERE username = ?
+                    """,
+                    ("ReportViewer",),
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            password_changed = change_current_user_password(
+                current_user,
+                current_password,
+                new_password,
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertTrue(current_user["is_active"])
+            self.assertFalse(password_changed)
+            self.assertIsNotNone(stored_user)
+
+            if stored_user is None:
+                self.fail("The user account was not found.")
+
+            self.assertFalse(stored_user["is_active"])
+            self.assertTrue(
+                verify_password(
+                    current_password,
+                    stored_user["password_hash"],
+                )
+            )
+            self.assertFalse(
+                verify_password(
+                    new_password,
+                    stored_user["password_hash"],
+                )
+            )
+
+    def test_missing_saved_user_cannot_change_own_password(
+        self,
+    ):
+        current_user = {
+            "user_id": 99,
+            "username": "MissingUser",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            password_changed = change_current_user_password(
+                current_user,
+                "CurrentPassword123!",
+                "NewPassword123!",
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "MissingUser",
+                database_file,
+            )
+
+            self.assertFalse(password_changed)
+            self.assertIsNone(stored_user)
+            self.assertTrue(database_file.exists())
+
+    def test_mismatched_session_user_id_cannot_change_password(
+        self,
+    ):
+        current_password = "CurrentPassword123!"
+        new_password = "NewPassword123!"
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_registered = register_user_account(
+                "ReportViewer",
+                current_password,
+                "viewer",
+                database_file,
+            )
+            current_user = authenticate_user_account(
+                "ReportViewer",
+                current_password,
+                database_file,
+            )
+
+            self.assertTrue(user_registered)
+            self.assertIsNotNone(current_user)
+
+            if current_user is None:
+                self.fail("The user could not sign in.")
+
+            current_user["user_id"] += 100
+
+            password_changed = change_current_user_password(
+                current_user,
+                current_password,
+                new_password,
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer",
+                database_file,
+            )
+
+            self.assertFalse(password_changed)
+            self.assertIsNotNone(stored_user)
+
+            if stored_user is None:
+                self.fail("The user account was not found.")
+
+            self.assertTrue(
+                verify_password(
+                    current_password,
+                    stored_user["password_hash"],
+                )
+            )
+            self.assertFalse(
+                verify_password(
+                    new_password,
+                    stored_user["password_hash"],
                 )
             )
 
