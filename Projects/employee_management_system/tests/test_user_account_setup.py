@@ -2,7 +2,10 @@ import unittest
 from pathlib import Path
 from unittest.mock import patch
 
-from user_account_setup import run_viewer_account_registration
+from user_account_setup import (
+    run_viewer_account_registration,
+    run_viewer_account_status_change,
+)
 
 
 class TestViewerAccountSetupCommand(unittest.TestCase):
@@ -80,6 +83,116 @@ class TestViewerAccountSetupCommand(unittest.TestCase):
             "Viewer account was not created."
         )
 
+    @patch("builtins.print")
+    @patch(
+        "user_account_setup.set_viewer_account_active_status",
+        return_value=True,
+    )
+    def test_successful_viewer_account_deactivation(
+        self,
+        mock_set_viewer_account_active_status,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        database_file = Path("temporary.db")
+
+        result = run_viewer_account_status_change(
+            administrator,
+            "ReportViewer",
+            False,
+            database_file,
+        )
+
+        self.assertTrue(result)
+        mock_set_viewer_account_active_status.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            False,
+            database_file,
+        )
+        mock_print.assert_called_once_with(
+            "Viewer account deactivated successfully."
+        )
+
+    @patch("builtins.print")
+    @patch(
+        "user_account_setup.set_viewer_account_active_status",
+        return_value=True,
+    )
+    def test_successful_viewer_account_reactivation(
+        self,
+        mock_set_viewer_account_active_status,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        database_file = Path("temporary.db")
+
+        result = run_viewer_account_status_change(
+            administrator,
+            "ReportViewer",
+            True,
+            database_file,
+        )
+
+        self.assertTrue(result)
+        mock_set_viewer_account_active_status.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            True,
+            database_file,
+        )
+        mock_print.assert_called_once_with(
+            "Viewer account activated successfully."
+        )
+
+    @patch("builtins.print")
+    @patch(
+        "user_account_setup.set_viewer_account_active_status",
+        return_value=False,
+    )
+    def test_failed_viewer_account_status_change(
+        self,
+        mock_set_viewer_account_active_status,
+        mock_print,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        database_file = Path("temporary.db")
+
+        result = run_viewer_account_status_change(
+            administrator,
+            "ReportViewer",
+            False,
+            database_file,
+        )
+
+        self.assertFalse(result)
+        mock_set_viewer_account_active_status.assert_called_once_with(
+            administrator,
+            "ReportViewer",
+            False,
+            database_file,
+        )
+        mock_print.assert_called_once_with(
+            "Viewer account status was not changed."
+        )
 
 if __name__ == "__main__":
     unittest.main()

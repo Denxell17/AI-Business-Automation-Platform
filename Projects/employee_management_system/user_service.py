@@ -13,6 +13,7 @@ from database import (
     count_user_accounts,
     insert_user_account,
     load_user_account_by_username,
+    update_user_account_active_status,
 )
 from models import UserAccount
 
@@ -99,5 +100,41 @@ def register_viewer_account(
         username,
         password,
         "viewer",
+        database_file,
+    )
+
+
+def set_viewer_account_active_status(
+    current_user: UserAccount,
+    target_username: str,
+    is_active: bool,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    if (
+        not current_user["is_active"]
+        or not user_has_permission(
+            current_user,
+            MANAGE_USER_ACCOUNTS,
+        )
+    ):
+        return False
+
+    target_user = load_user_account_by_username(
+        target_username,
+        database_file,
+    )
+
+    if target_user is None:
+        return False
+
+    if target_user["role"] != "viewer":
+        return False
+
+    if target_user["is_active"] == is_active:
+        return False
+
+    return update_user_account_active_status(
+        target_username,
+        is_active,
         database_file,
     )

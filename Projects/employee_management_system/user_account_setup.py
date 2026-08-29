@@ -2,7 +2,10 @@ from pathlib import Path
 
 from database import DATABASE_FILE
 from models import UserAccount
-from user_service import register_viewer_account
+from user_service import (
+    register_viewer_account,
+    set_viewer_account_active_status,
+)
 
 
 def run_viewer_account_registration(
@@ -23,4 +26,33 @@ def run_viewer_account_registration(
         return False
 
     print("Viewer account created successfully.")
+    return True
+
+
+def run_viewer_account_status_change(
+    current_user: UserAccount,
+    target_username: str,
+    is_active: bool,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    status_changed = set_viewer_account_active_status(
+        current_user,
+        target_username,
+        is_active,
+        database_file,
+    )
+
+    if not status_changed:
+        print("Viewer account status was not changed.")
+        return False
+
+    status_text = (
+        "activated"
+        if is_active
+        else "deactivated"
+    )
+
+    print(
+        f"Viewer account {status_text} successfully."
+    )
     return True
