@@ -80,6 +80,9 @@ The current Employee Management System can:
   factory, JSON health check, automatic OpenAPI documentation,
   and a server-rendered Jinja2 home page while preserving the
   existing console application
+- Provide tested browser logout through a POST-only endpoint that
+  clears the authenticated session, expires the signed cookie,
+  records successful logout activity, and redirects to sign-in
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -324,6 +327,9 @@ python Projects\employee_management_system\run_tests.py
 - Accessible HTML-to-CSS class mapping, labelled sections,
   decorative-element hiding with `aria-hidden`, desktop visual
   verification, and narrow-screen overflow checking
+- POST-only browser logout, authenticated-session clearing,
+  signed-cookie expiration, safe unauthenticated logout handling,
+  successful logout auditing, and protected-page reauthorization
 
 ## Project Roadmap
 
@@ -340,112 +346,30 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed, security-focused Python application with a complete console interface and a growing FastAPI web interface.
+The Employee Management System is an actively developed, security-focused Python application with a complete console interface and a growing authenticated FastAPI web interface.
 
-The completed backend includes:
+The backend provides employee CRUD, payroll and workforce analytics, filtering, reporting, CSV export, SQLite-primary storage, JSON migration and verification, database backup and protected restoration, activity logging, secure password hashing, administrator and viewer roles, default-deny authorization, viewer-account administration, and self-service password changes.
 
-- Employee creation, viewing, updating, and deletion
-- Payroll calculations and workforce analytics
-- Employee filtering, searching, sorting, reporting, and exporting
-- SQLite-primary data storage
-- JSON migration and storage-verification utilities
-- Database backup and protected restoration
-- Activity logging
-- Secure password hashing and authentication
-- Administrator and viewer roles
-- Permission-based authorization with default-deny protection
-- Administrator-controlled viewer registration
-- Viewer activation and deactivation
-- Administrator-controlled viewer password resets
-- Self-service password changes for authenticated users
-- Protected interactive console workflows
+The FastAPI interface now provides:
 
-The account-management system rejects inactive administrators, unauthorized viewers, missing accounts, protected administrator targets, unchanged statuses, blank passwords, incorrect current passwords, mismatched confirmations, reused passwords, stale inactive accounts, and mismatched session identities. Successful password operations store only protected hashes while preserving account roles and active statuses.
-
-The FastAPI web interface currently includes:
-
-- An application factory
-- A JSON health endpoint at `/health`
-- Automatic OpenAPI documentation at `/docs`
+- An application factory, `/health`, and `/docs`
 - A protected server-rendered dashboard at `/`
-- A browser login page at `/login`
-- Application-relative template and static-file paths
-- A reusable global `base.html` template
-- A reusable authenticated `application_base.html` layout
-- Jinja template inheritance
-- A responsive ABAP navigation sidebar
-- A responsive mobile navigation drawer
-- Keyboard-accessible navigation controls
-- A navigation backdrop
-- A visible skip link
-- Semantic page structure and ARIA attributes
-- An accessible Warm Charcoal visual system
-- Teal actions and warm off-white text
-- Visible keyboard focus
-- Reduced-motion support
-- Statuses communicated with icons and written text
+- Accessible browser login at `/login`
+- POST-only browser logout at `/logout`
+- Signed eight-hour `abap_session` cookies with `HttpOnly` and `SameSite=Lax`
+- Live SQLite account revalidation before protected access
+- Automatic rejection and clearing of missing, inactive, or mismatched sessions
+- Complete session clearing and signed-cookie expiration during logout
+- Success-only logout activity records containing the authenticated username
+- Safe, idempotent logout requests when no valid session remains
+- A reusable authenticated layout with responsive navigation
+- A visible, keyboard- and touch-friendly sign-out control
+- The accessible Warm Charcoal visual system, visible focus, reduced-motion support, and written status labels
 
-Day 81 established the FastAPI, Jinja2, health-check, documentation, and home-page foundation. Day 82 added static-file delivery and responsive CSS styling. Day 83 introduced the permanent ABAP master roadmap, reusable navigation layout, accessible mobile navigation behavior, Warm Charcoal interface, and development-resource cards.
+Day 84 established login and authenticated browser sessions. Day 85 completed explicit authenticated-session termination. Logout is deliberately a state-changing POST action: a valid user is reloaded before audit logging, all session values are cleared, Starlette expires the signed cookie, and the browser receives a `303` redirect to `/login`. The former cookie can no longer open the dashboard, and unauthenticated logout attempts do not create misleading success audit entries.
 
-Day 84 introduced the tested web-authentication and login-page foundation. The login workflow reuses the existing SQLite account database and `authenticate_user_account()` service instead of duplicating authentication rules. Only active accounts with valid credentials can create an authenticated browser session.
+The automated suite contains **233 passing tests**, including **18 FastAPI web tests**. Day 85 coverage verifies the authenticated logout form, POST-only routing, session and cookie termination, protected-page denial after logout, authenticated username audit logging, and safe unauthenticated logout behavior. The complete console and backend regression suite also remains green.
 
-Signed sessions use ItsDangerous through Starlette’s session middleware. The cookie is named `abap_session`, expires after eight hours, uses `HttpOnly`, and uses `SameSite=Lax`. The application stores only the authenticated user’s ID and username in the signed session. Passwords and password hashes are never stored in the browser session.
-
-The new `web_session.py` helper:
-
-- Starts authenticated sessions
-- Clears previous session information before login
-- Reloads the current account from SQLite
-- Rejects missing session data
-- Rejects missing database accounts
-- Rejects inactive accounts
-- Rejects mismatched user identities
-- Returns only a currently valid stored account
-
-Unauthenticated dashboard requests receive a `303` redirect to `/login`. Successful login creates the signed session and redirects to the dashboard. Failed login returns HTTP status `401` and displays the uniform message `Username or password is incorrect.` The failure response does not reveal whether the username exists, whether an account is inactive, or which credential was wrong. Submitted passwords are never returned in the rendered HTML.
-
-The login interface includes:
-
-- Visible username and password labels
-- Username autocomplete
-- Current-password autocomplete
-- Hidden password entry
-- Required fields
-- Visible focus indicators
-- A written and icon-supported error message
-- A large keyboard- and touch-friendly sign-in button
-- Responsive desktop and mobile layouts
-- No protected navigation before authentication
-
-Manual Day 84 verification confirmed that:
-
-- Opening `/` without a session redirects to `/login`
-- The Warm Charcoal login page renders correctly
-- Incorrect credentials display the uniform error message
-- The password field remains hidden and clears after failure
-- Correct credentials open the protected dashboard
-- The responsive authenticated layout remains usable at narrow widths
-- Activity logging records generic failures and successful usernames
-- Neither passwords nor password hashes appear in the activity log
-
-The automated suite now contains **229 passing tests**, including **14 FastAPI web tests**. Web coverage verifies:
-
-- Login-page HTML and accessible form attributes
-- Valid authentication
-- Invalid authentication
-- Inactive-account rejection
-- Signed session-cookie properties
-- Unauthenticated dashboard redirects
-- Authenticated dashboard access
-- Display of the authenticated username and role
-- Reusable navigation
-- Accessibility foundations
-- Static CSS and JavaScript delivery
-- Health endpoint
-- API documentation
-
-SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while the protected browser interface continues to grow.
+SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while protected browser workflows continue to grow.
 
 The permanent development plan is stored in `Notes/master_roadmap.md`. Day 100 remains the original Employee Management System milestone, while Day 155 is the target for the full ABAP portfolio MVP.
-
-The next milestone is Day 85: add tested logout and authenticated-session termination.
