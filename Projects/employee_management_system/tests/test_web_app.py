@@ -27,6 +27,28 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
 
+    def test_home_page_links_to_static_stylesheet(self):
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "/static/styles.css",
+            response.text,
+        )
+
+    def test_static_stylesheet_is_available(self):
+        response = self.client.get("/static/styles.css")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "text/css",
+            response.headers["content-type"],
+        )
+        self.assertIn(
+            "--color-primary",
+            response.text,
+        )
+
     def test_health_check_returns_healthy_status(self):
         response = self.client.get("/health")
 

@@ -2,11 +2,13 @@ from pathlib import Path
 
 from fastapi import FastAPI, Request
 from fastapi.responses import HTMLResponse
+from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 
 
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
 TEMPLATES_DIRECTORY = APPLICATION_DIRECTORY / "templates"
+STATIC_DIRECTORY = APPLICATION_DIRECTORY / "static"
 
 templates = Jinja2Templates(
     directory=TEMPLATES_DIRECTORY,
@@ -21,6 +23,12 @@ def create_web_application() -> FastAPI:
             "employee and user-account information."
         ),
         version="1.0.0",
+    )
+
+    application.mount(
+        "/static",
+        StaticFiles(directory=STATIC_DIRECTORY),
+        name="static",
     )
 
     @application.get(
