@@ -83,6 +83,11 @@ The current Employee Management System can:
 - Provide tested browser logout through a POST-only endpoint that
   clears the authenticated session, expires the signed cookie,
   records successful logout activity, and redirects to sign-in
+- Provide a protected, permission-checked employee directory that
+  loads current SQLite records through the employee repository,
+  supports administrator and viewer access, denies missing
+  permissions by default, handles loading failures safely, and
+  presents responsive employee information with accessible states
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -125,6 +130,7 @@ AI-Business-Automation-Platform/
 │       ├── templates/
 │       │   ├── application_base.html
 │       │   ├── base.html
+│       │   ├── employees.html
 │       │   ├── home.html
 │       │   └── login.html
 │       ├── activity_logger.py
@@ -330,6 +336,12 @@ python Projects\employee_management_system\run_tests.py
 - POST-only browser logout, authenticated-session clearing,
   signed-cookie expiration, safe unauthenticated logout handling,
   successful logout auditing, and protected-page reauthorization
+- Authenticated employee-directory routing, repository-backed web
+  data loading, web permission enforcement, default-deny HTTP `403`
+  responses, denied-access activity logging, safe repository-failure
+  handling, semantic data tables, table captions, scoped row and
+  column headers, accessible empty states, responsive horizontal
+  scrolling, temporary SQLite web fixtures, and mocked boundary tests
 
 ## Project Roadmap
 
@@ -356,19 +368,38 @@ The FastAPI interface now provides:
 - A protected server-rendered dashboard at `/`
 - Accessible browser login at `/login`
 - POST-only browser logout at `/logout`
+- A protected employee directory at `/employees`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and `SameSite=Lax`
 - Live SQLite account revalidation before protected access
-- Automatic rejection and clearing of missing, inactive, or mismatched sessions
-- Complete session clearing and signed-cookie expiration during logout
-- Success-only logout activity records containing the authenticated username
-- Safe, idempotent logout requests when no valid session remains
-- A reusable authenticated layout with responsive navigation
-- A visible, keyboard- and touch-friendly sign-out control
+- Complete authenticated-session termination during logout
+- Repository-backed employee loading
+- Existing `VIEW_EMPLOYEE` permission enforcement
+- Administrator and viewer employee-directory access
+- Default-deny responses and activity logging for missing permissions
+- Safe employee-loading failure handling
+- Semantic employee tables with captions and scoped headers
+- Accessible error and empty-directory states
+- Responsive horizontal table scrolling
+- Active authenticated navigation
 - The accessible Warm Charcoal visual system, visible focus, reduced-motion support, and written status labels
 
-Day 84 established login and authenticated browser sessions. Day 85 completed explicit authenticated-session termination. Logout is deliberately a state-changing POST action: a valid user is reloaded before audit logging, all session values are cleared, Starlette expires the signed cookie, and the browser receives a `303` redirect to `/login`. The former cookie can no longer open the dashboard, and unauthenticated logout attempts do not create misleading success audit entries.
+Day 84 established browser login and authenticated sessions. Day 85 completed explicit logout and authenticated-session termination. Day 86 introduced the first protected employee-data workflow through a read-only employee directory.
 
-The automated suite contains **233 passing tests**, including **18 FastAPI web tests**. Day 85 coverage verifies the authenticated logout form, POST-only routing, session and cookie termination, protected-page denial after logout, authenticated username audit logging, and safe unauthenticated logout behavior. The complete console and backend regression suite also remains green.
+The employee directory reloads the current account before access, requires `VIEW_EMPLOYEE`, and loads current SQLite records through `load_employee_records()`. Missing permissions return HTTP status `403` and create a denied-access activity entry. Repository failures return HTTP status `500` with a safe written message rather than exposing database details.
+
+The directory displays employee ID, name, department, position, and written employment status. A semantic table, caption, scoped headers, keyboard-focusable scrolling container, employee count, empty state, and responsive layout keep the page usable across desktop and narrow screens.
+
+The automated suite contains **240 passing tests**, including **25 FastAPI web tests**. Day 86 coverage verifies unauthenticated redirects, administrator access, viewer access, default-deny authorization, denied-access logging, repository-failure handling, empty-directory presentation, real temporary SQLite data rendering, and active navigation.
+
+Manual Day 86 verification confirmed that:
+
+- Real SQLite employee records appear at `/employees`
+- The employee count is correct
+- The Employees navigation item is active
+- The table remains contained and horizontally scrollable at narrow widths
+- Visible keyboard focus remains available
+- Logout removes access to the employee directory
+- Unauthenticated access redirects to `/login`
 
 SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while protected browser workflows continue to grow.
 
