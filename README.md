@@ -98,6 +98,8 @@ The current Employee Management System can:
 - HTML
 - Uvicorn
 - CSS
+- JavaScript
+- ItsDangerous signed sessions
 
 ## Project Structure
 
@@ -114,10 +116,14 @@ AI-Business-Automation-Platform/
 │       ├── exports/
 │       ├── logs/
 │       ├── static/
+│       │   ├── navigation.js
 │       │   └── styles.css
 │       ├── tests/
 │       ├── templates/
-│       │   └── home.html
+│       │   ├── application_base.html
+│       │   ├── base.html
+│       │   ├── home.html
+│       │   └── login.html
 │       ├── activity_logger.py
 │       ├── admin_setup.py
 │       ├── authentication.py
@@ -143,7 +149,8 @@ AI-Business-Automation-Platform/
 │       ├── user_account_setup.py
 │       ├── user_service.py
 │       ├── validators.py
-│       └── web_app.py
+│       ├── web_app.py
+│       └── web_session.py
 └── README.md
 ```
 
@@ -333,7 +340,7 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed, security-focused Python application with both a complete console interface and a growing FastAPI web interface.
+The Employee Management System is an actively developed, security-focused Python application with a complete console interface and a growing FastAPI web interface.
 
 The completed backend includes:
 
@@ -353,54 +360,92 @@ The completed backend includes:
 - Self-service password changes for authenticated users
 - Protected interactive console workflows
 
-The account-management system prevents unauthorized or unsafe changes. It rejects inactive administrators, viewer attempts to perform administrator actions, missing accounts, administrator targets in viewer-management workflows, unchanged account statuses, blank passwords, incorrect current passwords, mismatched confirmations, reused passwords, stale inactive accounts, and mismatched session identities. Successful password changes store only protected password hashes while preserving account roles and active statuses.
+The account-management system rejects inactive administrators, unauthorized viewers, missing accounts, protected administrator targets, unchanged statuses, blank passwords, incorrect current passwords, mismatched confirmations, reused passwords, stale inactive accounts, and mismatched session identities. Successful password operations store only protected hashes while preserving account roles and active statuses.
 
 The FastAPI web interface currently includes:
 
 - An application factory
 - A JSON health endpoint at `/health`
 - Automatic OpenAPI documentation at `/docs`
-- A server-rendered Jinja2 dashboard at `/`
+- A protected server-rendered dashboard at `/`
+- A browser login page at `/login`
 - Application-relative template and static-file paths
-- A reusable `base.html` layout
+- A reusable global `base.html` template
+- A reusable authenticated `application_base.html` layout
 - Jinja template inheritance
-- A shared ABAP navigation sidebar
+- A responsive ABAP navigation sidebar
 - A responsive mobile navigation drawer
-- A keyboard-accessible navigation toggle
-- Escape-key navigation closing
+- Keyboard-accessible navigation controls
 - A navigation backdrop
 - A visible skip link
 - Semantic page structure and ARIA attributes
-- A responsive Warm Charcoal visual system
+- An accessible Warm Charcoal visual system
 - Teal actions and warm off-white text
 - Visible keyboard focus
 - Reduced-motion support
-- Statuses communicated with text and icons instead of color alone
+- Statuses communicated with icons and written text
 
-Day 81 established the tested FastAPI, Jinja2, health-check, documentation, and home-page foundation. Day 82 added tested static-file delivery and responsive CSS styling. Day 83 introduced the permanent ABAP master roadmap, reusable base template, shared navigation layout, accessible mobile navigation behavior, Warm Charcoal interface, development-resource cards, and expanded web-interface tests.
+Day 81 established the FastAPI, Jinja2, health-check, documentation, and home-page foundation. Day 82 added static-file delivery and responsive CSS styling. Day 83 introduced the permanent ABAP master roadmap, reusable navigation layout, accessible mobile navigation behavior, Warm Charcoal interface, and development-resource cards.
 
-Manual Day 83 verification confirmed that:
+Day 84 introduced the tested web-authentication and login-page foundation. The login workflow reuses the existing SQLite account database and `authenticate_user_account()` service instead of duplicating authentication rules. Only active accounts with valid credentials can create an authenticated browser session.
 
-- The desktop layout displays the persistent navigation sidebar.
-- The narrow layout hides the sidebar behind a menu button.
-- The navigation drawer opens above a dark backdrop.
-- The page remains readable without horizontal overflow.
-- The dashboard active state is visible through both styling and `aria-current`.
-- The interface remains usable at desktop and mobile widths.
+Signed sessions use ItsDangerous through Starlette’s session middleware. The cookie is named `abap_session`, expires after eight hours, uses `HttpOnly`, and uses `SameSite=Lax`. The application stores only the authenticated user’s ID and username in the signed session. Passwords and password hashes are never stored in the browser session.
 
-The automated test suite now contains **223 passing tests**, including **8 FastAPI web tests** covering:
+The new `web_session.py` helper:
 
-- The rendered home page
-- The reusable navigation layout
+- Starts authenticated sessions
+- Clears previous session information before login
+- Reloads the current account from SQLite
+- Rejects missing session data
+- Rejects missing database accounts
+- Rejects inactive accounts
+- Rejects mismatched user identities
+- Returns only a currently valid stored account
+
+Unauthenticated dashboard requests receive a `303` redirect to `/login`. Successful login creates the signed session and redirects to the dashboard. Failed login returns HTTP status `401` and displays the uniform message `Username or password is incorrect.` The failure response does not reveal whether the username exists, whether an account is inactive, or which credential was wrong. Submitted passwords are never returned in the rendered HTML.
+
+The login interface includes:
+
+- Visible username and password labels
+- Username autocomplete
+- Current-password autocomplete
+- Hidden password entry
+- Required fields
+- Visible focus indicators
+- A written and icon-supported error message
+- A large keyboard- and touch-friendly sign-in button
+- Responsive desktop and mobile layouts
+- No protected navigation before authentication
+
+Manual Day 84 verification confirmed that:
+
+- Opening `/` without a session redirects to `/login`
+- The Warm Charcoal login page renders correctly
+- Incorrect credentials display the uniform error message
+- The password field remains hidden and clears after failure
+- Correct credentials open the protected dashboard
+- The responsive authenticated layout remains usable at narrow widths
+- Activity logging records generic failures and successful usernames
+- Neither passwords nor password hashes appear in the activity log
+
+The automated suite now contains **229 passing tests**, including **14 FastAPI web tests**. Web coverage verifies:
+
+- Login-page HTML and accessible form attributes
+- Valid authentication
+- Invalid authentication
+- Inactive-account rejection
+- Signed session-cookie properties
+- Unauthenticated dashboard redirects
+- Authenticated dashboard access
+- Display of the authenticated username and role
+- Reusable navigation
 - Accessibility foundations
-- Static asset links
-- CSS delivery and content type
-- JavaScript delivery and content type
-- The health endpoint
-- The API documentation page
+- Static CSS and JavaScript delivery
+- Health endpoint
+- API documentation
 
-SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while the browser interface continues to grow.
+SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while the protected browser interface continues to grow.
 
 The permanent development plan is stored in `Notes/master_roadmap.md`. Day 100 remains the original Employee Management System milestone, while Day 155 is the target for the full ABAP portfolio MVP.
 
-The next milestone is Day 84: introduce the tested web authentication and login-page foundation.
+The next milestone is Day 85: add tested logout and authenticated-session termination.
