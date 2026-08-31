@@ -21,6 +21,7 @@ from database import DATABASE_FILE
 from user_service import authenticate_user_account
 from web_session import (
     begin_authenticated_session,
+    clear_authenticated_session,
     load_authenticated_session_user,
 )
 
@@ -141,6 +142,26 @@ def create_web_application(
 
         return RedirectResponse(
             url=request.url_for("home_page"),
+            status_code=303,
+        )
+
+    @application.post("/logout")
+    def logout(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        clear_authenticated_session(request)
+
+        if current_user is not None:
+            log_activity(
+                f"User {current_user['username']} "
+                "logged out of the web application."
+            )
+
+        return RedirectResponse(
+            url=request.url_for("login_page"),
             status_code=303,
         )
 

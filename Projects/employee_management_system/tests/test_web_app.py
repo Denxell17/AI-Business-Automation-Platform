@@ -1,6 +1,7 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from database import update_user_account_active_status
@@ -238,6 +239,80 @@ class TestWebApplication(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(self.username, response.text)
         self.assertIn("Admin", response.text)
+
+    def test_authenticated_layout_includes_post_logout_form(self):
+        self.sign_in()
+
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn('action="http://testserver/logout"', response.text)
+        self.assertIn('method="post"', response.text)
+        self.assertIn("Sign out", response.text)
+
+    def test_logout_requires_post_request(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/logout",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(self.client.get("/").status_code, 200)
+
+    @patch("web_app.log_activity")
+    def test_logout_clears_session_and_records_username(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/logout",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+        cookie_header = response.headers["set-cookie"].lower()
+        self.assertIn("abap_session=null", cookie_header)
+        self.assertIn(
+            "expires=thu, 01 jan 1970 00:00:00 gmt",
+            cookie_header,
+        )
+        self.assertEqual(
+            self.client.get(
+                "/",
+                follow_redirects=False,
+            ).status_code,
+            303,
+        )
+        mock_log_activity.assert_called_once_with(
+            f"User {self.username} "
+            "logged out of the web application."
+        )
+
+    @patch("web_app.log_activity")
+    def test_logout_without_valid_session_is_safe_and_not_logged(
+        self,
+        mock_log_activity,
+    ):
+        response = self.client.post(
+            "/logout",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+        mock_log_activity.assert_not_called()
 
     def test_static_stylesheet_is_available(self):
         response = self.client.get("/static/styles.css")

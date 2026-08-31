@@ -58,8 +58,21 @@
         </nav>
 
         <div class="sidebar-footer">
-            <span class="status-dot" aria-hidden="true"></span>
-            Secure web session
+            <p class="session-status">
+                <span class="status-dot" aria-hidden="true"></span>
+                Secure web session
+            </p>
+
+            <form
+                class="logout-form"
+                method="post"
+                action="{{ url_for('logout') }}"
+            >
+                <button class="logout-button" type="submit">
+                    <span aria-hidden="true">↪</span>
+                    Sign out
+                </button>
+            </form>
         </div>
     </aside>
 
