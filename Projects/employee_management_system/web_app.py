@@ -17,7 +17,12 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from activity_logger import log_activity
+from authorization import (
+    VIEW_EMPLOYEE,
+    user_has_permission,
+)
 from database import DATABASE_FILE
+from employee_repository import load_employee_records
 from user_service import authenticate_user_account
 from web_session import (
     begin_authenticated_session,
@@ -192,6 +197,67 @@ def create_web_application(
                 ),
                 "active_page": "home",
                 "current_user": current_user,
+            },
+        )
+
+    @application.get(
+        "/employees",
+        response_class=HTMLResponse,
+    )
+    def employee_directory(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_EMPLOYEE,
+        ):
+            log_activity(
+                f"Web employee-directory access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        employee_list = load_employee_records(
+            database_file=database_file,
+        )
+
+        if employee_list is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employees.html",
+                context={
+                    "page_title": "Employee directory",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee_list": [],
+                    "error_message": (
+                        "Employee records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="employees.html",
+            context={
+                "page_title": "Employee directory",
+                "active_page": "employees",
+                "current_user": current_user,
+                "employee_list": employee_list,
+                "error_message": None,
             },
         )
 

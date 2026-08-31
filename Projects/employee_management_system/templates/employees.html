@@ -1,0 +1,99 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="directory-section"
+    aria-labelledby="employee-directory-heading"
+>
+    <div class="directory-heading">
+        <div>
+            <p class="section-eyebrow">Employee management</p>
+
+            <h1
+                id="employee-directory-heading"
+                class="section-title"
+            >
+                Employee directory
+            </h1>
+
+            <p class="page-message">
+                View the current workforce records stored in SQLite.
+            </p>
+        </div>
+
+        {% if not error_message %}
+        <p class="directory-count">
+            <strong>{{ employee_list | length }}</strong>
+            {% if employee_list | length == 1 %}
+                employee
+            {% else %}
+                employees
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+
+    {% if error_message %}
+    <p class="directory-message directory-message-error" role="alert">
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% elif employee_list %}
+    <div
+        class="employee-table-wrapper"
+        tabindex="0"
+        aria-label="Scrollable employee directory"
+    >
+        <table class="employee-table">
+            <caption>
+                Current employee records
+            </caption>
+
+            <thead>
+                <tr>
+                    <th scope="col">Employee ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Department</th>
+                    <th scope="col">Position</th>
+                    <th scope="col">Status</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for employee in employee_list %}
+                <tr>
+                    <td>{{ employee["employee_id"] }}</td>
+                    <th scope="row">{{ employee["name"] }}</th>
+                    <td>{{ employee["department"] }}</td>
+                    <td>{{ employee["position"] }}</td>
+                    <td>
+                        <span class="employee-status">
+                            <span
+                                class="status-dot"
+                                aria-hidden="true"
+                            ></span>
+                            {{ employee["employment_status"] }}
+                        </span>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="directory-empty-state">
+        <span
+            class="directory-empty-icon"
+            aria-hidden="true"
+        >○</span>
+
+        <div>
+            <h2>No employees found</h2>
+            <p>
+                Employee records will appear here after they are added.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

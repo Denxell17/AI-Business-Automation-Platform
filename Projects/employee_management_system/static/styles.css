@@ -688,3 +688,134 @@ a {
     background: var(--color-surface);
     border-color: var(--color-muted);
 }
+
+.directory-section {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+}
+
+.directory-heading {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.directory-count {
+    flex-shrink: 0;
+    margin: 0;
+    padding: 0.65rem 0.9rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    border: 1px solid #286c68;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.directory-count strong {
+    margin-right: 0.2rem;
+}
+
+.employee-table-wrapper {
+    overflow-x: auto;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+}
+
+.employee-table {
+    width: 100%;
+    min-width: 47rem;
+    border-collapse: collapse;
+    background: var(--color-background);
+}
+
+.employee-table caption {
+    padding: 1rem;
+    color: var(--color-muted);
+    text-align: left;
+    font-size: 0.875rem;
+}
+
+.employee-table th,
+.employee-table td {
+    padding: 0.9rem 1rem;
+    border-top: 1px solid var(--color-border);
+    text-align: left;
+    vertical-align: middle;
+}
+
+.employee-table thead th {
+    background: var(--color-surface-raised);
+    color: var(--color-muted);
+    font-size: 0.75rem;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+}
+
+.employee-table tbody th {
+    color: var(--color-text);
+}
+
+.employee-table tbody tr:hover {
+    background: var(--color-surface);
+}
+
+.employee-status {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+}
+
+.directory-message,
+.directory-empty-state {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1rem;
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+}
+
+.directory-message {
+    margin: 0;
+}
+
+.directory-message-error {
+    background: #442326;
+    color: #ffd7d9;
+    border-color: #8f454b;
+}
+
+.directory-empty-state {
+    background: var(--color-background);
+}
+
+.directory-empty-state h2,
+.directory-empty-state p {
+    margin: 0;
+}
+
+.directory-empty-state p {
+    color: var(--color-muted);
+}
+
+.directory-empty-icon {
+    color: var(--color-primary);
+    font-size: 2rem;
+}
+
+@media (max-width: 640px) {
+    .directory-heading {
+        flex-direction: column;
+    }
+
+    .directory-count {
+        align-self: flex-start;
+    }
+}

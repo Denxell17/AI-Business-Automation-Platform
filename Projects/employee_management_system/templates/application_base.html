@@ -36,6 +36,20 @@
                 </li>
 
                 <li>
+                    <a
+                        class="navigation-link{% if active_page == 'employees' %} is-active{% endif %}"
+                        href="{{ url_for('employee_directory') }}"
+                        {% if active_page == 'employees' %}aria-current="page"{% endif %}
+                    >
+                        <span
+                            class="navigation-icon"
+                            aria-hidden="true"
+                        >♙</span>
+                        Employees
+                    </a>
+                </li>
+
+                <li>
                     <a class="navigation-link" href="/docs">
                         <span
                             class="navigation-icon"
