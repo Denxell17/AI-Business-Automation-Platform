@@ -45,6 +45,7 @@ def create_web_application() -> FastAPI:
                     "Securely manage workforce information "
                     "through a browser."
                 ),
+                "active_page": "home",
             },
         )
 
