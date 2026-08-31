@@ -6,7 +6,7 @@ A Python learning and portfolio project focused on building practical business a
 
 ### Employee Management System
 
-The current console application can:
+The current Employee Management System can:
 
 - Register, view, update, and delete employee records
 - Use SQLite as the configured primary employee storage for
@@ -76,6 +76,10 @@ The current console application can:
 - Record application activity in a log file
 - Run a complete automated test suite
 - Run continuously through an interactive menu
+- Provide a tested FastAPI web foundation with an application
+  factory, JSON health check, automatic OpenAPI documentation,
+  and a server-rendered Jinja2 home page while preserving the
+  existing console application
 
 ## Technologies
 
@@ -84,6 +88,10 @@ The current console application can:
 - Git
 - GitHub
 - SQLite
+- FastAPI
+- Jinja2
+- HTML
+- Uvicorn
 
 ## Project Structure
 
@@ -100,6 +108,8 @@ AI-Business-Automation-Platform/
 │       ├── exports/
 │       ├── logs/
 │       ├── tests/
+│       ├── templates/
+│       │   └── home.html
 │       ├── activity_logger.py
 │       ├── admin_setup.py
 │       ├── authentication.py
@@ -118,12 +128,14 @@ AI-Business-Automation-Platform/
 │       ├── payroll.py
 │       ├── performance_boundary_demo.py
 │       ├── reports.py
+│       ├── requirements.txt
 │       ├── run_tests.py
 │       ├── storage.py
 │       ├── storage_verification.py
 │       ├── user_account_setup.py
 │       ├── user_service.py
-│       └── validators.py
+│       ├── validators.py
+│       └── web_app.py
 └── README.md
 ```
 
@@ -134,6 +146,23 @@ From the main project folder, run:
 ```powershell
 python Projects\employee_management_system\main.py
 ```
+
+## Running the Web Application
+
+Create and activate a virtual environment, install the Employee
+Management System dependencies, and start FastAPI from the main
+project folder:
+
+```powershell
+python -m venv .venv
+.\.venv\Scripts\python.exe -m pip install -r Projects\employee_management_system\requirements.txt
+.\.venv\Scripts\python.exe -m fastapi dev Projects\employee_management_system\web_app.py
+```
+
+Open `http://127.0.0.1:8000/` for the HTML home page,
+`http://127.0.0.1:8000/health` for the JSON health check, or
+`http://127.0.0.1:8000/docs` for the interactive API documentation.
+
 
 ## Creating the Initial Administrator
 
@@ -263,6 +292,13 @@ python Projects\employee_management_system\run_tests.py
 - Activity logging
 - Unit, boundary, and regression testing
 - Project-file organization
+- FastAPI application factories, HTTP GET routes, JSON and HTML
+  responses, automatic OpenAPI documentation, and Uvicorn
+  development serving
+- Jinja2 template rendering, template context values, semantic
+  HTML structure, and reliable template-directory resolution
+- FastAPI `TestClient` health-check, documentation, and
+  server-rendered home-page testing
 
 ## Project Roadmap
 
@@ -270,7 +306,7 @@ Future versions will introduce:
 
 - Additional filtering and reporting options
 - REST APIs
-- Web interface
+- Expanded responsive web interface and browser workflows
 - AI document processing
 - AI-generated business reports
 - Workflow automation
@@ -278,4 +314,4 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed console application. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and 58 existing automated tests are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Authentication includes a typed user-account model, protected password storage, case-insensitive account retrieval, credential authentication, inactive-account enforcement, controlled `admin` and `viewer` roles, uniform authentication failure, and required interactive login before employee records are loaded or the menu is displayed. Role-based authorization uses named permission constants, role-to-permission sets, a menu-to-permission mapping, and default-deny protection. Administrators receive every explicitly mapped console permission, while viewers receive read-only employee, payroll, and report permissions. Active administrators can create fixed-role viewer accounts through protected console option 14, manage viewer activation through protected option 15, and reset viewer passwords through protected option 16. Self-service password changes are available to both authenticated roles through option 17, and Exit is available through option 18. Account-status management rejects viewers, inactive administrators, missing accounts, administrator targets, and unchanged statuses. The administrator-controlled password-reset workflow uses hidden password entry and confirmation, required-input validation, generic failure messages, protected command and service layers, and success-only activity logging. It rejects viewers, inactive administrators, missing accounts, administrator targets, blank passwords, and reuse of the viewer's current password. Successful resets store only a newly protected password hash and preserve the viewer's role and active status. The completed self-service password-change workflow allows active administrators and viewers to change their own passwords through console option 17 after proving knowledge of the current password. It uses hidden current-password, new-password, and confirmation entry, reloads the live SQLite account, verifies both session and saved-account active status, matches the session user ID to the saved record, and rejects blank input, incorrect current passwords, mismatched confirmation, password reuse, missing accounts, stale deactivated accounts, and mismatched session identities. Successful self-service changes store a newly protected hash, preserve the account's role and active status, and create a success-only activity-log entry without exposing credentials. A tested one-time administrator setup command counts existing accounts, rejects repeated setup, hides password entry with `getpass`, confirms matching passwords, validates required input, and reports success or failure through process exit codes. Thirty-five database tests, six administrator-setup command tests, one database-backup command test, two database-restoration command tests, three migration tests, forty-one console-integration tests, six storage-verification tests, nine repository tests, five authentication tests, thirty-six user-service tests, four authorization-policy tests, and nine user-account command tests bring the complete suite to 215 automated tests. During manual verification of administrator-controlled reset, administrator Dennis reset `ReportViewer`'s password, the old password was rejected, the replacement password authenticated successfully, the account remained a viewer, and the viewer was denied access to the protected reset option. During manual self-service verification, `ReportViewer` changed its own password, the old password was rejected, the replacement password authenticated successfully, the account remained a viewer, and the activity log recorded the successful change and authentication events without exposing either password. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. The next milestone is Day 81: begin the tested web-interface foundation while reusing the existing business, service, repository, authentication, and authorization layers.
+The Employee Management System is an actively developed console application with a tested FastAPI web foundation. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and the original business workflows are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Authentication includes a typed user-account model, protected password storage, case-insensitive account retrieval, credential authentication, inactive-account enforcement, controlled `admin` and `viewer` roles, uniform authentication failure, and required interactive login before employee records are loaded or the menu is displayed. Role-based authorization uses named permission constants, role-to-permission sets, a menu-to-permission mapping, and default-deny protection. Administrators receive every explicitly mapped console permission, while viewers receive read-only employee, payroll, and report permissions. Active administrators can create fixed-role viewer accounts through protected console option 14, manage viewer activation through protected option 15, and reset viewer passwords through protected option 16. Self-service password changes are available to both authenticated roles through option 17, and Exit is available through option 18. Account-status management rejects viewers, inactive administrators, missing accounts, administrator targets, and unchanged statuses. The administrator-controlled password-reset workflow uses hidden password entry and confirmation, required-input validation, generic failure messages, protected command and service layers, and success-only activity logging. It rejects viewers, inactive administrators, missing accounts, administrator targets, blank passwords, and reuse of the viewer's current password. Successful resets store only a newly protected password hash and preserve the viewer's role and active status. The completed self-service password-change workflow allows active administrators and viewers to change their own passwords through console option 17 after proving knowledge of the current password. It uses hidden current-password, new-password, and confirmation entry, reloads the live SQLite account, verifies both session and saved-account active status, matches the session user ID to the saved record, and rejects blank input, incorrect current passwords, mismatched confirmation, password reuse, missing accounts, stale deactivated accounts, and mismatched session identities. Successful self-service changes store a newly protected hash, preserve the account's role and active status, and create a success-only activity-log entry without exposing credentials. A tested one-time administrator setup command counts existing accounts, rejects repeated setup, hides password entry with `getpass`, confirms matching passwords, validates required input, and reports success or failure through process exit codes. Day 81 introduced an isolated Python virtual environment, FastAPI and HTTPX2 dependencies, a FastAPI application factory, a JSON `/health` endpoint, automatic OpenAPI documentation at `/docs`, and a server-rendered Jinja2 home page at `/`. The template system uses a reliable application-relative directory path, semantic HTML structure, and context values for inserting the page title and business message. The web foundation remains separate from `main.py`, allowing the existing console application to continue working while the browser interface is developed. Three FastAPI web tests verify the health endpoint, interactive documentation, and rendered HTML home page. Thirty-five database tests, six administrator-setup command tests, one database-backup command test, two database-restoration command tests, three migration tests, forty-one console-integration tests, six storage-verification tests, nine repository tests, five authentication tests, thirty-six user-service tests, four authorization-policy tests, nine user-account command tests, three FastAPI web tests, and the previously completed employee, storage, payroll, reporting, validation, and export tests bring the complete suite to 218 automated tests. During manual verification of administrator-controlled reset, administrator Dennis reset `ReportViewer`'s password, the old password was rejected, the replacement password authenticated successfully, the account remained a viewer, and the viewer was denied access to the protected reset option. During manual self-service verification, `ReportViewer` changed its own password, the old password was rejected, the replacement password authenticated successfully, the account remained a viewer, and the activity log recorded the successful change and authentication events without exposing either password. Day 81 manual verification confirmed that FastAPI started successfully through Uvicorn, `/health` returned `{"status":"healthy"}`, `/docs` displayed the Employee Management System OpenAPI documentation, and `/` rendered the first Jinja2 HTML page. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. The next milestone is Day 82: add a tested static-file foundation and responsive CSS styling to the web interface.

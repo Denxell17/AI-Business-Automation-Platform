@@ -1,0 +1,2 @@
+fastapi[standard]
+httpx2>=2,<3
