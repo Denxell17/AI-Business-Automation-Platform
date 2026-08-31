@@ -6,124 +6,22 @@
         name="viewport"
         content="width=device-width, initial-scale=1.0"
     >
-    <title>{% block title %}{{ page_title }}{% endblock %} | ABAP</title>
+    <title>
+        {% block title %}{{ page_title }}{% endblock %} | ABAP
+    </title>
     <link
         rel="stylesheet"
         href="{{ url_for('static', path='/styles.css') }}"
     >
     {% block head %}{% endblock %}
 </head>
-<body>
+<body class="{% block body_class %}{% endblock %}">
     <a class="skip-link" href="#main-content">
         Skip to main content
     </a>
 
-    <div class="application-shell">
-        <aside
-            id="primary-navigation"
-            class="sidebar"
-            aria-label="Primary navigation"
-        >
-            <div class="brand">
-                <span class="brand-mark" aria-hidden="true">A</span>
-                <div>
-                    <p class="brand-name">ABAP</p>
-                    <p class="brand-description">
-                        AI Business Automation Platform
-                    </p>
-                </div>
-            </div>
+    {% block body %}{% endblock %}
 
-            <nav aria-label="Employee Management navigation">
-                <p class="navigation-heading">Workspace</p>
-                <ul class="navigation-list">
-                    <li>
-                        <a
-                            class="navigation-link{% if active_page == 'home' %} is-active{% endif %}"
-                            href="{{ url_for('home_page') }}"
-                            {% if active_page == 'home' %}aria-current="page"{% endif %}
-                        >
-                            <span
-                                class="navigation-icon"
-                                aria-hidden="true"
-                            >⌂</span>
-                            Dashboard
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="navigation-link" href="/docs">
-                            <span
-                                class="navigation-icon"
-                                aria-hidden="true"
-                            >?</span>
-                            API documentation
-                        </a>
-                    </li>
-
-                    <li>
-                        <a class="navigation-link" href="/health">
-                            <span
-                                class="navigation-icon"
-                                aria-hidden="true"
-                            >✓</span>
-                            System health
-                        </a>
-                    </li>
-                </ul>
-            </nav>
-
-            <div class="sidebar-footer">
-                <span class="status-dot" aria-hidden="true"></span>
-                Day 83 web foundation
-            </div>
-        </aside>
-
-        <button
-            class="navigation-backdrop"
-            type="button"
-            data-navigation-close
-            aria-label="Close navigation"
-            tabindex="-1"
-        ></button>
-
-        <div class="application-main">
-            <header class="topbar">
-                <button
-                    class="menu-button"
-                    type="button"
-                    aria-controls="primary-navigation"
-                    aria-expanded="false"
-                    aria-label="Open navigation"
-                    data-navigation-toggle
-                >
-                    <span aria-hidden="true">☰</span>
-                </button>
-
-                <div>
-                    <p class="topbar-label">Employee workspace</p>
-                    <p class="topbar-title">{{ page_title }}</p>
-                </div>
-
-                <span class="foundation-badge">
-                    Web foundation
-                </span>
-            </header>
-
-            <main
-                id="main-content"
-                class="page-content"
-                tabindex="-1"
-            >
-                {% block content %}{% endblock %}
-            </main>
-        </div>
-    </div>
-
-    <script
-        src="{{ url_for('static', path='/navigation.js') }}"
-        defer
-    ></script>
     {% block scripts %}{% endblock %}
 </body>
 </html>

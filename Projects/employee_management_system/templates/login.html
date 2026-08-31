@@ -1,0 +1,105 @@
+{% extends "base.html" %}
+
+{% block title %}Sign in{% endblock %}
+
+{% block body_class %}authentication-page{% endblock %}
+
+{% block body %}
+<main
+    id="main-content"
+    class="authentication-shell"
+    tabindex="-1"
+>
+    <section
+        class="authentication-card"
+        aria-labelledby="login-heading"
+    >
+        <header class="authentication-brand">
+            <span
+                class="authentication-brand-mark"
+                aria-hidden="true"
+            >A</span>
+
+            <div>
+                <p class="authentication-brand-name">ABAP</p>
+                <p class="authentication-brand-description">
+                    AI Business Automation Platform
+                </p>
+            </div>
+        </header>
+
+        <div class="authentication-introduction">
+            <p class="section-eyebrow">Secure access</p>
+
+            <h1
+                id="login-heading"
+                class="authentication-title"
+            >
+                Sign in to your workspace
+            </h1>
+
+            <p class="authentication-description">
+                Enter your Employee Management System account
+                credentials.
+            </p>
+        </div>
+
+        {% if error_message %}
+        <div
+            id="login-error"
+            class="form-message form-message-error"
+            role="alert"
+        >
+            <span aria-hidden="true">!</span>
+            <span>{{ error_message }}</span>
+        </div>
+        {% endif %}
+
+        <form
+            class="authentication-form"
+            method="post"
+            action="{{ url_for('login_submission') }}"
+        >
+            <div class="form-field">
+                <label for="username">Username</label>
+                <input
+                    id="username"
+                    name="username"
+                    type="text"
+                    value="{{ entered_username }}"
+                    autocomplete="username"
+                    required
+                    autofocus
+                    {% if error_message %}aria-describedby="login-error"{% endif %}
+                >
+            </div>
+
+            <div class="form-field">
+                <label for="password">Password</label>
+                <input
+                    id="password"
+                    name="password"
+                    type="password"
+                    autocomplete="current-password"
+                    required
+                    {% if error_message %}aria-describedby="login-error"{% endif %}
+                >
+            </div>
+
+            <button
+                class="primary-button"
+                type="submit"
+            >
+                Sign in
+            </button>
+        </form>
+
+        <footer class="authentication-footer">
+            <p>
+                Only active, authorized accounts can access
+                this workspace.
+            </p>
+        </footer>
+    </section>
+</main>
+{% endblock %}

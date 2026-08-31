@@ -1,21 +1,50 @@
+import secrets
 from pathlib import Path
+from typing import Annotated
 
-from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse
+from fastapi import (
+    FastAPI,
+    Form,
+    Request,
+)
+from fastapi.responses import (
+    HTMLResponse,
+    RedirectResponse,
+    Response,
+)
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
+from starlette.middleware.sessions import SessionMiddleware
+
+from activity_logger import log_activity
+from database import DATABASE_FILE
+from user_service import authenticate_user_account
+from web_session import (
+    begin_authenticated_session,
+    load_authenticated_session_user,
+)
 
 
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
 TEMPLATES_DIRECTORY = APPLICATION_DIRECTORY / "templates"
 STATIC_DIRECTORY = APPLICATION_DIRECTORY / "static"
 
+SESSION_COOKIE_NAME = "abap_session"
+SESSION_MAX_AGE_SECONDS = 8 * 60 * 60
+LOGIN_FAILURE_MESSAGE = (
+    "Username or password is incorrect."
+)
+
 templates = Jinja2Templates(
     directory=TEMPLATES_DIRECTORY,
 )
 
 
-def create_web_application() -> FastAPI:
+def create_web_application(
+    database_file: Path = DATABASE_FILE,
+    session_secret: str | None = None,
+    secure_cookies: bool = False,
+) -> FastAPI:
     application = FastAPI(
         title="Employee Management System",
         description=(
@@ -25,6 +54,19 @@ def create_web_application() -> FastAPI:
         version="1.0.0",
     )
 
+    application.add_middleware(
+        SessionMiddleware,
+        secret_key=(
+            session_secret
+            if session_secret is not None
+            else secrets.token_urlsafe(32)
+        ),
+        session_cookie=SESSION_COOKIE_NAME,
+        max_age=SESSION_MAX_AGE_SECONDS,
+        same_site="lax",
+        https_only=secure_cookies,
+    )
+
     application.mount(
         "/static",
         StaticFiles(directory=STATIC_DIRECTORY),
@@ -32,10 +74,92 @@ def create_web_application() -> FastAPI:
     )
 
     @application.get(
+        "/login",
+        response_class=HTMLResponse,
+    )
+    def login_page(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is not None:
+            return RedirectResponse(
+                url=request.url_for("home_page"),
+                status_code=303,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="login.html",
+            context={
+                "page_title": "Sign in",
+                "entered_username": "",
+                "error_message": None,
+            },
+        )
+
+    @application.post(
+        "/login",
+        response_class=HTMLResponse,
+    )
+    def login_submission(
+        request: Request,
+        username: Annotated[str, Form()],
+        password: Annotated[str, Form()],
+    ) -> Response:
+        entered_username = username.strip()
+
+        user_account = authenticate_user_account(
+            entered_username,
+            password,
+            database_file,
+        )
+
+        if user_account is None:
+            log_activity("Failed web login attempt.")
+
+            return templates.TemplateResponse(
+                request=request,
+                name="login.html",
+                context={
+                    "page_title": "Sign in",
+                    "entered_username": entered_username,
+                    "error_message": LOGIN_FAILURE_MESSAGE,
+                },
+                status_code=401,
+            )
+
+        begin_authenticated_session(
+            request,
+            user_account,
+        )
+        log_activity(
+            f"User {user_account['username']} "
+            "logged in through the web application."
+        )
+
+        return RedirectResponse(
+            url=request.url_for("home_page"),
+            status_code=303,
+        )
+
+    @application.get(
         "/",
         response_class=HTMLResponse,
     )
-    def home_page(request: Request):
+    def home_page(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
         return templates.TemplateResponse(
             request=request,
             name="home.html",
@@ -46,6 +170,7 @@ def create_web_application() -> FastAPI:
                     "through a browser."
                 ),
                 "active_page": "home",
+                "current_user": current_user,
             },
         )
 

@@ -9,7 +9,8 @@ Development follows Accelerated Build Mode:
 - Plan complete features before providing code
 - Prefer final implementations over temporary versions
 - Provide exact filenames and placement
-- Use complete file replacements when practical
+- Use targeted additions and changes for existing source files
+- Provide complete contents for new files and whole README Project Status replacements
 - Include important tests with each feature
 - Run targeted tests and the complete suite
 - Explain completed code simply
