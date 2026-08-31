@@ -1,51 +1,75 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-    <title>{{ page_title }}</title>
-    <link
-        rel="stylesheet"
-        href="{{ url_for('static', path='/styles.css') }}"
-    >
-</head>
-<body>
-    <header class="site-header">
-        <div class="header-content">
-            <p class="product-name">
-                AI Business Automation Platform
-            </p>
-            <h1 class="site-title">{{ page_title }}</h1>
-        </div>
-    </header>
+{% extends "base.html" %}
 
-    <main class="page-content">
-        <section
-            class="welcome-card"
-            aria-labelledby="welcome-heading"
+{% block content %}
+<section
+    class="welcome-card"
+    aria-labelledby="welcome-heading"
+>
+    <p class="section-eyebrow">Employee management</p>
+
+    <h1
+        id="welcome-heading"
+        class="section-title"
+    >
+        Welcome
+    </h1>
+
+    <p class="page-message">
+        {{ page_message }}
+    </p>
+
+    <p class="status-message">
+        <span
+            class="status-indicator"
+            aria-hidden="true"
+        >✓</span>
+        <span>Web interface foundation is running.</span>
+    </p>
+</section>
+
+<section
+    class="resource-section"
+    aria-labelledby="resources-heading"
+>
+    <div class="section-heading-group">
+        <p class="section-eyebrow">Available now</p>
+
+        <h2
+            id="resources-heading"
+            class="resource-title"
         >
-            <h2
-                id="welcome-heading"
-                class="section-title"
-            >
-                Welcome
-            </h2>
+            Development resources
+        </h2>
+    </div>
 
-            <p class="page-message">
-                {{ page_message }}
-            </p>
+    <div class="resource-grid">
+        <a class="resource-card" href="/docs">
+            <span
+                class="resource-icon"
+                aria-hidden="true"
+            >?</span>
 
-            <p class="status-message">
-                <span
-                    class="status-indicator"
-                    aria-hidden="true"
-                ></span>
-                Web interface foundation is running.
-            </p>
-        </section>
-    </main>
-</body>
-</html>
+            <span>
+                <strong>API documentation</strong>
+                <small>
+                    Explore and test available endpoints.
+                </small>
+            </span>
+        </a>
+
+        <a class="resource-card" href="/health">
+            <span
+                class="resource-icon"
+                aria-hidden="true"
+            >✓</span>
+
+            <span>
+                <strong>System health</strong>
+                <small>
+                    Confirm that the FastAPI service is available.
+                </small>
+            </span>
+        </a>
+    </div>
+</section>
+{% endblock %}

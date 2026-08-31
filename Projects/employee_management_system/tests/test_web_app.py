@@ -27,12 +27,58 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
 
-    def test_home_page_links_to_static_stylesheet(self):
+    def test_home_page_uses_reusable_navigation_layout(self):
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            'aria-label="Primary navigation"',
+            response.text,
+        )
+        self.assertIn(
+            'aria-current="page"',
+            response.text,
+        )
+        self.assertIn(
+            "API documentation",
+            response.text,
+        )
+        self.assertIn(
+            "System health",
+            response.text,
+        )
+
+    def test_home_page_includes_accessibility_foundations(self):
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            'class="skip-link"',
+            response.text,
+        )
+        self.assertIn(
+            'href="#main-content"',
+            response.text,
+        )
+        self.assertIn(
+            'id="main-content"',
+            response.text,
+        )
+        self.assertIn(
+            'aria-expanded="false"',
+            response.text,
+        )
+
+    def test_home_page_links_to_static_assets(self):
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             "/static/styles.css",
+            response.text,
+        )
+        self.assertIn(
+            "/static/navigation.js",
             response.text,
         )
 
@@ -46,6 +92,23 @@ class TestWebApplication(unittest.TestCase):
         )
         self.assertIn(
             "--color-primary",
+            response.text,
+        )
+        self.assertIn(
+            "--color-background: #1b1d21",
+            response.text,
+        )
+
+    def test_navigation_script_is_available(self):
+        response = self.client.get("/static/navigation.js")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "javascript",
+            response.headers["content-type"],
+        )
+        self.assertIn(
+            "setNavigationOpen",
             response.text,
         )
 

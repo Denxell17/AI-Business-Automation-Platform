@@ -333,4 +333,74 @@ Future versions will introduce:
 
 ## Project Status
 
-The Employee Management System is an actively developed console application with a tested and responsive FastAPI web foundation. Core employee management, payroll, reporting, backup recovery, logging, filtering, sorting, workforce analytics, legacy validated JSON utilities, and the original business workflows are complete. SQLite integration includes a tested schema, complete CRUD operations, complete-list synchronization, verified migration, read-only cross-storage verification, a configurable employee repository, SQLite-primary console workflows, and SQLite-only normal saving. SQLite backup and restoration are available through tested commands and interactive console options with confirmation protection, integrity checks, post-restoration session reloading, and activity logging. Authentication includes a typed user-account model, protected password storage, case-insensitive account retrieval, credential authentication, inactive-account enforcement, controlled `admin` and `viewer` roles, uniform authentication failure, and required interactive login before employee records are loaded or the menu is displayed. Role-based authorization uses named permission constants, role-to-permission sets, a menu-to-permission mapping, and default-deny protection. Administrators receive every explicitly mapped console permission, while viewers receive read-only employee, payroll, and report permissions. Active administrators can create fixed-role viewer accounts through protected console option 14, manage viewer activation through protected option 15, and reset viewer passwords through protected option 16. Self-service password changes are available to both authenticated roles through option 17, and Exit is available through option 18. Account-status management rejects viewers, inactive administrators, missing accounts, administrator targets, and unchanged statuses. The administrator-controlled password-reset workflow uses hidden password entry and confirmation, required-input validation, generic failure messages, protected command and service layers, and success-only activity logging. It rejects viewers, inactive administrators, missing accounts, administrator targets, blank passwords, and reuse of the viewer's current password. Successful resets store only a newly protected password hash and preserve the viewer's role and active status. The completed self-service password-change workflow allows active administrators and viewers to change their own passwords through console option 17 after proving knowledge of the current password. It uses hidden current-password, new-password, and confirmation entry, reloads the live SQLite account, verifies both session and saved-account active status, matches the session user ID to the saved record, and rejects blank input, incorrect current passwords, mismatched confirmation, password reuse, missing accounts, stale deactivated accounts, and mismatched session identities. Successful self-service changes store a newly protected hash, preserve the account's role and active status, and create a success-only activity-log entry without exposing credentials. A tested one-time administrator setup command counts existing accounts, rejects repeated setup, hides password entry with `getpass`, confirms matching passwords, validates required input, and reports success or failure through process exit codes. Day 81 introduced an isolated Python virtual environment, FastAPI and HTTPX2 dependencies, a FastAPI application factory, a JSON `/health` endpoint, automatic OpenAPI documentation at `/docs`, and a server-rendered Jinja2 home page at `/`. The template system uses a reliable application-relative directory path, semantic HTML structure, and context values for inserting the page title and business message. The web foundation remains separate from `main.py`, allowing the existing console application to continue working while the browser interface is developed. Day 82 added a dedicated `static` directory, FastAPI `StaticFiles` mounting at `/static`, a linked stylesheet at `/static/styles.css`, and an intentional responsive visual system. The stylesheet uses reusable CSS custom properties, predictable universal box sizing, a system font stack, constrained content widths, responsive heading sizes, a navy-and-teal business palette, a bordered and shadowed welcome card, an accessible status presentation, and a media query that reduces spacing on screens at or below 600 pixels. The updated Jinja2 page connects to the named static route through `url_for`, maps semantic HTML elements to focused CSS classes, labels the welcome section for assistive technology, and hides its decorative status indicator from screen readers. Five FastAPI web tests now verify the health endpoint, interactive documentation, rendered HTML home page, HTML-to-stylesheet connection, and downloadable CSS content and MIME type. Thirty-five database tests, six administrator-setup command tests, one database-backup command test, two database-restoration command tests, three migration tests, forty-one console-integration tests, six storage-verification tests, nine repository tests, five authentication tests, thirty-six user-service tests, four authorization-policy tests, nine user-account command tests, five FastAPI web tests, and the previously completed employee, storage, payroll, reporting, validation, and export tests bring the complete suite to 220 automated tests. During manual verification of administrator-controlled reset, administrator Dennis reset `ReportViewer`'s password, the old password was rejected, the replacement password authenticated successfully, the account remained a viewer, and the viewer was denied access to the protected reset option. During manual self-service verification, `ReportViewer` changed its own password, the old password was rejected, the replacement password authenticated successfully, the account remained a viewer, and the activity log recorded the successful change and authentication events without exposing either password. Day 81 manual verification confirmed that FastAPI started successfully through Uvicorn, `/health` returned `{"status":"healthy"}`, `/docs` displayed the Employee Management System OpenAPI documentation, and `/` rendered the first Jinja2 HTML page. Day 82 manual verification confirmed that the stylesheet loaded successfully, the desktop page displayed the intended header, content card, and status presentation, and the narrow-window layout wrapped text correctly without horizontal overflow. SQLite remains the live source of truth, while legacy JSON utilities remain available for migration, verification, and historical compatibility. The next milestone is Day 83: introduce a tested reusable base template and navigation foundation for the growing web interface.
+The Employee Management System is an actively developed, security-focused Python application with both a complete console interface and a growing FastAPI web interface.
+
+The completed backend includes:
+
+- Employee creation, viewing, updating, and deletion
+- Payroll calculations and workforce analytics
+- Employee filtering, searching, sorting, reporting, and exporting
+- SQLite-primary data storage
+- JSON migration and storage-verification utilities
+- Database backup and protected restoration
+- Activity logging
+- Secure password hashing and authentication
+- Administrator and viewer roles
+- Permission-based authorization with default-deny protection
+- Administrator-controlled viewer registration
+- Viewer activation and deactivation
+- Administrator-controlled viewer password resets
+- Self-service password changes for authenticated users
+- Protected interactive console workflows
+
+The account-management system prevents unauthorized or unsafe changes. It rejects inactive administrators, viewer attempts to perform administrator actions, missing accounts, administrator targets in viewer-management workflows, unchanged account statuses, blank passwords, incorrect current passwords, mismatched confirmations, reused passwords, stale inactive accounts, and mismatched session identities. Successful password changes store only protected password hashes while preserving account roles and active statuses.
+
+The FastAPI web interface currently includes:
+
+- An application factory
+- A JSON health endpoint at `/health`
+- Automatic OpenAPI documentation at `/docs`
+- A server-rendered Jinja2 dashboard at `/`
+- Application-relative template and static-file paths
+- A reusable `base.html` layout
+- Jinja template inheritance
+- A shared ABAP navigation sidebar
+- A responsive mobile navigation drawer
+- A keyboard-accessible navigation toggle
+- Escape-key navigation closing
+- A navigation backdrop
+- A visible skip link
+- Semantic page structure and ARIA attributes
+- A responsive Warm Charcoal visual system
+- Teal actions and warm off-white text
+- Visible keyboard focus
+- Reduced-motion support
+- Statuses communicated with text and icons instead of color alone
+
+Day 81 established the tested FastAPI, Jinja2, health-check, documentation, and home-page foundation. Day 82 added tested static-file delivery and responsive CSS styling. Day 83 introduced the permanent ABAP master roadmap, reusable base template, shared navigation layout, accessible mobile navigation behavior, Warm Charcoal interface, development-resource cards, and expanded web-interface tests.
+
+Manual Day 83 verification confirmed that:
+
+- The desktop layout displays the persistent navigation sidebar.
+- The narrow layout hides the sidebar behind a menu button.
+- The navigation drawer opens above a dark backdrop.
+- The page remains readable without horizontal overflow.
+- The dashboard active state is visible through both styling and `aria-current`.
+- The interface remains usable at desktop and mobile widths.
+
+The automated test suite now contains **223 passing tests**, including **8 FastAPI web tests** covering:
+
+- The rendered home page
+- The reusable navigation layout
+- Accessibility foundations
+- Static asset links
+- CSS delivery and content type
+- JavaScript delivery and content type
+- The health endpoint
+- The API documentation page
+
+SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while the browser interface continues to grow.
+
+The permanent development plan is stored in `Notes/master_roadmap.md`. Day 100 remains the original Employee Management System milestone, while Day 155 is the target for the full ABAP portfolio MVP.
+
+The next milestone is Day 84: introduce the tested web authentication and login-page foundation.
