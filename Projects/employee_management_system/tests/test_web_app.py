@@ -459,6 +459,144 @@ class TestWebApplication(unittest.TestCase):
         self.assertIn("Employees", response.text)
         self.assertIn('aria-current="page"', response.text)
 
+    def test_employee_directory_links_to_employee_profile(self):
+        self.sign_in()
+
+        response = self.client.get("/employees")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            'href="http://testserver/employees/EMP-WEB-001"',
+            response.text,
+        )
+        self.assertIn(
+            'class="employee-profile-link"',
+            response.text,
+        )
+
+    def test_employee_profile_redirects_unauthenticated_user(self):
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_administrator_can_view_employee_profile(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("EMP-WEB-001", response.text)
+        self.assertIn("Operations", response.text)
+        self.assertIn("Automation Specialist", response.text)
+        self.assertIn("test.employee@example.com", response.text)
+        self.assertIn("Employment details", response.text)
+        self.assertIn("Contact details", response.text)
+        self.assertIn(
+            "Back to employee directory",
+            response.text,
+        )
+        self.assertNotIn("Salary", response.text)
+        self.assertNotIn("Performance score", response.text)
+
+    def test_viewer_can_view_employee_profile(self):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("WebViewer", response.text)
+        self.assertIn("Viewer", response.text)
+
+    def test_employee_profile_id_is_case_insensitive(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/emp-web-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("EMP-WEB-001", response.text)
+
+    def test_employee_profile_returns_not_found(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-MISSING",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Employee not found", response.text)
+        self.assertIn(
+            "The requested employee record was not found.",
+            response.text,
+        )
+        self.assertNotIn("Test Employee", response.text)
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=None,
+    )
+    def test_employee_profile_handles_loading_failure(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee records could not be loaded.",
+            response.text,
+        )
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_employee_profile_denies_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web employee-profile access denied "
+            f"for user {self.username}."
+        )
+
     def test_static_stylesheet_is_available(self):
         response = self.client.get("/static/styles.css")
 
