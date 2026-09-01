@@ -1,0 +1,191 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section"
+    aria-labelledby="employee-edit-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('employee_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to employee directory
+    </a>
+
+    {% if error_message and employee is none %}
+    <div class="profile-error" role="alert">
+        <span
+            class="profile-error-icon"
+            aria-hidden="true"
+        >!</span>
+
+        <div>
+            <h1
+                id="employee-edit-heading"
+                class="profile-error-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            <p>{{ error_message }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Employee management</p>
+
+            <h1
+                id="employee-edit-heading"
+                class="section-title"
+            >
+                Edit employee
+            </h1>
+
+            <p class="page-message">
+                Update employment and contact details.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            Update access authorized
+        </span>
+    </div>
+
+    <section
+        class="employee-edit-summary"
+        aria-label="Employee being edited"
+    >
+        <p>
+            <strong>{{ employee["name"] }}</strong>
+        </p>
+
+        <p>
+            Employee ID:
+            <strong>{{ employee["employee_id"] }}</strong>
+        </p>
+    </section>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="/employees/{{ employee['employee_id'] }}/edit"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="employment-edit-heading"
+        >
+            <h2 id="employment-edit-heading">
+                Employment details
+            </h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="department">Department</label>
+                    <input
+                        id="department"
+                        name="department"
+                        type="text"
+                        value="{{ form_values.get(
+                            'department',
+                            ''
+                        ) }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="position">Position</label>
+                    <input
+                        id="position"
+                        name="position"
+                        type="text"
+                        value="{{ form_values.get(
+                            'position',
+                            ''
+                        ) }}"
+                        required
+                    >
+                </div>
+            </div>
+        </section>
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="contact-edit-heading"
+        >
+            <h2 id="contact-edit-heading">
+                Contact details
+            </h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value="{{ form_values.get(
+                            'email',
+                            ''
+                        ) }}"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="phone_number">Phone number</label>
+                    <input
+                        id="phone_number"
+                        name="phone_number"
+                        type="tel"
+                        value="{{ form_values.get(
+                            'phone_number',
+                            ''
+                        ) }}"
+                        autocomplete="tel"
+                        required
+                    >
+                </div>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for(
+                    'employee_profile',
+                    employee_id=employee['employee_id']
+                ) }}"
+            >
+                Cancel
+            </a>
+
+            <button class="employee-submit-button" type="submit">
+                <span aria-hidden="true">✓</span>
+                Save changes
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}
