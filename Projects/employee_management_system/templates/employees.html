@@ -45,6 +45,92 @@
         </div>
     </div>
 
+    <form
+        class="directory-filter-form"
+        method="get"
+        action="{{ url_for('employee_directory') }}"
+        aria-label="Search and filter employees"
+    >
+        <div class="directory-filter-fields">
+            <div class="form-field">
+                <label for="search_text">Search by name</label>
+                <input
+                    id="search_text"
+                    name="search_text"
+                    type="search"
+                    value="{{ filter_values['search_text'] }}"
+                >
+            </div>
+
+            <div class="form-field">
+                <label for="department">Department</label>
+                <input
+                    id="department"
+                    name="department"
+                    type="text"
+                    value="{{ filter_values['department'] }}"
+                >
+            </div>
+
+            <div class="form-field">
+                <label for="minimum_salary">
+                    Minimum salary
+                </label>
+                <input
+                    id="minimum_salary"
+                    name="minimum_salary"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="{{ filter_values['minimum_salary'] }}"
+                >
+            </div>
+
+            <div class="form-field">
+                <label for="maximum_salary">
+                    Maximum salary
+                </label>
+                <input
+                    id="maximum_salary"
+                    name="maximum_salary"
+                    type="number"
+                    min="0"
+                    step="1"
+                    value="{{ filter_values['maximum_salary'] }}"
+                >
+            </div>
+        </div>
+
+        <div class="directory-filter-actions">
+            <button
+                class="directory-filter-button"
+                type="submit"
+            >
+                <span aria-hidden="true">⌕</span>
+                Apply filters
+            </button>
+
+            {% if filters_applied %}
+            <a
+                class="directory-clear-filters-link"
+                href="{{ url_for('employee_directory') }}"
+            >
+                Clear filters
+            </a>
+            {% endif %}
+        </div>
+    </form>
+
+    {% if filter_error and not error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ filter_error }}</span>
+    </p>
+    {% endif %}
+
     {% if error_message %}
     <p class="directory-message directory-message-error" role="alert">
         <span aria-hidden="true">!</span>
@@ -110,10 +196,17 @@
         >○</span>
 
         <div>
+            {% if filters_applied %}
+            <h2>No matching employees found</h2>
+            <p>
+                Try changing or clearing the current filters.
+            </p>
+            {% else %}
             <h2>No employees found</h2>
             <p>
                 Employee records will appear here after they are added.
             </p>
+            {% endif %}
         </div>
     </div>
     {% endif %}

@@ -1,0 +1,127 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section"
+    aria-labelledby="employee-delete-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('employee_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to employee directory
+    </a>
+
+    {% if error_message and employee is none %}
+    <div class="profile-error" role="alert">
+        <span
+            class="profile-error-icon"
+            aria-hidden="true"
+        >!</span>
+
+        <div>
+            <h1
+                id="employee-delete-heading"
+                class="profile-error-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            <p>{{ error_message }}</p>
+        </div>
+    </div>
+    {% else %}
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Employee management</p>
+
+            <h1
+                id="employee-delete-heading"
+                class="section-title"
+            >
+                Delete employee
+            </h1>
+
+            <p class="page-message">
+                Review this permanent action before continuing.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            Delete access authorized
+        </span>
+    </div>
+
+    <section
+        class="employee-edit-summary"
+        aria-label="Employee being deleted"
+    >
+        <p>
+            <strong>{{ employee["name"] }}</strong>
+        </p>
+
+        <p>
+            Employee ID:
+            <strong>{{ employee["employee_id"] }}</strong>
+        </p>
+    </section>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <div
+        id="employee-delete-warning"
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>
+            This permanently deletes the employee record and
+            cannot be undone.
+        </span>
+    </div>
+
+    <form
+        class="employee-form"
+        method="post"
+        action="/employees/{{ employee['employee_id'] }}/delete"
+        aria-describedby="employee-delete-warning"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for(
+                    'employee_profile',
+                    employee_id=employee['employee_id']
+                ) }}"
+            >
+                Cancel
+            </a>
+
+            <button
+                class="employee-delete-button"
+                type="submit"
+            >
+                <span aria-hidden="true">×</span>
+                Permanently delete employee
+            </button>
+        </div>
+    </form>
+    {% endif %}
+</section>
+{% endblock %}

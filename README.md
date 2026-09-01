@@ -109,6 +109,21 @@ The current Employee Management System can:
   failure handling, prefilled forms, and redirect-to-profile
   confirmation for department, position, email, and phone-number
   updates
+- Provide an administrator-only browser employee-deletion workflow
+  with a protected confirmation page, `DELETE_EMPLOYEE` permission
+  checks, signed-session CSRF protection, repository-backed SQLite
+  synchronization, transactional rollback safety, successful-deletion
+  activity logging, safe missing-record and storage-failure handling,
+  POST-redirect-GET navigation, permission-aware profile actions, and
+  accessible destructive-action warnings
+- Provide a protected, read-only browser employee-directory search and
+  filtering workflow that supports case-insensitive partial-name
+  searches, case-insensitive exact department filters, inclusive salary
+  ranges, combined match-all filters, server-side salary validation,
+  preserved query values, clear-filter navigation, safe SQLite loading
+  failures, accessible filter controls, responsive layouts, and
+  administrator-and-viewer access through the existing
+  `VIEW_EMPLOYEE` permission
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -385,19 +400,22 @@ python Projects\employee_management_system\run_tests.py
   `404`, and `500` edit responses, update activity logging,
   permission-aware profile actions, responsive paired actions, and
   service-plus-web regression testing
-
-## Project Roadmap
-
-Future versions will introduce:
-
-- Additional filtering and reporting options
-- REST APIs
-- Expanded responsive web interface and browser workflows
-- AI document processing
-- AI-generated business reports
-- Workflow automation
-- Deployment and production configuration
-
+- Protected web employee deletion, explicit confirmation pages,
+  POST-only destructive actions, `DELETE_EMPLOYEE` authorization,
+  permission-aware destructive controls, signed-session CSRF
+  validation before storage access, case-insensitive employee lookup,
+  service-layer list removal, transactional SQLite synchronization,
+  rollback-safe persistence failures, success-only deletion logging,
+  safe `403`, `404`, and `500` responses, POST-redirect-GET navigation,
+  accessible irreversible-action warnings, destructive-button styling,
+  and end-to-end deletion boundary testing
+- Protected read-only directory search and filtering, GET query
+  parameters, query-input normalization, optional filter controls,
+  server-side integer conversion, paired salary-range validation,
+  negative-value and reversed-range rejection, service-layer filter
+  composition, preserved filter values, clear-filter navigation,
+  no-match states, accessible search forms, responsive filter grids,
+  viewer-access regression coverage, and state-independent web tests
 
 ## Project Status
 
@@ -425,33 +443,48 @@ The FastAPI interface now provides:
   `/employees/new`
 - An administrator-only Edit employee page and submission route at
   `/employees/{employee_id}/edit`
+- An administrator-only employee-deletion confirmation page and
+  POST submission route at `/employees/{employee_id}/delete`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and
   `SameSite=Lax`
-- Signed-session CSRF protection for employee creation and editing
+- Signed-session CSRF protection for employee creation, editing, and
+  deletion
 - Live SQLite account revalidation before protected access
 - Complete authenticated-session termination during logout
 - Repository-backed employee loading and saving
-- Separate `VIEW_EMPLOYEE`, `VIEW_PAYROLL`, `REGISTER_EMPLOYEE`, and
-  `UPDATE_EMPLOYEE` permission enforcement
-- Permission-aware Add employee, Edit employee, and View payroll
-  actions
+- Separate `VIEW_EMPLOYEE`, `VIEW_PAYROLL`, `REGISTER_EMPLOYEE`,
+  `UPDATE_EMPLOYEE`, and `DELETE_EMPLOYEE` permission enforcement
+- Permission-aware Add employee, Edit employee, Delete employee, and
+  View payroll actions
 - Default-deny responses and activity logging for missing permissions
-- Permission checks before employee loading, saving, or payroll
-  calculation
-- Server-side employee-form validation and normalized employee IDs
-- Duplicate employee-ID protection
+- Case-insensitive partial-name directory searches
+- Case-insensitive exact department directory filters
+- Inclusive minimum-and-maximum salary directory filters
+- Combined directory filters that require all selected conditions
+- Server-side salary-range validation with preserved query values
+- Clear-filter navigation and distinct no-match directory states
+- Administrator and viewer directory filtering through
+  `VIEW_EMPLOYEE`
+- Explicit confirmation before permanent employee deletion
+- POST-only destructive employee deletion
+- CSRF validation before deletion reads or mutates employee storage
+- Transactional SQLite synchronization with rollback on failure
+- Success-only employee-creation, update, and deletion activity logging
 - Safe employee-loading and saving failure handling
 - Safe missing-employee `404` pages
 - Case-insensitive employee-ID lookup
-- Generated employee-profile, payroll, and edit links
-- POST-redirect-GET navigation after employee creation and editing
+- Generated employee-profile, payroll, edit, and delete links
+- POST-redirect-GET navigation after employee creation, editing, and
+  deletion
 - Semantic employee tables, profile description lists, payroll
-  summaries, and labelled forms
-- Accessible error and empty states
-- Responsive employee tables, profile cards, payroll cards, form
-  layouts, and paired profile actions
+  summaries, labelled forms, and labelled filter controls
+- Accessible error, warning, confirmation, empty, and no-match states
+- Responsive employee tables, profile cards, payroll cards, forms,
+  confirmation pages, profile actions, and directory filter controls
+- Written destructive-action labels that do not rely on color alone
+- Visible keyboard focus and narrow-screen controls
 - Peso currency formatting with two decimal places
-- Reuse of the existing payroll calculation service
+- Reuse of existing employee, payroll, search, and filter services
 - Separation of general employee information from payroll-sensitive
   information
 - Active authenticated navigation
@@ -463,36 +496,45 @@ completed explicit logout and authenticated-session termination. Day 86
 introduced the protected read-only employee directory. Day 87 added
 protected individual employee profiles. Day 88 added protected employee
 payroll pages. Day 89 added protected browser employee creation. Day 90
-added protected browser employee editing.
+added protected browser employee editing. Day 91 added protected browser
+employee deletion. Day 92 added protected browser directory search and
+filtering.
 
-Employee editing requires an authenticated user with `UPDATE_EMPLOYEE`.
-The form page and submission route reload the current account and reject
-missing permission with HTTP `403`. A session-bound CSRF token protects
-the data-changing submission before employee records are loaded or
-saved.
+Directory searching and filtering requires an authenticated user with
+`VIEW_EMPLOYEE`. Both administrators and viewers can use the read-only
+GET form. Missing permission returns HTTP `403` before employee records
+are loaded, while unauthenticated users are redirected to `/login`.
 
-The editing route safely loads the requested employee through the
-repository, displays current department, position, email, and phone
-number in the form, requires all four values, updates the existing
-record through focused service helpers, saves through
-`save_employee_records()`, logs successful updates, and redirects with
-HTTP `303` to the employee profile. Missing employees return HTTP
-`404`, while loading and saving failures return safe written HTTP
-`500` responses. Invalid form values preserve submitted values for
-correction.
+The directory accepts optional `search_text`, `department`,
+`minimum_salary`, and `maximum_salary` query parameters. Text values
+are normalized before filtering. The existing service functions perform
+case-insensitive partial-name searching, case-insensitive exact
+department matching, and inclusive salary-range filtering.
 
-The automated suite contains **278 passing tests**, including
-**61 FastAPI web tests**. Day 90 coverage verifies unauthenticated
-redirects, form prefilling, profile edit-action visibility,
-direct permission denial, CSRF rejection, successful department,
-position, email, and phone updates, required-value rejection,
-missing employees, repository loading failures, repository saving
-failures, and focused contact-detail service behavior.
+When several valid filters are provided, they run in sequence against
+the preceding result, so each displayed employee matches every selected
+condition. The form preserves submitted values and supplies a Clear
+filters link whenever a filter is active.
 
-Manual Day 90 verification confirmed that an administrator can open an
-employee profile, edit department, position, email, and phone number,
-save the changes, and view the updated contact details on the resulting
-profile page.
+Salary filtering requires both bounds. Non-integer, negative, incomplete,
+and reversed ranges return written validation messages while preserving
+the unfiltered employee list. A valid search with no results displays a
+distinct no-match state rather than suggesting that the SQLite database
+is empty.
+
+Employee deletion remains protected by `DELETE_EMPLOYEE`. Opening the
+confirmation page never modifies storage. The deletion POST route checks
+authorization and signed-session CSRF protection before loading records,
+uses the repository and existing service layer, commits the updated list
+in one SQLite transaction, logs only successful deletions, and redirects
+with HTTP `303`.
+
+The automated suite contains **299 passing tests**, including
+**82 FastAPI web tests**. Day 92 added **11 web tests** covering the
+filter form, name searches, department filters, salary-range filters,
+combined filters, no-match states, incomplete salary ranges,
+non-integer salary input, negative salary input, reversed salary ranges,
+and viewer filtering access.
 
 SQLite remains the live source of truth. Legacy JSON utilities remain
 available for migration, verification, and historical compatibility.
