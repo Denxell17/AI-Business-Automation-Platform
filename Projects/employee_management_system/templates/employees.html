@@ -63,7 +63,17 @@
                 {% for employee in employee_list %}
                 <tr>
                     <td>{{ employee["employee_id"] }}</td>
-                    <th scope="row">{{ employee["name"] }}</th>
+                    <th scope="row">
+                        <a
+                            class="employee-profile-link"
+                            href="{{ url_for(
+                                'employee_profile',
+                                employee_id=employee['employee_id']
+                            ) }}"
+                        >
+                            {{ employee["name"] }}
+                        </a>
+                    </th>
                     <td>{{ employee["department"] }}</td>
                     <td>{{ employee["position"] }}</td>
                     <td>

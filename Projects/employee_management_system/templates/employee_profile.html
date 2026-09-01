@@ -1,0 +1,128 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="profile-section"
+    aria-labelledby="employee-profile-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('employee_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to employee directory
+    </a>
+
+    {% if error_message %}
+    <div class="profile-error" role="alert">
+        <span
+            class="profile-error-icon"
+            aria-hidden="true"
+        >!</span>
+
+        <div>
+            <h1
+                id="employee-profile-heading"
+                class="profile-error-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            <p>{{ error_message }}</p>
+        </div>
+    </div>
+    {% else %}
+    <header class="profile-header">
+        <div>
+            <p class="section-eyebrow">Employee profile</p>
+
+            <h1
+                id="employee-profile-heading"
+                class="section-title"
+            >
+                {{ employee["name"] }}
+            </h1>
+
+            <p class="profile-identifier">
+                Employee ID:
+                <strong>{{ employee["employee_id"] }}</strong>
+            </p>
+        </div>
+
+        <p class="profile-status">
+            <span
+                class="status-dot"
+                aria-hidden="true"
+            ></span>
+            {{ employee["employment_status"] }}
+        </p>
+    </header>
+
+    <div class="profile-grid">
+        <section
+            class="profile-card"
+            aria-labelledby="employment-details-heading"
+        >
+            <h2 id="employment-details-heading">
+                Employment details
+            </h2>
+
+            <dl class="profile-details">
+                <div>
+                    <dt>Department</dt>
+                    <dd>{{ employee["department"] }}</dd>
+                </div>
+
+                <div>
+                    <dt>Position</dt>
+                    <dd>{{ employee["position"] }}</dd>
+                </div>
+
+                <div>
+                    <dt>Company</dt>
+                    <dd>{{ employee["company"] }}</dd>
+                </div>
+
+                <div>
+                    <dt>Country</dt>
+                    <dd>{{ employee["country"] }}</dd>
+                </div>
+
+                <div>
+                    <dt>Years of experience</dt>
+                    <dd>
+                        {{ employee["years_of_experience"] }}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Employment status</dt>
+                    <dd>{{ employee["employment_status"] }}</dd>
+                </div>
+            </dl>
+        </section>
+
+        <section
+            class="profile-card"
+            aria-labelledby="contact-details-heading"
+        >
+            <h2 id="contact-details-heading">
+                Contact details
+            </h2>
+
+            <dl class="profile-details">
+                <div>
+                    <dt>Email</dt>
+                    <dd>{{ employee["email"] }}</dd>
+                </div>
+
+                <div>
+                    <dt>Phone number</dt>
+                    <dd>{{ employee["phone_number"] }}</dd>
+                </div>
+            </dl>
+        </section>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

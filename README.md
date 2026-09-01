@@ -88,6 +88,11 @@ The current Employee Management System can:
   supports administrator and viewer access, denies missing
   permissions by default, handles loading failures safely, and
   presents responsive employee information with accessible states
+- Provide protected, permission-checked employee profiles that
+  use normalized employee-ID searches, support administrator and
+  viewer access, return safe missing-record and loading-failure
+  pages, link from the employee directory, and exclude payroll-
+  sensitive fields from the general employee-view permission
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -130,9 +135,9 @@ AI-Business-Automation-Platform/
 │       ├── templates/
 │       │   ├── application_base.html
 │       │   ├── base.html
+│       │   ├── employee_profile.html
 │       │   ├── employees.html
 │       │   ├── home.html
-│       │   └── login.html
 │       ├── activity_logger.py
 │       ├── admin_setup.py
 │       ├── authentication.py
@@ -342,6 +347,12 @@ python Projects\employee_management_system\run_tests.py
   handling, semantic data tables, table captions, scoped row and
   column headers, accessible empty states, responsive horizontal
   scrolling, temporary SQLite web fixtures, and mocked boundary tests
+- Dynamic FastAPI path parameters, protected employee-profile
+  routing, normalized service-layer record lookup, case-insensitive
+  URL identifiers, safe HTTP `404` profile responses, profile-level
+  repository-failure handling, semantic description lists, responsive
+  detail cards, generated record links, back navigation, long-value
+  wrapping, payroll-field separation, and profile boundary testing
 
 ## Project Roadmap
 
@@ -369,37 +380,44 @@ The FastAPI interface now provides:
 - Accessible browser login at `/login`
 - POST-only browser logout at `/logout`
 - A protected employee directory at `/employees`
+- Protected employee profiles at `/employees/{employee_id}`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and `SameSite=Lax`
 - Live SQLite account revalidation before protected access
 - Complete authenticated-session termination during logout
 - Repository-backed employee loading
 - Existing `VIEW_EMPLOYEE` permission enforcement
-- Administrator and viewer employee-directory access
+- Administrator and viewer employee-directory and profile access
 - Default-deny responses and activity logging for missing permissions
 - Safe employee-loading failure handling
-- Semantic employee tables with captions and scoped headers
-- Accessible error and empty-directory states
-- Responsive horizontal table scrolling
+- Safe missing-employee `404` pages
+- Case-insensitive employee-ID profile lookup
+- Generated employee-profile links
+- Back-to-directory navigation
+- Semantic employee tables and profile description lists
+- Accessible error and empty states
+- Responsive employee tables and profile cards
+- Separation of employee-view and payroll-sensitive information
 - Active authenticated navigation
 - The accessible Warm Charcoal visual system, visible focus, reduced-motion support, and written status labels
 
-Day 84 established browser login and authenticated sessions. Day 85 completed explicit logout and authenticated-session termination. Day 86 introduced the first protected employee-data workflow through a read-only employee directory.
+Day 84 established browser login and authenticated sessions. Day 85 completed explicit logout and authenticated-session termination. Day 86 introduced the protected read-only employee directory. Day 87 added protected individual employee profiles.
 
-The employee directory reloads the current account before access, requires `VIEW_EMPLOYEE`, and loads current SQLite records through `load_employee_records()`. Missing permissions return HTTP status `403` and create a denied-access activity entry. Repository failures return HTTP status `500` with a safe written message rather than exposing database details.
+Employee profiles reload the current account, require `VIEW_EMPLOYEE`, load current SQLite records through `load_employee_records()`, and use `find_employee_by_id()` for normalized lookup. Lowercase and uppercase employee IDs locate the same record. Missing IDs return HTTP status `404`, repository failures return HTTP status `500`, and missing permissions return HTTP status `403` with denied-access activity logging.
 
-The directory displays employee ID, name, department, position, and written employment status. A semantic table, caption, scoped headers, keyboard-focusable scrolling container, employee count, empty state, and responsive layout keep the page usable across desktop and narrow screens.
+The employee profile displays the employee ID, name, written status, department, position, company, country, years of experience, email, and phone number. Salary, payroll calculations, and performance score are deliberately excluded because general employee viewing and payroll viewing use separate permissions.
 
-The automated suite contains **240 passing tests**, including **25 FastAPI web tests**. Day 86 coverage verifies unauthenticated redirects, administrator access, viewer access, default-deny authorization, denied-access logging, repository-failure handling, empty-directory presentation, real temporary SQLite data rendering, and active navigation.
+The automated suite contains **248 passing tests**, including **33 FastAPI web tests**. Day 87 coverage verifies directory-to-profile links, unauthenticated redirects, administrator access, viewer access, case-insensitive identifiers, missing-record handling, repository-failure handling, default-deny authorization, denied-access logging, back navigation, and exclusion of payroll-sensitive fields.
 
-Manual Day 86 verification confirmed that:
+Manual Day 87 verification confirmed that:
 
-- Real SQLite employee records appear at `/employees`
-- The employee count is correct
-- The Employees navigation item is active
-- The table remains contained and horizontally scrollable at narrow widths
-- Visible keyboard focus remains available
-- Logout removes access to the employee directory
-- Unauthenticated access redirects to `/login`
+- Employee names open the correct profile
+- Real SQLite employee details appear
+- Payroll-sensitive fields remain hidden
+- Back navigation returns to the employee directory
+- Profile cards stack at narrow widths
+- Missing employee IDs show a safe written error
+- Logout removes profile access
+- Unauthenticated profile requests redirect to `/login`
 
 SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while protected browser workflows continue to grow.
 

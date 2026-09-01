@@ -23,6 +23,7 @@ from authorization import (
 )
 from database import DATABASE_FILE
 from employee_repository import load_employee_records
+from employee_service import find_employee_by_id
 from user_service import authenticate_user_account
 from web_session import (
     begin_authenticated_session,
@@ -257,6 +258,92 @@ def create_web_application(
                 "active_page": "employees",
                 "current_user": current_user,
                 "employee_list": employee_list,
+                "error_message": None,
+            },
+        )
+
+    @application.get(
+        "/employees/{employee_id}",
+        response_class=HTMLResponse,
+    )
+    def employee_profile(
+        request: Request,
+        employee_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_EMPLOYEE,
+        ):
+            log_activity(
+                f"Web employee-profile access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        employee_list = load_employee_records(
+            database_file=database_file,
+        )
+
+        if employee_list is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_profile.html",
+                context={
+                    "page_title": "Employee profile",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": None,
+                    "error_message": (
+                        "Employee records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        employee = find_employee_by_id(
+            employee_list,
+            employee_id,
+        )
+
+        if employee is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_profile.html",
+                context={
+                    "page_title": "Employee not found",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": None,
+                    "error_message": (
+                        "The requested employee record "
+                        "was not found."
+                    ),
+                },
+                status_code=404,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="employee_profile.html",
+            context={
+                "page_title": employee["name"],
+                "active_page": "employees",
+                "current_user": current_user,
+                "employee": employee,
                 "error_message": None,
             },
         )
