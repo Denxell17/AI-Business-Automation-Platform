@@ -19,6 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from activity_logger import log_activity
 from authorization import (
     REGISTER_EMPLOYEE,
+    UPDATE_EMPLOYEE,
     VIEW_EMPLOYEE,
     VIEW_PAYROLL,
     user_has_permission,
@@ -29,7 +30,11 @@ from employee_repository import (
     load_employee_records,
     save_employee_records,
 )
-from employee_service import find_employee_by_id
+from employee_service import (
+    find_employee_by_id,
+    update_employee_contact_details,
+    update_employee_details,
+)
 from payroll import calculate_payroll
 from models import Employee
 from user_service import authenticate_user_account
@@ -607,6 +612,284 @@ def create_web_application(
         )
 
     @application.get(
+        "/employees/{employee_id}/edit",
+        response_class=HTMLResponse,
+    )
+    def employee_edit_form(
+        request: Request,
+        employee_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            UPDATE_EMPLOYEE,
+        ):
+            log_activity(
+                f"Web employee-update access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        employee_list = load_employee_records(
+            database_file=database_file,
+        )
+
+        if employee_list is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_edit.html",
+                context={
+                    "page_title": "Edit employee",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": None,
+                    "form_values": {},
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "error_message": (
+                        "Employee records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        employee = find_employee_by_id(
+            employee_list,
+            employee_id,
+        )
+
+        if employee is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_edit.html",
+                context={
+                    "page_title": "Employee not found",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": None,
+                    "form_values": {},
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "error_message": (
+                        "The requested employee record "
+                        "was not found."
+                    ),
+                },
+                status_code=404,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="employee_edit.html",
+            context={
+                "page_title": f"Edit {employee['name']}",
+                "active_page": "employees",
+                "current_user": current_user,
+                "employee": employee,
+                "form_values": {
+                    "department": employee["department"],
+                    "position": employee["position"],
+                    "email": employee["email"],
+                    "phone_number": employee["phone_number"],
+                },
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "error_message": None,
+            },
+        )
+
+    @application.post("/employees/{employee_id}/edit")
+    def employee_update(
+        request: Request,
+        employee_id: str,
+        csrf_token: Annotated[str, Form()],
+        department: Annotated[str, Form()],
+        position: Annotated[str, Form()],
+        email: Annotated[str, Form()],
+        phone_number: Annotated[str, Form()],
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            UPDATE_EMPLOYEE,
+        ):
+            log_activity(
+                f"Web employee-update access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"User {current_user['username']} submitted an "
+                "invalid employee-update CSRF token."
+            )
+            return Response(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        form_values = {
+            "department": department.strip(),
+            "position": position.strip(),
+            "email": email.strip(),
+            "phone_number": phone_number.strip(),
+        }
+
+        if not all(form_values.values()):
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_edit.html",
+                context={
+                    "page_title": "Edit employee",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": {
+                        "employee_id": employee_id.strip().upper(),
+                        "name": "Employee",
+                    },
+                    "form_values": form_values,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "error_message": (
+                        "Department, position, email, and phone "
+                        "number are required."
+                    ),
+                },
+                status_code=400,
+            )
+
+        employee_list = load_employee_records(
+            database_file=database_file,
+        )
+
+        if employee_list is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_edit.html",
+                context={
+                    "page_title": "Edit employee",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": None,
+                    "form_values": form_values,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "error_message": (
+                        "Employee records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        employee = find_employee_by_id(
+            employee_list,
+            employee_id,
+        )
+
+        if employee is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_edit.html",
+                context={
+                    "page_title": "Employee not found",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": None,
+                    "form_values": form_values,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "error_message": (
+                        "The requested employee record "
+                        "was not found."
+                    ),
+                },
+                status_code=404,
+            )
+
+        update_employee_details(
+            employee,
+            form_values["department"],
+            form_values["position"],
+        )
+
+        update_employee_contact_details(
+            employee,
+            form_values["email"],
+            form_values["phone_number"],
+        )
+
+        if not save_employee_records(
+            employee_list,
+            database_file=database_file,
+        ):
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_edit.html",
+                context={
+                    "page_title": f"Edit {employee['name']}",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "employee": employee,
+                    "form_values": form_values,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "error_message": (
+                        "Employee changes could not be saved. "
+                        "Please try again later."
+                    ),
+                },
+                status_code=500,
+            )
+
+        log_activity(
+            f"User {current_user['username']} updated "
+            f"employee {employee['employee_id']} through "
+            "the web application."
+        )
+
+        return RedirectResponse(
+            url=request.url_for(
+                "employee_profile",
+                employee_id=employee["employee_id"],
+            ),
+            status_code=303,
+        )
+
+    @application.get(
         "/employees/{employee_id}",
         response_class=HTMLResponse,
     )
@@ -688,6 +971,10 @@ def create_web_application(
                 "active_page": "employees",
                 "current_user": current_user,
                 "employee": employee,
+                "can_update_employee": user_has_permission(
+                    current_user,
+                    UPDATE_EMPLOYEE,
+                ),
                 "can_view_payroll": user_has_permission(
                     current_user,
                     VIEW_PAYROLL,

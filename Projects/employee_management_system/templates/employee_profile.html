@@ -58,8 +58,22 @@
         </p>
     </header>
 
-    {% if can_view_payroll %}
+    {% if can_update_employee or can_view_payroll %}
     <div class="profile-actions">
+        {% if can_update_employee %}
+        <a
+            class="edit-employee-link"
+            href="{{ url_for(
+                'employee_edit_form',
+                employee_id=employee['employee_id']
+            ) }}"
+        >
+            <span aria-hidden="true">✎</span>
+            Edit employee
+        </a>
+        {% endif %}
+
+        {% if can_view_payroll %}
         <a
             class="payroll-link"
             href="{{ url_for(
@@ -70,6 +84,7 @@
             <span aria-hidden="true">₱</span>
             View payroll
         </a>
+        {% endif %}
     </div>
     {% endif %}
 

@@ -115,6 +115,23 @@ def update_employee_details(
     return changes_made
 
 
+def update_employee_contact_details(
+    employee: Employee,
+    email: str,
+    phone_number: str,
+) -> bool:
+    email = email.strip()
+    phone_number = phone_number.strip()
+
+    if not email or not phone_number:
+        return False
+
+    employee["email"] = email
+    employee["phone_number"] = phone_number
+
+    return True
+
+
 def remove_employee(
     employee_list: list[Employee],
     employee: Employee,

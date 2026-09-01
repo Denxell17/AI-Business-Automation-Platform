@@ -120,6 +120,25 @@ class TestWebApplication(unittest.TestCase):
 
         return token_match.group(1)
 
+    def get_edit_csrf_token(
+        self,
+        employee_id: str,
+    ) -> str:
+        response = self.client.get(
+            f"/employees/{employee_id}/edit"
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        token_match = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"',
+            response.text,
+        )
+
+        self.assertIsNotNone(token_match)
+
+        return token_match.group(1)
+
     def employee_form_data(
         self,
         csrf_token: str,
@@ -707,7 +726,7 @@ class TestWebApplication(unittest.TestCase):
 
     @patch(
         "web_app.user_has_permission",
-        side_effect=[True, False],
+        side_effect=[True, False, False],
     )
     def test_employee_profile_hides_payroll_link_without_permission(
         self,
@@ -720,6 +739,7 @@ class TestWebApplication(unittest.TestCase):
         )
 
         self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Edit employee", response.text)
         self.assertNotIn("View payroll", response.text)
         self.assertNotIn(
             "/employees/EMP-WEB-001/payroll",
@@ -727,7 +747,7 @@ class TestWebApplication(unittest.TestCase):
         )
         self.assertEqual(
             mock_user_has_permission.call_count,
-            2,
+            3,
         )
 
     @patch(
@@ -1018,6 +1038,286 @@ class TestWebApplication(unittest.TestCase):
         self.assertEqual(response.status_code, 500)
         self.assertIn(
             "Employee could not be saved.",
+            response.text,
+        )
+        mock_save_employee_records.assert_called_once()
+
+    def test_employee_edit_form_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/employees/EMP-WEB-001/edit",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_employee_edit_form_prefills_existing_values(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/edit",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Edit employee", response.text)
+        self.assertIn("Update access authorized", response.text)
+        self.assertIn('value="Operations"', response.text)
+        self.assertIn(
+            'value="Automation Specialist"',
+            response.text,
+        )
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn(
+            'value="test.employee@example.com"',
+            response.text,
+        )
+        self.assertIn(
+            'value="+81-90-1234-5678"',
+            response.text,
+        )
+
+    def test_employee_profile_links_to_edit_form(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Edit employee", response.text)
+        self.assertIn(
+            'href="http://testserver/'
+            'employees/EMP-WEB-001/edit"',
+            response.text,
+        )
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_employee_edit_routes_deny_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        get_response = self.client.get(
+            "/employees/EMP-WEB-001/edit",
+        )
+
+        self.assertEqual(get_response.status_code, 403)
+        self.assertEqual(get_response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web employee-update access denied "
+            f"for user {self.username}."
+        )
+
+        mock_user_has_permission.reset_mock()
+        mock_log_activity.reset_mock()
+
+        post_response = self.client.post(
+            "/employees/EMP-WEB-001/edit",
+            data={
+                "csrf_token": "not-needed-after-denial",
+                "department": "Security",
+                "position": "Security Analyst",
+                "email": "security@example.com",
+                "phone_number": "+63-917-000-0000",
+            },
+        )
+
+        self.assertEqual(post_response.status_code, 403)
+        self.assertEqual(post_response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web employee-update access denied "
+            f"for user {self.username}."
+        )
+
+    def test_employee_update_changes_department_and_position(
+        self,
+    ):
+        self.sign_in()
+        csrf_token = self.get_edit_csrf_token(
+            "EMP-WEB-001"
+        )
+
+        response = self.client.post(
+            "/employees/EMP-WEB-001/edit",
+            data={
+                "csrf_token": csrf_token,
+                "department": "Product Engineering",
+                "position": "Senior Automation Engineer",
+                "email": "updated.employee@example.com",
+                "phone_number": "+63-917-111-2222",
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/employees/EMP-WEB-001",
+        )
+
+        profile_response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertIn(
+            "Product Engineering",
+            profile_response.text,
+        )
+        self.assertIn(
+            "Senior Automation Engineer",
+            profile_response.text,
+        )
+        self.assertIn(
+            "updated.employee@example.com",
+            profile_response.text,
+        )
+        self.assertIn(
+            "+63-917-111-2222",
+            profile_response.text,
+        )
+
+    def test_employee_update_rejects_blank_values(self):
+        self.sign_in()
+        csrf_token = self.get_edit_csrf_token(
+            "EMP-WEB-001"
+        )
+
+        response = self.client.post(
+            "/employees/EMP-WEB-001/edit",
+            data={
+                "csrf_token": csrf_token,
+                "department": "   ",
+                "position": "Automation Lead",
+                "email": "lead@example.com",
+                "phone_number": "+63-917-333-4444",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "Department, position, email, and phone "
+            "number are required.",
+            response.text,
+        )
+        self.assertIn(
+            'value="Automation Lead"',
+            response.text,
+        )
+
+    def test_employee_update_rejects_invalid_csrf_token(self):
+        self.sign_in()
+
+        response = self.client.post(
+            "/employees/EMP-WEB-001/edit",
+            data={
+                "csrf_token": "invalid-csrf-token",
+                "department": "Untrusted Department",
+                "position": "Untrusted Position",
+                "email": "untrusted@example.com",
+                "phone_number": "+63-917-555-6666",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.text,
+            "Your form could not be verified.",
+        )
+
+        profile_response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertNotIn(
+            "Untrusted Department",
+            profile_response.text,
+        )
+        self.assertNotIn(
+            "Untrusted Position",
+            profile_response.text,
+        )
+
+    def test_employee_edit_form_returns_not_found(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-MISSING/edit",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Employee not found", response.text)
+        self.assertIn(
+            "The requested employee record was not found.",
+            response.text,
+        )
+        self.assertNotIn("Save changes", response.text)
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=None,
+    )
+    def test_employee_edit_form_handles_loading_failure(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/edit",
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee records could not be loaded.",
+            response.text,
+        )
+        self.assertNotIn("Save changes", response.text)
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
+    @patch(
+        "web_app.save_employee_records",
+        return_value=False,
+    )
+    def test_employee_update_handles_saving_failure(
+        self,
+        mock_save_employee_records,
+    ):
+        self.sign_in()
+        csrf_token = self.get_edit_csrf_token(
+            "EMP-WEB-001"
+        )
+
+        response = self.client.post(
+            "/employees/EMP-WEB-001/edit",
+            data={
+                "csrf_token": csrf_token,
+                "department": "Temporary Department",
+                "position": "Temporary Position",
+                "email": "temporary@example.com",
+                "phone_number": "+63-917-777-8888",
+            },
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee changes could not be saved.",
             response.text,
         )
         mock_save_employee_records.assert_called_once()

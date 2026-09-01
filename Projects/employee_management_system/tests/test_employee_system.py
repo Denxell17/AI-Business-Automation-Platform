@@ -8,6 +8,7 @@ from employee_service import (
     search_employees_by_name,
     sort_employees_by_name,
     sort_employees_by_salary,
+    update_employee_contact_details,
     update_employee_details,
 )
 from payroll import (
@@ -460,6 +461,52 @@ class TestEmployeeUpdate(unittest.TestCase):
         self.assertEqual(
             employee["position"],
             "Assistant",
+        )
+
+    def test_update_email_and_phone_number(self):
+        employee = {
+            "employee_id": "EMP001",
+            "email": "old@example.com",
+            "phone_number": "111111",
+        }
+
+        changes_made = update_employee_contact_details(
+            employee,
+            "new@example.com",
+            "222222",
+        )
+
+        self.assertTrue(changes_made)
+        self.assertEqual(
+            employee["email"],
+            "new@example.com",
+        )
+        self.assertEqual(
+            employee["phone_number"],
+            "222222",
+        )
+
+    def test_blank_contact_values_keep_current_details(self):
+        employee = {
+            "employee_id": "EMP001",
+            "email": "old@example.com",
+            "phone_number": "111111",
+        }
+
+        changes_made = update_employee_contact_details(
+            employee,
+            "   ",
+            "",
+        )
+
+        self.assertFalse(changes_made)
+        self.assertEqual(
+            employee["email"],
+            "old@example.com",
+        )
+        self.assertEqual(
+            employee["phone_number"],
+            "111111",
         )
 
 
