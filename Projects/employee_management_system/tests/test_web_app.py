@@ -597,6 +597,169 @@ class TestWebApplication(unittest.TestCase):
             f"for user {self.username}."
         )
 
+    def test_employee_profile_links_to_payroll(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            'href="http://testserver/'
+            'employees/EMP-WEB-001/payroll"',
+            response.text,
+        )
+        self.assertIn("View payroll", response.text)
+
+    def test_employee_payroll_redirects_unauthenticated_user(self):
+        response = self.client.get(
+            "/employees/EMP-WEB-001/payroll",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_administrator_can_view_employee_payroll(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/payroll",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("EMP-WEB-001", response.text)
+        self.assertIn("Monthly payroll", response.text)
+        self.assertIn("Annual compensation", response.text)
+        self.assertIn("Performance basis", response.text)
+        self.assertIn("₱85,000.00", response.text)
+        self.assertIn("₱88,750.00", response.text)
+        self.assertIn("₱1,105,000.00", response.text)
+        self.assertIn("Needs Improvement", response.text)
+        self.assertIn(
+            "Payroll access authorized",
+            response.text,
+        )
+        self.assertIn(
+            "Back to employee profile",
+            response.text,
+        )
+
+    def test_viewer_can_view_employee_payroll(self):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/payroll",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("₱85,000.00", response.text)
+        self.assertIn("WebViewer", response.text)
+        self.assertIn("Viewer", response.text)
+
+    @patch(
+        "web_app.user_has_permission",
+        side_effect=[True, False],
+    )
+    def test_employee_profile_hides_payroll_link_without_permission(
+        self,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("View payroll", response.text)
+        self.assertNotIn(
+            "/employees/EMP-WEB-001/payroll",
+            response.text,
+        )
+        self.assertEqual(
+            mock_user_has_permission.call_count,
+            2,
+        )
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_employee_payroll_denies_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/payroll",
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        self.assertNotIn("₱", response.text)
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web payroll access denied "
+            f"for user {self.username}."
+        )
+
+    def test_employee_payroll_returns_not_found(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-MISSING/payroll",
+        )
+
+        self.assertEqual(response.status_code, 404)
+        self.assertIn("Employee not found", response.text)
+        self.assertIn(
+            "The requested employee record was not found.",
+            response.text,
+        )
+        self.assertNotIn("₱", response.text)
+        self.assertIn(
+            "Back to employee directory",
+            response.text,
+        )
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=None,
+    )
+    def test_employee_payroll_handles_loading_failure(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/payroll",
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee records could not be loaded.",
+            response.text,
+        )
+        self.assertNotIn("₱", response.text)
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
     def test_static_stylesheet_is_available(self):
         response = self.client.get("/static/styles.css")
 

@@ -381,43 +381,52 @@ The FastAPI interface now provides:
 - POST-only browser logout at `/logout`
 - A protected employee directory at `/employees`
 - Protected employee profiles at `/employees/{employee_id}`
+- Protected payroll pages at `/employees/{employee_id}/payroll`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and `SameSite=Lax`
 - Live SQLite account revalidation before protected access
 - Complete authenticated-session termination during logout
 - Repository-backed employee loading
-- Existing `VIEW_EMPLOYEE` permission enforcement
-- Administrator and viewer employee-directory and profile access
+- Separate `VIEW_EMPLOYEE` and `VIEW_PAYROLL` permission enforcement
+- Administrator and viewer access according to their assigned permissions
 - Default-deny responses and activity logging for missing permissions
+- Permission checks before payroll data loading and calculation
 - Safe employee-loading failure handling
 - Safe missing-employee `404` pages
-- Case-insensitive employee-ID profile lookup
-- Generated employee-profile links
-- Back-to-directory navigation
-- Semantic employee tables and profile description lists
+- Case-insensitive employee-ID lookup
+- Generated employee-profile and payroll links
+- Permission-aware payroll-link visibility
+- Back-to-directory and back-to-profile navigation
+- Semantic employee tables, profile description lists, and payroll summaries
 - Accessible error and empty states
-- Responsive employee tables and profile cards
-- Separation of employee-view and payroll-sensitive information
+- Responsive employee tables, profile cards, and payroll cards
+- Peso currency formatting with two decimal places
+- Reuse of the existing payroll calculation service
+- Separation of general employee information from payroll-sensitive information
 - Active authenticated navigation
 - The accessible Warm Charcoal visual system, visible focus, reduced-motion support, and written status labels
 
-Day 84 established browser login and authenticated sessions. Day 85 completed explicit logout and authenticated-session termination. Day 86 introduced the protected read-only employee directory. Day 87 added protected individual employee profiles.
+Day 84 established browser login and authenticated sessions. Day 85 completed explicit logout and authenticated-session termination. Day 86 introduced the protected read-only employee directory. Day 87 added protected individual employee profiles. Day 88 added protected employee payroll pages.
 
-Employee profiles reload the current account, require `VIEW_EMPLOYEE`, load current SQLite records through `load_employee_records()`, and use `find_employee_by_id()` for normalized lookup. Lowercase and uppercase employee IDs locate the same record. Missing IDs return HTTP status `404`, repository failures return HTTP status `500`, and missing permissions return HTTP status `403` with denied-access activity logging.
+Employee payroll pages reload the current account, require `VIEW_PAYROLL`, and check authorization before employee records are loaded or payroll values are calculated. Missing permissions return HTTP status `403` with denied-access activity logging. Missing employees return HTTP status `404`, while repository failures return HTTP status `500` without exposing financial information.
 
-The employee profile displays the employee ID, name, written status, department, position, company, country, years of experience, email, and phone number. Salary, payroll calculations, and performance score are deliberately excluded because general employee viewing and payroll viewing use separate permissions.
+Authorized payroll pages reuse `calculate_payroll()` as the single calculation source. They display monthly income, estimated tax, net monthly income, annual salary, thirteenth-month pay, performance rating, bonus rate, estimated bonus, and total compensation. Peso amounts use comma separators and two decimal places.
 
-The automated suite contains **248 passing tests**, including **33 FastAPI web tests**. Day 87 coverage verifies directory-to-profile links, unauthenticated redirects, administrator access, viewer access, case-insensitive identifiers, missing-record handling, repository-failure handling, default-deny authorization, denied-access logging, back navigation, and exclusion of payroll-sensitive fields.
+The payroll link appears on an employee profile only when the authenticated account has `VIEW_PAYROLL`. This improves the interface, but the payroll route still performs its own permission check because hiding a link is not a security boundary.
 
-Manual Day 87 verification confirmed that:
+The automated suite contains **256 passing tests**, including **41 FastAPI web tests**. Day 88 coverage verifies authorized payroll links, unauthenticated redirects, administrator and viewer access, calculated payroll values, currency formatting, hidden links without permission, direct permission denial, denied-access logging, missing employees, repository failures, and exclusion of financial values from denied and error responses.
 
-- Employee names open the correct profile
-- Real SQLite employee details appear
-- Payroll-sensitive fields remain hidden
-- Back navigation returns to the employee directory
-- Profile cards stack at narrow widths
-- Missing employee IDs show a safe written error
-- Logout removes profile access
-- Unauthenticated profile requests redirect to `/login`
+Manual Day 88 verification confirmed that:
+
+- Authorized employee profiles display the View payroll action
+- Real SQLite payroll values appear
+- Peso amounts use commas and two decimal places
+- Monthly and annual calculations render correctly
+- Performance ratings and bonus rates appear
+- Back navigation returns to the employee profile
+- Payroll layouts remain usable at narrow widths
+- Missing employee IDs show a safe error without financial values
+- Logout removes payroll access
+- Unauthenticated payroll requests redirect to `/login`
 
 SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while protected browser workflows continue to grow.
 

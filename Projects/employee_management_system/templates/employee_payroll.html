@@ -1,0 +1,216 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="payroll-section"
+    aria-labelledby="employee-payroll-heading"
+>
+    {% if employee %}
+    <a
+        class="back-link"
+        href="{{ url_for(
+            'employee_profile',
+            employee_id=employee['employee_id']
+        ) }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to employee profile
+    </a>
+    {% else %}
+    <a
+        class="back-link"
+        href="{{ url_for('employee_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to employee directory
+    </a>
+    {% endif %}
+
+    {% if error_message %}
+    <div class="profile-error" role="alert">
+        <span
+            class="profile-error-icon"
+            aria-hidden="true"
+        >!</span>
+
+        <div>
+            <h1
+                id="employee-payroll-heading"
+                class="profile-error-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            <p>{{ error_message }}</p>
+        </div>
+    </div>
+    {% else %}
+    <header class="payroll-header">
+        <div>
+            <p class="section-eyebrow">Payroll information</p>
+
+            <h1
+                id="employee-payroll-heading"
+                class="section-title"
+            >
+                {{ employee["name"] }}
+            </h1>
+
+            <p class="profile-identifier">
+                Employee ID:
+                <strong>{{ employee["employee_id"] }}</strong>
+            </p>
+        </div>
+
+        <p class="payroll-access-status">
+            <span aria-hidden="true">✓</span>
+            Payroll access authorized
+        </p>
+    </header>
+
+    <div class="payroll-grid">
+        <section
+            class="payroll-card"
+            aria-labelledby="monthly-payroll-heading"
+        >
+            <h2 id="monthly-payroll-heading">
+                Monthly payroll
+            </h2>
+
+            <dl class="payroll-details">
+                <div>
+                    <dt>Base salary</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            employee["salary"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Allowance</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["allowance"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Overtime</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["overtime"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Monthly income</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["monthly_income"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Estimated monthly tax</dt>
+                    <dd>
+                        −₱{{ "{:,.2f}".format(
+                            payroll["monthly_tax"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div class="payroll-total-row">
+                    <dt>Net monthly income</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["net_monthly_income"]
+                        ) }}
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <section
+            class="payroll-card"
+            aria-labelledby="annual-payroll-heading"
+        >
+            <h2 id="annual-payroll-heading">
+                Annual compensation
+            </h2>
+
+            <dl class="payroll-details">
+                <div>
+                    <dt>Annual salary</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["annual_salary"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Thirteenth-month pay</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["thirteenth_month_pay"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div>
+                    <dt>Estimated bonus</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["estimated_bonus"]
+                        ) }}
+                    </dd>
+                </div>
+
+                <div class="payroll-total-row">
+                    <dt>Total compensation</dt>
+                    <dd>
+                        ₱{{ "{:,.2f}".format(
+                            payroll["total_compensation"]
+                        ) }}
+                    </dd>
+                </div>
+            </dl>
+        </section>
+
+        <section
+            class="payroll-card payroll-performance-card"
+            aria-labelledby="performance-payroll-heading"
+        >
+            <h2 id="performance-payroll-heading">
+                Performance basis
+            </h2>
+
+            <dl class="payroll-details">
+                <div>
+                    <dt>Performance rating</dt>
+                    <dd>{{ payroll["performance_rating"] }}</dd>
+                </div>
+
+                <div>
+                    <dt>Bonus rate</dt>
+                    <dd>
+                        {{ "{:.0%}".format(
+                            payroll["bonus_rate"]
+                        ) }}
+                    </dd>
+                </div>
+            </dl>
+
+            <p class="payroll-note">
+                Values are estimates calculated from the stored
+                employee record and configured payroll defaults.
+            </p>
+        </section>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

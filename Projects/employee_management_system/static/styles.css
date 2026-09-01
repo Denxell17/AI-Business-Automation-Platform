@@ -971,3 +971,146 @@ a {
         gap: 0.25rem;
     }
 }
+
+.profile-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin: -0.75rem 0 1.5rem;
+}
+
+.payroll-link {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.65rem 1rem;
+    background: var(--color-primary);
+    color: #102423;
+    border: 1px solid var(--color-primary);
+    border-radius: 0.55rem;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.payroll-link:hover {
+    background: var(--color-primary-strong);
+    border-color: var(--color-primary-strong);
+}
+
+.payroll-section {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+}
+
+.payroll-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.payroll-access-status {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0.65rem 0.9rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    border: 1px solid #286c68;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.payroll-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(min(100%, 24rem), 1fr));
+    gap: 1rem;
+}
+
+.payroll-card {
+    padding: 1.25rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+}
+
+.payroll-card h2 {
+    margin: 0 0 1rem;
+    font-size: 1.125rem;
+}
+
+.payroll-performance-card {
+    grid-column: 1 / -1;
+}
+
+.payroll-details {
+    margin: 0;
+}
+
+.payroll-details div {
+    display: grid;
+    grid-template-columns: minmax(10rem, 1fr) auto;
+    gap: 1rem;
+    padding: 0.8rem 0;
+    border-top: 1px solid var(--color-border);
+}
+
+.payroll-details dt {
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.payroll-details dd {
+    margin: 0;
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+    overflow-wrap: anywhere;
+}
+
+.payroll-total-row {
+    color: var(--color-primary);
+    font-weight: 900;
+}
+
+.payroll-note {
+    margin: 1rem 0 0;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+}
+
+@media (max-width: 640px) {
+    .profile-actions {
+        justify-content: stretch;
+    }
+
+    .payroll-link {
+        width: 100%;
+    }
+
+    .payroll-header {
+        flex-direction: column;
+    }
+
+    .payroll-access-status {
+        align-self: flex-start;
+    }
+
+    .payroll-details div {
+        grid-template-columns: 1fr;
+        gap: 0.25rem;
+    }
+
+    .payroll-details dd {
+        text-align: left;
+    }
+}
