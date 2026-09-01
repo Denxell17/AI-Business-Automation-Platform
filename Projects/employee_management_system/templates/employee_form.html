@@ -1,0 +1,272 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section"
+    aria-labelledby="employee-form-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('employee_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to employee directory
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Employee management</p>
+
+            <h1
+                id="employee-form-heading"
+                class="section-title"
+            >
+                Add employee
+            </h1>
+
+            <p class="page-message">
+                Create a new employee record in the SQLite database.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            Registration access authorized
+        </span>
+    </div>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="/employees/new"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="identity-heading"
+        >
+            <h2 id="identity-heading">Identity</h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="employee_id">Employee ID</label>
+                    <input
+                        id="employee_id"
+                        name="employee_id"
+                        type="text"
+                        value="{{ form_values.get('employee_id', '') }}"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="name">Full name</label>
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        value="{{ form_values.get('name', '') }}"
+                        autocomplete="name"
+                        required
+                    >
+                </div>
+            </div>
+        </section>
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="employment-heading"
+        >
+            <h2 id="employment-heading">Employment details</h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="department">Department</label>
+                    <input
+                        id="department"
+                        name="department"
+                        type="text"
+                        value="{{ form_values.get('department', '') }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="position">Position</label>
+                    <input
+                        id="position"
+                        name="position"
+                        type="text"
+                        value="{{ form_values.get('position', '') }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="company">Company</label>
+                    <input
+                        id="company"
+                        name="company"
+                        type="text"
+                        value="{{ form_values.get('company', '') }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="country">Country</label>
+                    <input
+                        id="country"
+                        name="country"
+                        type="text"
+                        value="{{ form_values.get('country', '') }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="employment_status">
+                        Employment status
+                    </label>
+                    <input
+                        id="employment_status"
+                        name="employment_status"
+                        type="text"
+                        value="{{ form_values.get(
+                            'employment_status',
+                            ''
+                        ) }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="years_of_experience">
+                        Years of experience
+                    </label>
+                    <input
+                        id="years_of_experience"
+                        name="years_of_experience"
+                        type="number"
+                        min="0"
+                        max="60"
+                        step="1"
+                        value="{{ form_values.get(
+                            'years_of_experience',
+                            ''
+                        ) }}"
+                        required
+                    >
+                </div>
+            </div>
+        </section>
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="contact-heading"
+        >
+            <h2 id="contact-heading">Contact details</h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="email">Email</label>
+                    <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        value="{{ form_values.get('email', '') }}"
+                        autocomplete="email"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="phone_number">Phone number</label>
+                    <input
+                        id="phone_number"
+                        name="phone_number"
+                        type="tel"
+                        value="{{ form_values.get(
+                            'phone_number',
+                            ''
+                        ) }}"
+                        autocomplete="tel"
+                        required
+                    >
+                </div>
+            </div>
+        </section>
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="payroll-basis-heading"
+        >
+            <h2 id="payroll-basis-heading">Payroll basis</h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="salary">Monthly salary</label>
+                    <input
+                        id="salary"
+                        name="salary"
+                        type="number"
+                        min="1"
+                        step="1"
+                        value="{{ form_values.get('salary', '') }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="performance_score">
+                        Performance score
+                    </label>
+                    <input
+                        id="performance_score"
+                        name="performance_score"
+                        type="number"
+                        min="0"
+                        max="100"
+                        step="1"
+                        value="{{ form_values.get(
+                            'performance_score',
+                            ''
+                        ) }}"
+                        required
+                    >
+                </div>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for('employee_directory') }}"
+            >
+                Cancel
+            </a>
+
+            <button class="employee-submit-button" type="submit">
+                <span aria-hidden="true">+</span>
+                Create employee
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

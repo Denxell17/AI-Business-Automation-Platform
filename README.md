@@ -93,6 +93,15 @@ The current Employee Management System can:
   viewer access, return safe missing-record and loading-failure
   pages, link from the employee directory, and exclude payroll-
   sensitive fields from the general employee-view permission
+- Provide protected employee payroll pages that require the separate
+  `VIEW_PAYROLL` permission, reuse the existing payroll calculation
+  service, return safe missing-record and loading-failure pages, and
+  keep financial information separate from general employee profiles
+- Provide an administrator-only browser employee-creation workflow
+  with `REGISTER_EMPLOYEE` permission checks, signed-session CSRF
+  protection, server-side validation, normalized duplicate-ID
+  rejection, repository-backed SQLite saving, activity logging, safe
+  failure handling, and redirect-to-profile confirmation
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -135,6 +144,8 @@ AI-Business-Automation-Platform/
 │       ├── templates/
 │       │   ├── application_base.html
 │       │   ├── base.html
+│       │   ├── employee_form.html
+│       │   ├── employee_payroll.html
 │       │   ├── employee_profile.html
 │       │   ├── employees.html
 │       │   ├── home.html
@@ -353,6 +364,13 @@ python Projects\employee_management_system\run_tests.py
   repository-failure handling, semantic description lists, responsive
   detail cards, generated record links, back navigation, long-value
   wrapping, payroll-field separation, and profile boundary testing
+- Protected FastAPI form workflows, GET-and-POST route separation,
+  `Annotated` form fields, signed-session CSRF tokens, constant-time
+  token comparison, server-side form normalization and validation,
+  duplicate-record prevention, repository-backed SQLite saves,
+  POST-redirect-GET navigation, form-value preservation, written
+  validation errors, permission-aware actions, responsive form grids,
+  and creation-workflow boundary testing
 
 ## Project Roadmap
 
@@ -382,52 +400,53 @@ The FastAPI interface now provides:
 - A protected employee directory at `/employees`
 - Protected employee profiles at `/employees/{employee_id}`
 - Protected payroll pages at `/employees/{employee_id}/payroll`
+- An administrator-only Add employee page and submission route at `/employees/new`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and `SameSite=Lax`
+- Signed-session CSRF protection for employee creation
 - Live SQLite account revalidation before protected access
 - Complete authenticated-session termination during logout
-- Repository-backed employee loading
-- Separate `VIEW_EMPLOYEE` and `VIEW_PAYROLL` permission enforcement
-- Administrator and viewer access according to their assigned permissions
+- Repository-backed employee loading and saving
+- Separate `VIEW_EMPLOYEE`, `VIEW_PAYROLL`, and `REGISTER_EMPLOYEE` permission enforcement
+- Permission-aware Add employee and View payroll actions
 - Default-deny responses and activity logging for missing permissions
-- Permission checks before payroll data loading and calculation
-- Safe employee-loading failure handling
+- Permission checks before employee loading, saving, or payroll calculation
+- Server-side employee-form validation and normalized employee IDs
+- Duplicate employee-ID protection
+- Safe employee-loading and saving failure handling
 - Safe missing-employee `404` pages
 - Case-insensitive employee-ID lookup
 - Generated employee-profile and payroll links
-- Permission-aware payroll-link visibility
-- Back-to-directory and back-to-profile navigation
-- Semantic employee tables, profile description lists, and payroll summaries
+- POST-redirect-GET navigation after employee creation
+- Semantic employee tables, profile description lists, payroll summaries, and labelled forms
 - Accessible error and empty states
-- Responsive employee tables, profile cards, and payroll cards
+- Responsive employee tables, profile cards, payroll cards, and form layouts
 - Peso currency formatting with two decimal places
 - Reuse of the existing payroll calculation service
 - Separation of general employee information from payroll-sensitive information
 - Active authenticated navigation
 - The accessible Warm Charcoal visual system, visible focus, reduced-motion support, and written status labels
 
-Day 84 established browser login and authenticated sessions. Day 85 completed explicit logout and authenticated-session termination. Day 86 introduced the protected read-only employee directory. Day 87 added protected individual employee profiles. Day 88 added protected employee payroll pages.
+Day 84 established browser login and authenticated sessions. Day 85 completed explicit logout and authenticated-session termination. Day 86 introduced the protected read-only employee directory. Day 87 added protected individual employee profiles. Day 88 added protected employee payroll pages. Day 89 added protected browser employee creation.
 
-Employee payroll pages reload the current account, require `VIEW_PAYROLL`, and check authorization before employee records are loaded or payroll values are calculated. Missing permissions return HTTP status `403` with denied-access activity logging. Missing employees return HTTP status `404`, while repository failures return HTTP status `500` without exposing financial information.
+Employee creation requires an authenticated user with `REGISTER_EMPLOYEE`. The form page and submission route reload the current account and reject missing permission with HTTP `403`. A session-bound CSRF token protects every form submission before employee records are loaded or saved.
 
-Authorized payroll pages reuse `calculate_payroll()` as the single calculation source. They display monthly income, estimated tax, net monthly income, annual salary, thirteenth-month pay, performance rating, bonus rate, estimated bonus, and total compensation. Peso amounts use comma separators and two decimal places.
+The creation route normalizes submitted employee IDs, converts numeric fields safely, reuses shared employee-record validation, enforces the existing experience and performance-score limits, rejects duplicates, and saves through `save_employee_records()`. Successful submissions are logged and redirect with HTTP `303` to the new employee profile. Validation errors preserve entered non-sensitive values, while loading and saving failures return safe written HTTP `500` responses.
 
-The payroll link appears on an employee profile only when the authenticated account has `VIEW_PAYROLL`. This improves the interface, but the payroll route still performs its own permission check because hiding a link is not a security boundary.
+Employee payroll pages reload the current account, require `VIEW_PAYROLL`, and check authorization before employee records are loaded or payroll values are calculated. Missing permissions return HTTP `403` with denied-access activity logging. Missing employees return HTTP `404`, while repository failures return HTTP `500` without exposing financial information.
 
-The automated suite contains **256 passing tests**, including **41 FastAPI web tests**. Day 88 coverage verifies authorized payroll links, unauthenticated redirects, administrator and viewer access, calculated payroll values, currency formatting, hidden links without permission, direct permission denial, denied-access logging, missing employees, repository failures, and exclusion of financial values from denied and error responses.
+The automated suite contains **266 passing tests**, including **51 FastAPI web tests**. Day 89 coverage verifies authenticated form access, administrator-only action visibility, direct permission denial, CSRF protection, successful employee creation, redirect-to-profile behavior, validation failures, duplicate IDs, and repository failure handling.
 
-Manual Day 88 verification confirmed that:
+Manual Day 89 verification confirmed that:
 
-- Authorized employee profiles display the View payroll action
-- Real SQLite payroll values appear
-- Peso amounts use commas and two decimal places
-- Monthly and annual calculations render correctly
-- Performance ratings and bonus rates appear
-- Back navigation returns to the employee profile
-- Payroll layouts remain usable at narrow widths
-- Missing employee IDs show a safe error without financial values
-- Logout removes payroll access
-- Unauthenticated payroll requests redirect to `/login`
+- Administrators see Add employee in the employee directory
+- The Add employee form works on desktop and narrow screens
+- A new employee is saved to SQLite successfully
+- The new employee profile opens after creation
+- The employee appears in the directory
+- Viewers can view employee records
+- Viewers do not see Add employee
 
-SQLite remains the live source of truth. Legacy JSON utilities remain available for migration, verification, and historical compatibility. The console application remains operational while protected browser workflows continue to grow.
+SQLite remains the live source of truth. Legacy JSON utilities remain availabl
+for migration, verification, and historical compatibility. The console application remains operational while protected browser workflows continue to grow.
 
 The permanent development plan is stored in `Notes/master_roadmap.md`. Day 100 remains the original Employee Management System milestone, while Day 155 is the target for the full ABAP portfolio MVP.
