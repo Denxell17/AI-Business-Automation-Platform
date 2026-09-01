@@ -139,6 +139,25 @@ class TestWebApplication(unittest.TestCase):
 
         return token_match.group(1)
 
+    def get_delete_csrf_token(
+        self,
+        employee_id: str,
+    ) -> str:
+        response = self.client.get(
+            f"/employees/{employee_id}/delete"
+        )
+
+        self.assertEqual(response.status_code, 200)
+
+        token_match = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"',
+            response.text,
+        )
+
+        self.assertIsNotNone(token_match)
+
+        return token_match.group(1)
+
     def employee_form_data(
         self,
         csrf_token: str,
@@ -427,6 +446,214 @@ class TestWebApplication(unittest.TestCase):
         self.assertIn("Automation Specialist", response.text)
         self.assertIn("Active", response.text)
         self.assertIn("<table", response.text)
+
+    def test_employee_directory_displays_filter_form(self):
+        self.sign_in()
+
+        response = self.client.get("/employees")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            'method="get"',
+            response.text,
+        )
+        self.assertIn(
+            'action="http://testserver/employees"',
+            response.text,
+        )
+        self.assertIn('name="search_text"', response.text)
+        self.assertIn('name="department"', response.text)
+        self.assertIn('name="minimum_salary"', response.text)
+        self.assertIn('name="maximum_salary"', response.text)
+        self.assertIn("Apply filters", response.text)
+
+    def test_employee_directory_searches_by_name(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "search_text": "employee",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn(
+            'value="employee"',
+            response.text,
+        )
+        self.assertIn("Clear filters", response.text)
+
+    def test_employee_directory_filters_by_department(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "department": "operations",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn(
+            'value="operations"',
+            response.text,
+        )
+        self.assertIn("Clear filters", response.text)
+
+    def test_employee_directory_filters_by_salary_range(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "minimum_salary": "80000",
+                "maximum_salary": "90000",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn('value="80000"', response.text)
+        self.assertIn('value="90000"', response.text)
+        self.assertIn("Clear filters", response.text)
+
+    def test_employee_directory_combines_filters(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "search_text": "test",
+                "department": "Operations",
+                "minimum_salary": "80000",
+                "maximum_salary": "90000",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("Clear filters", response.text)
+
+    def test_employee_directory_shows_no_match_state(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "search_text": "not-a-real-employee",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "No matching employees found",
+            response.text,
+        )
+        self.assertIn(
+            "Try changing or clearing the current filters.",
+            response.text,
+        )
+        self.assertNotIn("Test Employee", response.text)
+
+    def test_employee_directory_rejects_incomplete_salary_range(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "minimum_salary": "80000",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "Enter both minimum and maximum salary values.",
+            response.text,
+        )
+        self.assertIn("Test Employee", response.text)
+        self.assertIn('value="80000"', response.text)
+
+    def test_employee_directory_rejects_non_integer_salary(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "minimum_salary": "eighty thousand",
+                "maximum_salary": "90000",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "Salary values must be whole numbers.",
+            response.text,
+        )
+        self.assertIn("Test Employee", response.text)
+
+    def test_employee_directory_rejects_negative_salary(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "minimum_salary": "-1",
+                "maximum_salary": "90000",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "Salary values cannot be negative.",
+            response.text,
+        )
+        self.assertIn("Test Employee", response.text)
+
+    def test_employee_directory_rejects_reversed_salary_range(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "minimum_salary": "90000",
+                "maximum_salary": "80000",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "Minimum salary cannot exceed maximum salary.",
+            response.text,
+        )
+        self.assertIn("Test Employee", response.text)
+
+    def test_viewer_can_filter_employee_directory(self):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "search_text": "Test",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("Clear filters", response.text)
 
     def test_viewer_can_view_employee_directory(self):
         self.sign_in(
@@ -726,7 +953,7 @@ class TestWebApplication(unittest.TestCase):
 
     @patch(
         "web_app.user_has_permission",
-        side_effect=[True, False, False],
+        side_effect=[True, False, False, False],
     )
     def test_employee_profile_hides_payroll_link_without_permission(
         self,
@@ -740,6 +967,7 @@ class TestWebApplication(unittest.TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertNotIn("Edit employee", response.text)
+        self.assertNotIn("Delete employee", response.text)
         self.assertNotIn("View payroll", response.text)
         self.assertNotIn(
             "/employees/EMP-WEB-001/payroll",
@@ -747,7 +975,7 @@ class TestWebApplication(unittest.TestCase):
         )
         self.assertEqual(
             mock_user_has_permission.call_count,
-            3,
+            4,
         )
 
     @patch(
@@ -1041,6 +1269,319 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
         mock_save_employee_records.assert_called_once()
+
+    def test_employee_delete_form_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/employees/EMP-WEB-001/delete",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_employee_delete_form_shows_confirmation(self):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/delete",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Delete employee", response.text)
+        self.assertIn("Delete access authorized", response.text)
+        self.assertIn("Test Employee", response.text)
+        self.assertIn("EMP-WEB-001", response.text)
+        self.assertIn(
+            "This permanently deletes the employee record",
+            response.text,
+        )
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn(
+            'action="/employees/EMP-WEB-001/delete"',
+            response.text,
+        )
+        self.assertIn("Cancel", response.text)
+        self.assertIn(
+            "Permanently delete employee",
+            response.text,
+        )
+
+    def test_employee_profile_links_to_delete_confirmation(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Delete employee", response.text)
+        self.assertIn(
+            'href="http://testserver/'
+            'employees/EMP-WEB-001/delete"',
+            response.text,
+        )
+
+    def test_viewer_profile_hides_delete_action(self):
+        self.sign_in(
+            self.viewer_username,
+            self.viewer_password,
+        )
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Delete employee", response.text)
+        self.assertNotIn(
+            "/employees/EMP-WEB-001/delete",
+            response.text,
+        )
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_employee_delete_routes_deny_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        get_response = self.client.get(
+            "/employees/EMP-WEB-001/delete",
+        )
+
+        self.assertEqual(get_response.status_code, 403)
+        self.assertEqual(get_response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web employee-deletion access denied "
+            f"for user {self.username}."
+        )
+
+        mock_user_has_permission.reset_mock()
+        mock_log_activity.reset_mock()
+
+        post_response = self.client.post(
+            "/employees/EMP-WEB-001/delete",
+            data={
+                "csrf_token": "not-needed-after-denial",
+            },
+        )
+
+        self.assertEqual(post_response.status_code, 403)
+        self.assertEqual(post_response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web employee-deletion access denied "
+            f"for user {self.username}."
+        )
+
+    @patch("web_app.log_activity")
+    def test_employee_delete_rejects_invalid_csrf_token(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/employees/EMP-WEB-001/delete",
+            data={
+                "csrf_token": "invalid-csrf-token",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.text,
+            "Your form could not be verified.",
+        )
+        mock_log_activity.assert_called_once_with(
+            f"User {self.username} submitted an "
+            "invalid employee-deletion CSRF token."
+        )
+
+        profile_response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertIn("Test Employee", profile_response.text)
+
+    @patch("web_app.log_activity")
+    def test_employee_delete_removes_sqlite_record(
+        self,
+        mock_log_activity,
+    ):
+        employee_id = "EMP-WEB-DELETE"
+
+        employee_inserted = insert_employee(
+            {
+                "employee_id": employee_id,
+                "name": "Delete Test Employee",
+                "department": "Quality Assurance",
+                "position": "Test Specialist",
+                "country": "Philippines",
+                "salary": 64000,
+                "email": "delete.test@example.com",
+                "phone_number": "+63-917-999-0000",
+                "years_of_experience": 3,
+                "company": "ABAP",
+                "employment_status": "Active",
+                "performance_score": 88,
+            },
+            self.database_file,
+        )
+        self.assertTrue(employee_inserted)
+
+        self.sign_in()
+        csrf_token = self.get_delete_csrf_token(employee_id)
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            f"/employees/{employee_id}/delete",
+            data={
+                "csrf_token": csrf_token,
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/employees",
+        )
+        mock_log_activity.assert_called_once_with(
+            f"User {self.username} deleted "
+            f"employee {employee_id} through "
+            "the web application."
+        )
+
+        profile_response = self.client.get(
+            f"/employees/{employee_id}",
+        )
+
+        self.assertEqual(profile_response.status_code, 404)
+        self.assertIn(
+            "The requested employee record was not found.",
+            profile_response.text,
+        )
+
+    def test_employee_delete_routes_return_not_found(self):
+        self.sign_in()
+
+        get_response = self.client.get(
+            "/employees/EMP-MISSING/delete",
+        )
+
+        self.assertEqual(get_response.status_code, 404)
+        self.assertIn("Employee not found", get_response.text)
+        self.assertIn(
+            "The requested employee record was not found.",
+            get_response.text,
+        )
+        self.assertNotIn(
+            "Permanently delete employee",
+            get_response.text,
+        )
+
+        csrf_token = self.get_delete_csrf_token(
+            "EMP-WEB-001"
+        )
+
+        post_response = self.client.post(
+            "/employees/EMP-MISSING/delete",
+            data={
+                "csrf_token": csrf_token,
+            },
+        )
+
+        self.assertEqual(post_response.status_code, 404)
+        self.assertIn(
+            "The requested employee record was not found.",
+            post_response.text,
+        )
+        self.assertNotIn(
+            "Permanently delete employee",
+            post_response.text,
+        )
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=None,
+    )
+    def test_employee_delete_form_handles_loading_failure(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees/EMP-WEB-001/delete",
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee records could not be loaded.",
+            response.text,
+        )
+        self.assertNotIn(
+            "Permanently delete employee",
+            response.text,
+        )
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
+    @patch(
+        "web_app.save_employee_records",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_employee_delete_handles_saving_failure(
+        self,
+        mock_log_activity,
+        mock_save_employee_records,
+    ):
+        self.sign_in()
+        csrf_token = self.get_delete_csrf_token(
+            "EMP-WEB-001"
+        )
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/employees/EMP-WEB-001/delete",
+            data={
+                "csrf_token": csrf_token,
+            },
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee deletion could not be saved.",
+            response.text,
+        )
+        mock_save_employee_records.assert_called_once()
+        mock_log_activity.assert_not_called()
+
+        profile_response = self.client.get(
+            "/employees/EMP-WEB-001",
+        )
+
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertIn("Test Employee", profile_response.text)
 
     def test_employee_edit_form_redirects_unauthenticated_user(
         self,

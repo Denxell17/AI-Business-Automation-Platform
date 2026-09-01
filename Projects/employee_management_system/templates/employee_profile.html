@@ -58,7 +58,11 @@
         </p>
     </header>
 
-    {% if can_update_employee or can_view_payroll %}
+    {% if (
+        can_update_employee
+        or can_delete_employee
+        or can_view_payroll
+    ) %}
     <div class="profile-actions">
         {% if can_update_employee %}
         <a
@@ -70,6 +74,19 @@
         >
             <span aria-hidden="true">✎</span>
             Edit employee
+        </a>
+        {% endif %}
+
+        {% if can_delete_employee %}
+        <a
+            class="delete-employee-link"
+            href="{{ url_for(
+                'employee_delete_confirmation',
+                employee_id=employee['employee_id']
+            ) }}"
+        >
+            <span aria-hidden="true">×</span>
+            Delete employee
         </a>
         {% endif %}
 
