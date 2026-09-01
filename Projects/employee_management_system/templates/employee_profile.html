@@ -58,6 +58,21 @@
         </p>
     </header>
 
+    {% if can_view_payroll %}
+    <div class="profile-actions">
+        <a
+            class="payroll-link"
+            href="{{ url_for(
+                'employee_payroll',
+                employee_id=employee['employee_id']
+            ) }}"
+        >
+            <span aria-hidden="true">₱</span>
+            View payroll
+        </a>
+    </div>
+    {% endif %}
+
     <div class="profile-grid">
         <section
             class="profile-card"
