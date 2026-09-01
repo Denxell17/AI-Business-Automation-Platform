@@ -18,14 +18,20 @@ from starlette.middleware.sessions import SessionMiddleware
 
 from activity_logger import log_activity
 from authorization import (
+    REGISTER_EMPLOYEE,
     VIEW_EMPLOYEE,
     VIEW_PAYROLL,
     user_has_permission,
 )
 from database import DATABASE_FILE
-from employee_repository import load_employee_records
+from data_validation import get_employee_record_errors
+from employee_repository import (
+    load_employee_records,
+    save_employee_records,
+)
 from employee_service import find_employee_by_id
 from payroll import calculate_payroll
+from models import Employee
 from user_service import authenticate_user_account
 from web_session import (
     begin_authenticated_session,
@@ -43,6 +49,109 @@ SESSION_MAX_AGE_SECONDS = 8 * 60 * 60
 LOGIN_FAILURE_MESSAGE = (
     "Username or password is incorrect."
 )
+
+CSRF_SESSION_KEY = "csrf_token"
+
+
+def get_or_create_csrf_token(request: Request) -> str:
+    csrf_token = request.session.get(CSRF_SESSION_KEY)
+
+    if not isinstance(csrf_token, str):
+        csrf_token = secrets.token_urlsafe(32)
+        request.session[CSRF_SESSION_KEY] = csrf_token
+
+    return csrf_token
+
+
+def csrf_token_is_valid(
+    request: Request,
+    submitted_token: str,
+) -> bool:
+    session_token = request.session.get(CSRF_SESSION_KEY)
+
+    if not isinstance(session_token, str):
+        return False
+
+    return secrets.compare_digest(
+        session_token,
+        submitted_token,
+    )
+
+
+def build_employee_from_form(
+    employee_id: str,
+    name: str,
+    department: str,
+    position: str,
+    country: str,
+    salary: str,
+    email: str,
+    phone_number: str,
+    years_of_experience: str,
+    company: str,
+    employment_status: str,
+    performance_score: str,
+) -> tuple[dict[str, str], Employee | None, str | None]:
+    form_values = {
+        "employee_id": employee_id.strip().upper(),
+        "name": name.strip(),
+        "department": department.strip(),
+        "position": position.strip(),
+        "country": country.strip(),
+        "salary": salary.strip(),
+        "email": email.strip(),
+        "phone_number": phone_number.strip(),
+        "years_of_experience": years_of_experience.strip(),
+        "company": company.strip(),
+        "employment_status": employment_status.strip(),
+        "performance_score": performance_score.strip(),
+    }
+
+    try:
+        employee: Employee = {
+            "employee_id": form_values["employee_id"],
+            "name": form_values["name"],
+            "department": form_values["department"],
+            "position": form_values["position"],
+            "country": form_values["country"],
+            "salary": int(form_values["salary"]),
+            "email": form_values["email"],
+            "phone_number": form_values["phone_number"],
+            "years_of_experience": int(
+                form_values["years_of_experience"]
+            ),
+            "company": form_values["company"],
+            "employment_status": form_values[
+                "employment_status"
+            ],
+            "performance_score": int(
+                form_values["performance_score"]
+            ),
+        }
+    except ValueError:
+        return (
+            form_values,
+            None,
+            "Salary, years of experience, and performance "
+            "score must be whole numbers.",
+        )
+
+    validation_errors = get_employee_record_errors(employee)
+
+    if employee["years_of_experience"] > 60:
+        validation_errors.append(
+            "Years of experience must be between 0 and 60."
+        )
+
+    if validation_errors:
+        return (
+            form_values,
+            None,
+            " ".join(validation_errors),
+        )
+
+    return form_values, employee, None
+
 
 templates = Jinja2Templates(
     directory=TEMPLATES_DIRECTORY,
@@ -204,6 +313,227 @@ def create_web_application(
         )
 
     @application.get(
+        "/employees/new",
+        response_class=HTMLResponse,
+    )
+    def employee_create_form(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            REGISTER_EMPLOYEE,
+        ):
+            log_activity(
+                "User "
+                f"{current_user['username']} was denied "
+                "web employee-registration access."
+            )
+            return Response(
+                content="Employee registration access is denied.",
+                status_code=403,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="employee_form.html",
+            context={
+                "page_title": "Add employee",
+                "active_page": "employees",
+                "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "form_values": {},
+                "error_message": None,
+            },
+        )
+
+    @application.post("/employees/new")
+    def employee_create(
+        request: Request,
+        csrf_token: Annotated[str, Form()],
+        employee_id: Annotated[str, Form()],
+        name: Annotated[str, Form()],
+        department: Annotated[str, Form()],
+        position: Annotated[str, Form()],
+        country: Annotated[str, Form()],
+        salary: Annotated[str, Form()],
+        email: Annotated[str, Form()],
+        phone_number: Annotated[str, Form()],
+        years_of_experience: Annotated[str, Form()],
+        company: Annotated[str, Form()],
+        employment_status: Annotated[str, Form()],
+        performance_score: Annotated[str, Form()],
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            REGISTER_EMPLOYEE,
+        ):
+            log_activity(
+                "User "
+                f"{current_user['username']} was denied "
+                "web employee-registration access."
+            )
+            return Response(
+                content="Employee registration access is denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                "User "
+                f"{current_user['username']} submitted an "
+                "invalid employee-registration CSRF token."
+            )
+            return Response(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        (
+            form_values,
+            employee,
+            validation_error,
+        ) = build_employee_from_form(
+            employee_id,
+            name,
+            department,
+            position,
+            country,
+            salary,
+            email,
+            phone_number,
+            years_of_experience,
+            company,
+            employment_status,
+            performance_score,
+        )
+
+        if validation_error is not None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_form.html",
+                context={
+                    "page_title": "Add employee",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "form_values": form_values,
+                    "error_message": validation_error,
+                },
+                status_code=400,
+            )
+
+        employee_list = load_employee_records(
+            database_file=database_file,
+        )
+
+        if employee_list is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_form.html",
+                context={
+                    "page_title": "Add employee",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "form_values": form_values,
+                    "error_message": (
+                        "Employee records could not be loaded. "
+                        "Please try again later."
+                    ),
+                },
+                status_code=500,
+            )
+
+        existing_employee = find_employee_by_id(
+            employee_list,
+            employee["employee_id"],
+        )
+
+        if existing_employee is not None:
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_form.html",
+                context={
+                    "page_title": "Add employee",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "form_values": form_values,
+                    "error_message": (
+                        "An employee with that ID already exists."
+                    ),
+                },
+                status_code=400,
+            )
+
+        employee_list.append(employee)
+
+        if not save_employee_records(
+            employee_list,
+            database_file=database_file,
+        ):
+            return templates.TemplateResponse(
+                request=request,
+                name="employee_form.html",
+                context={
+                    "page_title": "Add employee",
+                    "active_page": "employees",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "form_values": form_values,
+                    "error_message": (
+                        "Employee could not be saved. "
+                        "Please try again later."
+                    ),
+                },
+                status_code=500,
+            )
+
+        log_activity(
+            f"User {current_user['username']} registered "
+            f"employee {employee['employee_id']} through "
+            "the web application."
+        )
+
+        return RedirectResponse(
+            url=request.url_for(
+                "employee_profile",
+                employee_id=employee["employee_id"],
+            ),
+            status_code=303,
+        )
+
+    @application.get(
         "/employees",
         response_class=HTMLResponse,
     )
@@ -244,6 +574,12 @@ def create_web_application(
                     "page_title": "Employee directory",
                     "active_page": "employees",
                     "current_user": current_user,
+                    "can_register_employee": (
+                        user_has_permission(
+                            current_user,
+                            REGISTER_EMPLOYEE,
+                        )
+                    ),
                     "employee_list": [],
                     "error_message": (
                         "Employee records could not be loaded."
@@ -259,6 +595,12 @@ def create_web_application(
                 "page_title": "Employee directory",
                 "active_page": "employees",
                 "current_user": current_user,
+                "can_register_employee": (
+                    user_has_permission(
+                        current_user,
+                        REGISTER_EMPLOYEE,
+                    )
+                ),
                 "employee_list": employee_list,
                 "error_message": None,
             },

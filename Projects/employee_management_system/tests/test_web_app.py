@@ -1,3 +1,4 @@
+import re
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
@@ -104,6 +105,44 @@ class TestWebApplication(unittest.TestCase):
             },
             follow_redirects=False,
         )
+
+    def get_csrf_token(self) -> str:
+        response = self.client.get("/employees/new")
+
+        self.assertEqual(response.status_code, 200)
+
+        token_match = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"',
+            response.text,
+        )
+
+        self.assertIsNotNone(token_match)
+
+        return token_match.group(1)
+
+    def employee_form_data(
+        self,
+        csrf_token: str,
+        **overrides: str,
+    ) -> dict[str, str]:
+        form_data = {
+            "csrf_token": csrf_token,
+            "employee_id": "EMP-WEB-NEW",
+            "name": "New Web Employee",
+            "department": "Engineering",
+            "position": "Automation Engineer",
+            "country": "Philippines",
+            "salary": "72000",
+            "email": "new.employee@example.com",
+            "phone_number": "+63-917-000-0000",
+            "years_of_experience": "4",
+            "company": "ABAP",
+            "employment_status": "Active",
+            "performance_score": "85",
+        }
+        form_data.update(overrides)
+
+        return form_data
 
     def test_home_page_returns_employee_management_html(self):
         self.sign_in()
@@ -759,6 +798,229 @@ class TestWebApplication(unittest.TestCase):
         mock_load_employee_records.assert_called_once_with(
             database_file=self.database_file,
         )
+
+    def test_employee_create_form_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/employees/new",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_administrator_can_view_employee_create_form(self):
+        self.sign_in()
+
+        response = self.client.get("/employees/new")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Add employee", response.text)
+        self.assertIn(
+            "Registration access authorized",
+            response.text,
+        )
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn('name="employee_id"', response.text)
+        self.assertIn('name="performance_score"', response.text)
+
+    def test_directory_shows_add_employee_only_to_administrator(
+        self,
+    ):
+        self.sign_in()
+
+        administrator_response = self.client.get("/employees")
+
+        self.assertEqual(
+            administrator_response.status_code,
+            200,
+        )
+        self.assertIn(
+            'href="http://testserver/employees/new"',
+            administrator_response.text,
+        )
+        self.assertIn("Add employee", administrator_response.text)
+
+        self.client.post("/logout", follow_redirects=False)
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        viewer_response = self.client.get("/employees")
+
+        self.assertEqual(viewer_response.status_code, 200)
+        self.assertNotIn(
+            'href="http://testserver/employees/new"',
+            viewer_response.text,
+        )
+        self.assertNotIn("Add employee", viewer_response.text)
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_employee_create_form_denies_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/employees/new")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.text,
+            "Employee registration access is denied.",
+        )
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "User "
+            f"{self.username} was denied "
+            "web employee-registration access."
+        )
+
+    def test_administrator_can_create_employee(self):
+        self.sign_in()
+        csrf_token = self.get_csrf_token()
+
+        response = self.client.post(
+            "/employees/new",
+            data=self.employee_form_data(csrf_token),
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/employees/EMP-WEB-NEW",
+        )
+
+        profile_response = self.client.get(
+            "/employees/EMP-WEB-NEW",
+        )
+
+        self.assertEqual(profile_response.status_code, 200)
+        self.assertIn("New Web Employee", profile_response.text)
+        self.assertIn("Automation Engineer", profile_response.text)
+
+    def test_employee_create_rejects_invalid_form_values(self):
+        self.sign_in()
+        csrf_token = self.get_csrf_token()
+
+        response = self.client.post(
+            "/employees/new",
+            data=self.employee_form_data(
+                csrf_token,
+                years_of_experience="61",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "Years of experience must be between 0 and 60.",
+            response.text,
+        )
+        self.assertIn("New Web Employee", response.text)
+
+    def test_employee_create_rejects_invalid_csrf_token(self):
+        self.sign_in()
+
+        response = self.client.post(
+            "/employees/new",
+            data=self.employee_form_data(
+                "invalid-csrf-token",
+                employee_id="EMP-WEB-CSRF",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.text,
+            "Your form could not be verified.",
+        )
+
+        profile_response = self.client.get(
+            "/employees/EMP-WEB-CSRF",
+        )
+
+        self.assertEqual(profile_response.status_code, 404)
+
+    def test_employee_create_rejects_duplicate_employee_id(self):
+        self.sign_in()
+        csrf_token = self.get_csrf_token()
+
+        response = self.client.post(
+            "/employees/new",
+            data=self.employee_form_data(
+                csrf_token,
+                employee_id="emp-web-001",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "An employee with that ID already exists.",
+            response.text,
+        )
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=None,
+    )
+    def test_employee_create_handles_loading_failure(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+        csrf_token = self.get_csrf_token()
+
+        response = self.client.post(
+            "/employees/new",
+            data=self.employee_form_data(csrf_token),
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee records could not be loaded.",
+            response.text,
+        )
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
+    @patch(
+        "web_app.save_employee_records",
+        return_value=False,
+    )
+    def test_employee_create_handles_saving_failure(
+        self,
+        mock_save_employee_records,
+    ):
+        self.sign_in()
+        csrf_token = self.get_csrf_token()
+
+        response = self.client.post(
+            "/employees/new",
+            data=self.employee_form_data(
+                csrf_token,
+                employee_id="EMP-WEB-SAVE-FAIL",
+            ),
+        )
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee could not be saved.",
+            response.text,
+        )
+        mock_save_employee_records.assert_called_once()
 
     def test_static_stylesheet_is_available(self):
         response = self.client.get("/static/styles.css")

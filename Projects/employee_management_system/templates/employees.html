@@ -21,16 +21,28 @@
             </p>
         </div>
 
-        {% if not error_message %}
-        <p class="directory-count">
-            <strong>{{ employee_list | length }}</strong>
-            {% if employee_list | length == 1 %}
-                employee
-            {% else %}
-                employees
+        <div class="directory-actions">
+            {% if can_register_employee %}
+            <a
+                class="add-employee-link"
+                href="{{ url_for('employee_create_form') }}"
+            >
+                <span aria-hidden="true">+</span>
+                Add employee
+            </a>
             {% endif %}
-        </p>
-        {% endif %}
+
+            {% if not error_message %}
+            <p class="directory-count">
+                <strong>{{ employee_list | length }}</strong>
+                {% if employee_list | length == 1 %}
+                    employee
+                {% else %}
+                    employees
+                {% endif %}
+            </p>
+            {% endif %}
+        </div>
     </div>
 
     {% if error_message %}
