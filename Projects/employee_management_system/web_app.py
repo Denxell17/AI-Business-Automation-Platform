@@ -23,6 +23,7 @@ from activity_logger import (
 from authorization import (
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
+    MANAGE_USER_ACCOUNTS,
     REGISTER_EMPLOYEE,
     UPDATE_EMPLOYEE,
     VIEW_EMPLOYEE,
@@ -30,7 +31,10 @@ from authorization import (
     VIEW_PAYROLL,
     user_has_permission,
 )
-from database import DATABASE_FILE
+from database import (
+    DATABASE_FILE,
+    load_user_account_summaries,
+)
 from data_validation import get_employee_record_errors
 from employee_repository import (
     load_employee_records,
@@ -179,6 +183,9 @@ templates.env.globals["user_has_permission"] = (
     user_has_permission
 )
 templates.env.globals["VIEW_ACTIVITY_LOG"] = VIEW_ACTIVITY_LOG
+templates.env.globals["MANAGE_USER_ACCOUNTS"] = (
+    MANAGE_USER_ACCOUNTS
+)
 
 
 def create_web_application(
@@ -213,6 +220,67 @@ def create_web_application(
         StaticFiles(directory=STATIC_DIRECTORY),
         name="static",
     )
+
+    @application.get(
+        "/users",
+        response_class=HTMLResponse,
+    )
+    def user_account_directory(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_USER_ACCOUNTS,
+        ):
+            log_activity(
+                f"Web user-account-directory access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        user_account_summaries = load_user_account_summaries(
+            database_file
+        )
+
+        if user_account_summaries is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="user_accounts.html",
+                context={
+                    "page_title": "User accounts",
+                    "active_page": "users",
+                    "current_user": current_user,
+                    "user_account_summaries": [],
+                    "error_message": (
+                        "User accounts could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="user_accounts.html",
+            context={
+                "page_title": "User accounts",
+                "active_page": "users",
+                "current_user": current_user,
+                "user_account_summaries": user_account_summaries,
+                "error_message": None,
+            },
+        )
 
     @application.get(
         "/login",

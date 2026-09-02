@@ -1,0 +1,117 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="user-accounts-section"
+    aria-labelledby="user-accounts-heading"
+>
+    {% if error_message %}
+    <div class="profile-error" role="alert">
+        <span
+            class="profile-error-icon"
+            aria-hidden="true"
+        >!</span>
+
+        <div>
+            <h1
+                id="user-accounts-heading"
+                class="profile-error-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            <p>{{ error_message }}</p>
+        </div>
+    </div>
+    {% else %}
+    <header class="user-accounts-header">
+        <div>
+            <p class="section-eyebrow">Access administration</p>
+
+            <h1
+                id="user-accounts-heading"
+                class="section-title"
+            >
+                User accounts
+            </h1>
+
+            <p class="user-accounts-description">
+                Review account roles and access status.
+            </p>
+        </div>
+
+        <p class="user-accounts-count">
+            {{ user_account_summaries | length }} accounts
+        </p>
+    </header>
+
+    {% if user_account_summaries %}
+    <section
+        class="user-accounts-card"
+        aria-labelledby="user-account-records-heading"
+    >
+        <h2 id="user-account-records-heading">
+            Current user accounts
+        </h2>
+
+        <p class="user-accounts-note">
+            Password hashes are never displayed.
+        </p>
+
+        <div class="user-accounts-table-wrapper">
+            <table class="user-accounts-table">
+                <caption>
+                    Administrator-visible user account records
+                </caption>
+
+                <thead>
+                    <tr>
+                        <th scope="col">Username</th>
+                        <th scope="col">Role</th>
+                        <th scope="col">Access status</th>
+                    </tr>
+                </thead>
+
+                <tbody>
+                    {% for user_account in user_account_summaries %}
+                    <tr>
+                        <th scope="row">
+                            {{ user_account["username"] }}
+                        </th>
+                        <td>{{ user_account["role"] }}</td>
+                        <td>
+                            {% if user_account["is_active"] %}
+                            <span class="user-account-status is-active">
+                                <span
+                                    class="status-dot"
+                                    aria-hidden="true"
+                                ></span>
+                                Active
+                            </span>
+                            {% else %}
+                            <span class="user-account-status is-inactive">
+                                <span
+                                    class="status-dot"
+                                    aria-hidden="true"
+                                ></span>
+                                Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% else %}
+    <section class="user-accounts-empty-state" aria-live="polite">
+        <h2>No user accounts found</h2>
+        <p>
+            Create an administrator account before managing access.
+        </p>
+    </section>
+    {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

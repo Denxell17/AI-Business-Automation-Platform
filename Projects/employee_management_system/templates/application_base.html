@@ -81,6 +81,25 @@
                 </li>
                 {% endif %}
 
+                {% if user_has_permission(
+                    current_user,
+                    MANAGE_USER_ACCOUNTS
+                ) %}
+                <li>
+                    <a
+                        class="navigation-link{% if active_page == 'users' %} is-active{% endif %}"
+                        href="{{ url_for('user_account_directory') }}"
+                        {% if active_page == 'users' %}aria-current="page"{% endif %}
+                    >
+                        <span
+                            class="navigation-icon"
+                            aria-hidden="true"
+                        >♙</span>
+                        User accounts
+                    </a>
+                </li>
+                {% endif %}
+
                 <li>
                     <a class="navigation-link" href="/docs">
                         <span
