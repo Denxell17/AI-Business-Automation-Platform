@@ -1,7 +1,11 @@
 import sqlite3
 from pathlib import Path
 
-from models import Employee, UserAccount
+from models import (
+    Employee,
+    UserAccount,
+    UserAccountSummary,
+)
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
 DATABASE_FILE = DATA_DIRECTORY / "employees.db"
@@ -463,6 +467,44 @@ def load_user_account_by_username(
         }
     finally:
         connection.close()
+
+
+def load_user_account_summaries(
+    database_file: Path = DATABASE_FILE,
+) -> list[UserAccountSummary] | None:
+    connection: sqlite3.Connection | None = None
+
+    try:
+        initialize_database(database_file)
+        connection = get_database_connection(database_file)
+        connection.row_factory = sqlite3.Row
+
+        stored_users = connection.execute(
+            """
+            SELECT
+                user_id,
+                username,
+                role,
+                is_active
+            FROM users
+            ORDER BY username COLLATE NOCASE
+            """
+        ).fetchall()
+
+        return [
+            {
+                "user_id": stored_user["user_id"],
+                "username": stored_user["username"],
+                "role": stored_user["role"],
+                "is_active": bool(stored_user["is_active"]),
+            }
+            for stored_user in stored_users
+        ]
+    except sqlite3.Error:
+        return None
+    finally:
+        if connection is not None:
+            connection.close()
 
 
 def update_user_account_active_status(

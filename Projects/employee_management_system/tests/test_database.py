@@ -13,6 +13,7 @@ from database import (
     insert_user_account,
     load_employees_from_database,
     load_user_account_by_username,
+    load_user_account_summaries,
     migrate_employees_to_database,
     restore_database_from_backup,
     synchronize_employees_to_database,
@@ -1042,6 +1043,73 @@ class TestEmployeeDatabase(unittest.TestCase):
             self.assertEqual(empty_count, 0)
             self.assertTrue(insert_result)
             self.assertEqual(account_count, 1)
+
+    def test_load_user_account_summaries_returns_safe_sorted_accounts(
+        self,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            first_insert_result = insert_user_account(
+                "ZoeAdmin",
+                "first_protected_hash",
+                "admin",
+                database_file,
+            )
+            second_insert_result = insert_user_account(
+                "aliceViewer",
+                "second_protected_hash",
+                "viewer",
+                database_file,
+            )
+
+            user_account_summaries = load_user_account_summaries(
+                database_file
+            )
+
+        self.assertTrue(first_insert_result)
+        self.assertTrue(second_insert_result)
+        self.assertEqual(
+            user_account_summaries,
+            [
+                {
+                    "user_id": 2,
+                    "username": "aliceViewer",
+                    "role": "viewer",
+                    "is_active": True,
+                },
+                {
+                    "user_id": 1,
+                    "username": "ZoeAdmin",
+                    "role": "admin",
+                    "is_active": True,
+                },
+            ],
+        )
+        self.assertNotIn(
+            "password_hash",
+            user_account_summaries[0],
+        )
+
+    def test_load_user_account_summaries_returns_none_for_invalid_database(
+        self,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+            database_file.write_text(
+                "This is not a SQLite database.",
+                encoding="utf-8",
+            )
+
+            user_account_summaries = load_user_account_summaries(
+                database_file
+            )
+
+        self.assertIsNone(user_account_summaries)
 
     def test_update_user_account_active_status_deactivates_account(
         self,

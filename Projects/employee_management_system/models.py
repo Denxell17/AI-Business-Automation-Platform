@@ -24,6 +24,13 @@ class UserAccount(TypedDict):
     is_active: bool
 
 
+class UserAccountSummary(TypedDict):
+    user_id: int
+    username: str
+    role: str
+    is_active: bool
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float

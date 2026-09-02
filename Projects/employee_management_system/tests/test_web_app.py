@@ -687,6 +687,118 @@ class TestWebApplication(unittest.TestCase):
             database_file=self.database_file,
         )
 
+    def test_user_account_directory_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/users",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_administrator_can_view_user_account_directory(self):
+        self.sign_in()
+
+        response = self.client.get("/users")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("User accounts", response.text)
+        self.assertIn("Access administration", response.text)
+        self.assertIn("WebAdmin", response.text)
+        self.assertIn("WebViewer", response.text)
+        self.assertIn("InactiveViewer", response.text)
+        self.assertIn("Administrator-visible user account records", response.text)
+        self.assertIn(
+            "Password hashes are never displayed.",
+            response.text,
+        )
+        self.assertNotIn("password_hash", response.text)
+        self.assertIn(
+            'href="http://testserver/users"',
+            response.text,
+        )
+        self.assertIn('aria-current="page"', response.text)
+
+    @patch("web_app.load_user_account_summaries")
+    @patch("web_app.log_activity")
+    def test_viewer_cannot_view_user_account_directory(
+        self,
+        mock_log_activity,
+        mock_load_user_account_summaries,
+    ):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        directory_response = self.client.get("/employees")
+
+        self.assertEqual(directory_response.status_code, 200)
+        self.assertNotIn(
+            'href="http://testserver/users"',
+            directory_response.text,
+        )
+
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/users")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_load_user_account_summaries.assert_not_called()
+        mock_log_activity.assert_called_once_with(
+            "Web user-account-directory access denied "
+            f"for user {self.viewer_username}."
+        )
+
+    @patch(
+        "web_app.load_user_account_summaries",
+        return_value=None,
+    )
+    def test_user_account_directory_handles_loading_failure(
+        self,
+        mock_load_user_account_summaries,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/users")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "User accounts could not be loaded.",
+            response.text,
+        )
+        mock_load_user_account_summaries.assert_called_once_with(
+            self.database_file
+        )
+
+    @patch(
+        "web_app.load_user_account_summaries",
+        return_value=[],
+    )
+    def test_user_account_directory_displays_empty_state(
+        self,
+        mock_load_user_account_summaries,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/users")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("No user accounts found", response.text)
+        self.assertIn(
+            "Create an administrator account before managing access.",
+            response.text,
+        )
+        mock_load_user_account_summaries.assert_called_once_with(
+            self.database_file
+        )
+
     def test_activity_log_redirects_unauthenticated_user(self):
         response = self.client.get(
             "/activity-log",
