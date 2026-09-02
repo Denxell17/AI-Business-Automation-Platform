@@ -1328,6 +1328,137 @@ a {
     border-color: var(--color-primary);
 }
 
+.workforce-report-section {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+}
+
+.workforce-report-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.workforce-report-description {
+    margin: 0.65rem 0 0;
+    color: var(--color-muted);
+}
+
+.workforce-report-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 0.75rem;
+}
+
+.workforce-report-status {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0.65rem 0.9rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    border: 1px solid #286c68;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.report-export-link {
+    display: inline-flex;
+    min-height: 2.75rem;
+    align-items: center;
+    justify-content: center;
+    gap: 0.55rem;
+    padding: 0.65rem 1rem;
+    background: var(--color-primary);
+    color: #102423;
+    border: 1px solid var(--color-primary);
+    border-radius: 0.55rem;
+    font-weight: 900;
+    text-decoration: none;
+}
+
+.report-export-link:hover {
+    background: var(--color-primary-strong);
+    border-color: var(--color-primary-strong);
+}
+
+.workforce-metric-grid {
+    display: grid;
+    grid-template-columns:
+        repeat(auto-fit, minmax(min(100%, 12rem), 1fr));
+    gap: 1rem;
+    margin-bottom: 1rem;
+}
+
+.workforce-metric-card,
+.workforce-department-card,
+.workforce-empty-state {
+    padding: 1.25rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+}
+
+.workforce-metric-card p {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.workforce-metric-card strong {
+    display: block;
+    margin-top: 0.5rem;
+    color: var(--color-primary);
+    font-size: clamp(1.5rem, 3vw, 2.25rem);
+}
+
+.workforce-department-card h2,
+.workforce-empty-state h2 {
+    margin: 0 0 1rem;
+    font-size: 1.125rem;
+}
+
+.workforce-table th:last-child,
+.workforce-table td:last-child {
+    text-align: right;
+    font-variant-numeric: tabular-nums;
+}
+
+.workforce-empty-state p {
+    margin: 0;
+    color: var(--color-muted);
+}
+
+@media (max-width: 640px) {
+    .workforce-report-header {
+        flex-direction: column;
+    }
+
+    .workforce-report-status {
+        align-self: flex-start;
+    }
+
+    .workforce-report-actions {
+        width: 100%;
+        align-items: stretch;
+    }
+
+    .report-export-link {
+        width: 100%;
+    }
+}
+
 .employee-form-actions {
     display: flex;
     align-items: center;

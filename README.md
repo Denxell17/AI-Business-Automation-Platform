@@ -130,6 +130,17 @@ The current Employee Management System can:
   filter-then-sort behavior, accessible sorting controls, responsive
   select styling, and administrator-and-viewer access through the
   existing `VIEW_EMPLOYEE` permission
+- Provide a protected, read-only browser workforce report that reuses
+  existing summary services to show employee and department headcounts,
+  largest and smallest departments, safe loading-failure and empty states,
+  responsive accessible report tables, and administrator-and-viewer access
+  through the existing `VIEW_EMPLOYEE` permission without showing salary
+  or payroll values
+- Provide a protected browser CSV-download workflow that requires the
+  existing `EXPORT_REPORT` permission, reuses the employee CSV service,
+  delivers the current SQLite employee report as an in-memory attachment,
+  records successful downloads and denied attempts, and exposes salary
+  values only to users who hold the explicit export permission
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -428,6 +439,16 @@ python Projects\employee_management_system\run_tests.py
   native select elements, shared input-and-select styling, controlled
   multi-record web fixtures, order assertions, combined-control tests,
   and viewer sorting regression coverage
+- Protected read-only browser workforce reporting, service-layer workforce
+  summaries, permission-protected aggregate analytics, salary-safe template
+  context selection, empty and loading-failure states, semantic report
+  tables, responsive metric cards, active navigation, and administrator
+  and viewer regression coverage
+- Protected browser CSV downloads, permission-aware report actions,
+  in-memory CSV generation, UTF-8 BOM spreadsheet compatibility,
+  attachment response headers, success-only download activity logging,
+  denied-export logging, loading-failure handling, and exporter-plus-web
+  regression coverage
 
 ## Project Status
 
@@ -457,6 +478,8 @@ The FastAPI interface now provides:
   `/employees/{employee_id}/edit`
 - An administrator-only employee-deletion confirmation page and
   POST submission route at `/employees/{employee_id}/delete`
+- A protected workforce report at `/reports/workforce`
+- A protected employee CSV download at `/reports/employees.csv`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and
   `SameSite=Lax`
 - Signed-session CSRF protection for employee creation, editing, and
@@ -465,9 +488,10 @@ The FastAPI interface now provides:
 - Complete authenticated-session termination during logout
 - Repository-backed employee loading and saving
 - Separate `VIEW_EMPLOYEE`, `VIEW_PAYROLL`, `REGISTER_EMPLOYEE`,
-  `UPDATE_EMPLOYEE`, and `DELETE_EMPLOYEE` permission enforcement
-- Permission-aware Add employee, Edit employee, Delete employee, and
-  View payroll actions
+  `UPDATE_EMPLOYEE`, `DELETE_EMPLOYEE`, and `EXPORT_REPORT` permission
+  enforcement
+- Permission-aware Add employee, Edit employee, Delete employee, View
+  payroll, and Download employee CSV actions
 - Default-deny responses and activity logging for missing permissions
 - Case-insensitive partial-name directory searches
 - Case-insensitive exact department directory filters
@@ -477,11 +501,18 @@ The FastAPI interface now provides:
 - Clear-filter navigation and distinct no-match directory states
 - Administrator and viewer directory filtering through
   `VIEW_EMPLOYEE`
+- Protected workforce reports through `VIEW_EMPLOYEE`
+- Aggregate employee and department headcounts without salary or payroll
+  values
+- CSV export downloads through `EXPORT_REPORT`
+- In-memory CSV attachments with salary values limited to export-authorized
+  users
 - Explicit confirmation before permanent employee deletion
 - POST-only destructive employee deletion
 - CSRF validation before deletion reads or mutates employee storage
 - Transactional SQLite synchronization with rollback on failure
-- Success-only employee-creation, update, and deletion activity logging
+- Success-only employee-creation, update, deletion, and CSV-download
+  activity logging
 - Safe employee-loading and saving failure handling
 - Safe missing-employee `404` pages
 - Case-insensitive employee-ID lookup
@@ -492,11 +523,13 @@ The FastAPI interface now provides:
   summaries, labelled forms, and labelled filter controls
 - Accessible error, warning, confirmation, empty, and no-match states
 - Responsive employee tables, profile cards, payroll cards, forms,
-  confirmation pages, profile actions, and directory filter controls
+  confirmation pages, profile actions, directory filter controls, and
+  workforce report cards, tables, and download actions
 - Written destructive-action labels that do not rely on color alone
 - Visible keyboard focus and narrow-screen controls
 - Peso currency formatting with two decimal places
-- Reuse of existing employee, payroll, search, and filter services
+- Reuse of existing employee, payroll, report, export, search, and filter
+  services
 - Separation of general employee information from payroll-sensitive
   information
 - Active authenticated navigation
@@ -509,7 +542,9 @@ protected individual employee profiles. Day 88 added protected browser
 employee payroll pages. Day 89 added protected browser employee creation.
 Day 90 added protected browser employee editing. Day 91 added protected
 browser employee deletion. Day 92 added protected browser directory search
-and filtering. Day 93 added protected browser directory sorting.
+and filtering. Day 93 added protected browser directory sorting. Day 94
+added protected browser workforce reporting. Day 95 added protected browser
+employee CSV downloads.
 
 Directory searching, filtering, and sorting require an authenticated user
 with `VIEW_EMPLOYEE`. Both administrators and viewers can use the
@@ -537,6 +572,21 @@ the default record order. A valid search with no results displays a
 distinct no-match state rather than suggesting that the SQLite database is
 empty.
 
+The workforce report requires the same `VIEW_EMPLOYEE` permission and
+uses the existing `calculate_workforce_summary()` service. It shows only
+aggregate employee and department information: total employees, total
+departments, largest and smallest departments, and department headcounts.
+Salary and payroll values are intentionally excluded from its template
+context.
+
+The employee CSV download requires the separate `EXPORT_REPORT` permission.
+It reuses the exporter service to generate the current SQLite employee data
+in memory, returns it as an `employee_report.csv` attachment, and adds a
+UTF-8 byte-order mark for spreadsheet compatibility. The file includes the
+existing report columns, including salary, so the download action is shown
+only to export-authorized users. Successful downloads and denied attempts
+are recorded in the activity log.
+
 Employee deletion remains protected by `DELETE_EMPLOYEE`. Opening the
 confirmation page never modifies storage. The deletion POST route checks
 authorization and signed-session CSRF protection before loading records,
@@ -544,10 +594,11 @@ uses the repository and existing service layer, commits the updated list
 in one SQLite transaction, logs only successful deletions, and redirects
 with HTTP `303`.
 
-The automated suite contains **304 passing tests**, including
-**87 FastAPI web tests**. Day 93 added **5 web tests** covering
-alphabetical name sorting, highest-salary-first sorting, combined
-filter-and-sort behavior, unknown-sort fallback, and viewer sorting access.
+The automated suite contains **317 passing tests**, including
+**99 FastAPI web tests**. Day 95 added **6 web tests** and **1 exporter
+test** covering unauthenticated redirects, administrator and viewer
+downloads, denied-export logging, loading failures, download-link display,
+CSV attachment headers and content, and service-level CSV generation.
 
 SQLite remains the live source of truth. Legacy JSON utilities remain
 available for migration, verification, and historical compatibility.
