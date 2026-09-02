@@ -1,4 +1,5 @@
 import csv
+from io import StringIO
 from pathlib import Path
 
 from models import Employee
@@ -7,19 +8,35 @@ from models import Employee
 EXPORT_DIRECTORY = Path(__file__).with_name("exports")
 EXPORT_FILE = EXPORT_DIRECTORY / "employee_report.csv"
 
+CSV_FIELDNAMES = [
+    "employee_id",
+    "name",
+    "department",
+    "position",
+    "salary",
+]
+
+
+def build_employee_csv_content(
+    employee_list: list[Employee],
+) -> str:
+    output = StringIO(newline="")
+    writer = csv.DictWriter(
+        output,
+        fieldnames=CSV_FIELDNAMES,
+        extrasaction="ignore",
+    )
+
+    writer.writeheader()
+    writer.writerows(employee_list)
+
+    return output.getvalue()
+
 
 def export_employees_to_csv(
     employee_list: list[Employee],
     file_path: Path = EXPORT_FILE,
 ) -> bool:
-    fieldnames = [
-        "employee_id",
-        "name",
-        "department",
-        "position",
-        "salary",
-    ]
-
     try:
         with open(
             file_path,
@@ -27,14 +44,7 @@ def export_employees_to_csv(
             newline="",
             encoding="utf-8-sig",
         ) as file:
-            writer = csv.DictWriter(
-                file,
-                fieldnames=fieldnames,
-                extrasaction="ignore",
-            )
-
-            writer.writeheader()
-            writer.writerows(employee_list)
+            file.write(build_employee_csv_content(employee_list))
 
         return True
 

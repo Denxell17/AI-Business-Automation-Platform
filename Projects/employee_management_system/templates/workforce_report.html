@@ -1,0 +1,134 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="workforce-report-section"
+    aria-labelledby="workforce-report-heading"
+>
+    {% if error_message %}
+    <div class="profile-error" role="alert">
+        <span
+            class="profile-error-icon"
+            aria-hidden="true"
+        >!</span>
+
+        <div>
+            <h1
+                id="workforce-report-heading"
+                class="profile-error-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            <p>{{ error_message }}</p>
+        </div>
+    </div>
+    {% else %}
+    <header class="workforce-report-header">
+        <div>
+            <p class="section-eyebrow">Workforce analytics</p>
+
+            <h1
+                id="workforce-report-heading"
+                class="section-title"
+            >
+                Workforce report
+            </h1>
+
+            <p class="workforce-report-description">
+                View current employee and department headcounts.
+            </p>
+        </div>
+
+        <div class="workforce-report-actions">
+            <p class="workforce-report-status">
+                <span aria-hidden="true">✓</span>
+                Report access authorized
+            </p>
+
+            {% if can_export_report %}
+            <a
+                class="report-export-link"
+                href="{{ url_for('download_employee_report') }}"
+            >
+                <span aria-hidden="true">↓</span>
+                Download employee CSV
+            </a>
+            {% endif %}
+        </div>
+    </header>
+
+    <div class="workforce-metric-grid">
+        <section
+            class="workforce-metric-card"
+            aria-labelledby="total-employees-heading"
+        >
+            <p id="total-employees-heading">Total employees</p>
+            <strong>{{ workforce_summary["total_employees"] }}</strong>
+        </section>
+
+        <section
+            class="workforce-metric-card"
+            aria-labelledby="total-departments-heading"
+        >
+            <p id="total-departments-heading">Total departments</p>
+            <strong>{{ workforce_summary["total_departments"] }}</strong>
+        </section>
+
+        {% if workforce_summary["largest_department"] %}
+        <section
+            class="workforce-metric-card"
+            aria-labelledby="largest-department-heading"
+        >
+            <p id="largest-department-heading">Largest department</p>
+            <strong>{{ workforce_summary["largest_department"] }}</strong>
+        </section>
+
+        <section
+            class="workforce-metric-card"
+            aria-labelledby="smallest-department-heading"
+        >
+            <p id="smallest-department-heading">Smallest department</p>
+            <strong>{{ workforce_summary["smallest_department"] }}</strong>
+        </section>
+        {% endif %}
+    </div>
+
+    {% if workforce_summary["department_counts"] %}
+    <section
+        class="workforce-department-card"
+        aria-labelledby="department-headcounts-heading"
+    >
+        <h2 id="department-headcounts-heading">
+            Department headcounts
+        </h2>
+
+        <div class="table-wrapper">
+            <table class="workforce-table">
+                <caption>Current employees in each department</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Department</th>
+                        <th scope="col">Employees</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for department, employee_count in workforce_summary["department_counts"].items() | sort %}
+                    <tr>
+                        <th scope="row">{{ department }}</th>
+                        <td>{{ employee_count }}</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% else %}
+    <section class="workforce-empty-state" aria-live="polite">
+        <h2>No employee data is available</h2>
+        <p>Add an employee to generate department headcounts.</p>
+    </section>
+    {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

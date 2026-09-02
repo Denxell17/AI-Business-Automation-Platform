@@ -3,10 +3,40 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from exporter import export_employees_to_csv
+from exporter import (
+    build_employee_csv_content,
+    export_employees_to_csv,
+)
 
 
 class TestEmployeeExporter(unittest.TestCase):
+
+    def test_build_employee_csv_content_uses_report_columns(self):
+        csv_content = build_employee_csv_content(
+            [
+                {
+                    "employee_id": "EMP001",
+                    "name": "Dennis",
+                    "department": "Automation",
+                    "position": "Developer",
+                    "salary": 60000,
+                    "email": "private@example.com",
+                }
+            ]
+        )
+
+        csv_rows = list(csv.DictReader(csv_content.splitlines()))
+
+        self.assertEqual(
+            csv_rows[0],
+            {
+                "employee_id": "EMP001",
+                "name": "Dennis",
+                "department": "Automation",
+                "position": "Developer",
+                "salary": "60000",
+            },
+        )
 
     def test_export_employees_to_csv(self):
         employees = [

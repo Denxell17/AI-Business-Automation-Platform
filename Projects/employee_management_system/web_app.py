@@ -19,6 +19,7 @@ from starlette.middleware.sessions import SessionMiddleware
 from activity_logger import log_activity
 from authorization import (
     DELETE_EMPLOYEE,
+    EXPORT_REPORT,
     REGISTER_EMPLOYEE,
     UPDATE_EMPLOYEE,
     VIEW_EMPLOYEE,
@@ -42,8 +43,10 @@ from employee_service import (
     update_employee_contact_details,
     update_employee_details,
 )
+from exporter import build_employee_csv_content
 from payroll import calculate_payroll
 from models import Employee
+from reports import calculate_workforce_summary
 from user_service import authenticate_user_account
 from web_session import (
     begin_authenticated_session,
@@ -729,6 +732,137 @@ def create_web_application(
                 "filter_error": filter_error,
                 "filters_applied": filters_applied,
                 "error_message": None,
+            },
+        )
+
+    @application.get(
+        "/reports/workforce",
+        response_class=HTMLResponse,
+    )
+    def workforce_report(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_EMPLOYEE,
+        ):
+            log_activity(
+                f"Web workforce-report access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        employee_list = load_employee_records(
+            database_file=database_file,
+        )
+
+        if employee_list is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="workforce_report.html",
+                context={
+                    "page_title": "Workforce report",
+                    "active_page": "reports",
+                    "current_user": current_user,
+                    "workforce_summary": None,
+                    "can_export_report": user_has_permission(
+                        current_user,
+                        EXPORT_REPORT,
+                    ),
+                    "error_message": (
+                        "Employee records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        summary = calculate_workforce_summary(employee_list)
+        workforce_summary = {
+            "total_employees": summary["total_employees"],
+            "total_departments": summary["total_departments"],
+            "largest_department": summary["largest_department"],
+            "smallest_department": summary["smallest_department"],
+            "department_counts": summary["department_counts"],
+        }
+
+        return templates.TemplateResponse(
+            request=request,
+            name="workforce_report.html",
+            context={
+                "page_title": "Workforce report",
+                "active_page": "reports",
+                "current_user": current_user,
+                "workforce_summary": workforce_summary,
+                "can_export_report": user_has_permission(
+                    current_user,
+                    EXPORT_REPORT,
+                ),
+                "error_message": None,
+            },
+        )
+
+    @application.get("/reports/employees.csv")
+    def download_employee_report(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            EXPORT_REPORT,
+        ):
+            log_activity(
+                f"Web employee-report export access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        employee_list = load_employee_records(
+            database_file=database_file,
+        )
+
+        if employee_list is None:
+            return Response(
+                content="Employee records could not be loaded.",
+                status_code=500,
+            )
+
+        csv_content = "\ufeff" + build_employee_csv_content(employee_list)
+
+        log_activity(
+            f"User {current_user['username']} downloaded "
+            "the web employee report."
+        )
+
+        return Response(
+            content=csv_content,
+            media_type="text/csv",
+            headers={
+                "Content-Disposition": (
+                    'attachment; filename="employee_report.csv"'
+                ),
             },
         )
 

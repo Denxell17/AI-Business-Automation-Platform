@@ -461,6 +461,232 @@ class TestWebApplication(unittest.TestCase):
             "http://testserver/login",
         )
 
+    def test_workforce_report_redirects_unauthenticated_user(self):
+        response = self.client.get(
+            "/reports/workforce",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_employee_report_download_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/reports/employees.csv",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    @patch("web_app.log_activity")
+    def test_administrator_can_download_employee_report(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/reports/employees.csv")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.headers["content-type"],
+            "text/csv; charset=utf-8",
+        )
+        self.assertEqual(
+            response.headers["content-disposition"],
+            'attachment; filename="employee_report.csv"',
+        )
+        self.assertTrue(response.content.startswith(b"\xef\xbb\xbf"))
+        self.assertIn(
+            "employee_id,name,department,position,salary",
+            response.text,
+        )
+        self.assertIn(
+            "EMP-WEB-001,Test Employee,Operations,"
+            "Automation Specialist,85000",
+            response.text,
+        )
+        mock_log_activity.assert_called_once_with(
+            f"User {self.username} downloaded "
+            "the web employee report."
+        )
+
+    def test_viewer_can_download_employee_report(self):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        response = self.client.get("/reports/employees.csv")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.content.startswith(b"\xef\xbb\xbf"))
+        self.assertIn(
+            "employee_id,name,department,position,salary",
+            response.text,
+        )
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_employee_report_download_denies_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/reports/employees.csv")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web employee-report export access denied "
+            f"for user {self.username}."
+        )
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=None,
+    )
+    def test_employee_report_download_handles_loading_failure(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/reports/employees.csv")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(
+            response.text,
+            "Employee records could not be loaded.",
+        )
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
+    def test_workforce_report_shows_download_link(self):
+        self.sign_in()
+
+        response = self.client.get("/reports/workforce")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Download employee CSV", response.text)
+        self.assertIn(
+            'href="http://testserver/reports/employees.csv"',
+            response.text,
+        )
+
+    def test_administrator_can_view_workforce_report(self):
+        self.sign_in()
+
+        response = self.client.get("/reports/workforce")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Workforce report", response.text)
+        self.assertIn("Total employees", response.text)
+        self.assertIn("Total departments", response.text)
+        self.assertIn("Department headcounts", response.text)
+        self.assertIn("Operations", response.text)
+        self.assertIn("Reports", response.text)
+        self.assertIn('aria-current="page"', response.text)
+        self.assertNotIn("85,000.00", response.text)
+
+    def test_viewer_can_view_workforce_report(self):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        response = self.client.get("/reports/workforce")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("WebViewer", response.text)
+        self.assertIn("Workforce report", response.text)
+        self.assertIn("Department headcounts", response.text)
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_workforce_report_denies_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/reports/workforce")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web workforce-report access denied "
+            f"for user {self.username}."
+        )
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=None,
+    )
+    def test_workforce_report_handles_loading_failure(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/reports/workforce")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Employee records could not be loaded.",
+            response.text,
+        )
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
+    @patch(
+        "web_app.load_employee_records",
+        return_value=[],
+    )
+    def test_workforce_report_displays_empty_state(
+        self,
+        mock_load_employee_records,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/reports/workforce")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Total employees", response.text)
+        self.assertIn("No employee data is available", response.text)
+        self.assertIn(
+            "Add an employee to generate department headcounts.",
+            response.text,
+        )
+        mock_load_employee_records.assert_called_once_with(
+            database_file=self.database_file,
+        )
+
     def test_administrator_can_view_employee_directory(self):
         self.sign_in()
 

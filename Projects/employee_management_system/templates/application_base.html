@@ -50,6 +50,20 @@
                 </li>
 
                 <li>
+                    <a
+                        class="navigation-link{% if active_page == 'reports' %} is-active{% endif %}"
+                        href="{{ url_for('workforce_report') }}"
+                        {% if active_page == 'reports' %}aria-current="page"{% endif %}
+                    >
+                        <span
+                            class="navigation-icon"
+                            aria-hidden="true"
+                        >▤</span>
+                        Reports
+                    </a>
+                </li>
+
+                <li>
                     <a class="navigation-link" href="/docs">
                         <span
                             class="navigation-icon"
