@@ -1595,3 +1595,88 @@ a {
         flex-direction: column;
     }
 }
+
+.activity-log-section {
+    padding: clamp(1.5rem, 3vw, 2.5rem);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    border-radius: 1rem;
+    box-shadow: var(--shadow-card);
+}
+
+.activity-log-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 1.5rem;
+    margin-bottom: 2rem;
+}
+
+.activity-log-description {
+    margin: 0.65rem 0 0;
+    color: var(--color-muted);
+}
+
+.activity-log-status {
+    display: inline-flex;
+    flex-shrink: 0;
+    align-items: center;
+    gap: 0.55rem;
+    margin: 0;
+    padding: 0.65rem 0.9rem;
+    background: var(--color-primary-soft);
+    color: var(--color-primary);
+    border: 1px solid #286c68;
+    border-radius: 999px;
+    font-size: 0.875rem;
+    font-weight: 700;
+}
+
+.activity-log-card,
+.activity-log-empty-state {
+    padding: 1.25rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: 0.75rem;
+}
+
+.activity-log-card h2,
+.activity-log-empty-state h2 {
+    margin: 0;
+    font-size: 1.125rem;
+}
+
+.activity-log-note,
+.activity-log-empty-state p {
+    margin: 0.65rem 0 0;
+    color: var(--color-muted);
+}
+
+.activity-log-list {
+    display: grid;
+    gap: 0.75rem;
+    margin: 1rem 0 0;
+    padding: 0;
+    list-style: none;
+}
+
+.activity-log-list li {
+    padding: 0.85rem 1rem;
+    background: var(--color-surface-raised);
+    border: 1px solid var(--color-border);
+    border-radius: 0.55rem;
+    font-family: Consolas, "Courier New", monospace;
+    font-size: 0.875rem;
+    line-height: 1.5;
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 640px) {
+    .activity-log-header {
+        flex-direction: column;
+    }
+
+    .activity-log-status {
+        align-self: flex-start;
+    }
+}

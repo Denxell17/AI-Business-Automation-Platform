@@ -10,6 +10,7 @@ EXPORT_REPORT = "report.export"
 BACKUP_DATABASE = "database.backup"
 RESTORE_DATABASE = "database.restore"
 MANAGE_USER_ACCOUNTS = "users.manage"
+VIEW_ACTIVITY_LOG = "activity_log.view"
 
 
 ROLE_PERMISSIONS = {
@@ -23,6 +24,7 @@ ROLE_PERMISSIONS = {
         BACKUP_DATABASE,
         RESTORE_DATABASE,
         MANAGE_USER_ACCOUNTS,
+        VIEW_ACTIVITY_LOG,
     },
     "viewer": {
         VIEW_EMPLOYEE,

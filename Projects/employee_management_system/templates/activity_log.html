@@ -1,0 +1,77 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="activity-log-section"
+    aria-labelledby="activity-log-heading"
+>
+    {% if error_message %}
+    <div class="profile-error" role="alert">
+        <span
+            class="profile-error-icon"
+            aria-hidden="true"
+        >!</span>
+
+        <div>
+            <h1
+                id="activity-log-heading"
+                class="profile-error-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            <p>{{ error_message }}</p>
+        </div>
+    </div>
+    {% else %}
+    <header class="activity-log-header">
+        <div>
+            <p class="section-eyebrow">Security auditing</p>
+
+            <h1
+                id="activity-log-heading"
+                class="section-title"
+            >
+                Activity log
+            </h1>
+
+            <p class="activity-log-description">
+                Review the latest recorded application activity.
+            </p>
+        </div>
+
+        <p class="activity-log-status">
+            <span aria-hidden="true">✓</span>
+            Administrator access authorized
+        </p>
+    </header>
+
+    {% if activity_entries %}
+    <section
+        class="activity-log-card"
+        aria-labelledby="recent-activity-heading"
+    >
+        <h2 id="recent-activity-heading">Recent activity</h2>
+
+        <p class="activity-log-note">
+            Showing the latest {{ activity_entries | length }} entries,
+            newest first.
+        </p>
+
+        <ol class="activity-log-list">
+            {% for entry in activity_entries %}
+            <li>{{ entry }}</li>
+            {% endfor %}
+        </ol>
+    </section>
+    {% else %}
+    <section class="activity-log-empty-state" aria-live="polite">
+        <h2>No activity has been recorded</h2>
+        <p>
+            New application and security actions will appear here.
+        </p>
+    </section>
+    {% endif %}
+    {% endif %}
+</section>
+{% endblock %}

@@ -687,6 +687,124 @@ class TestWebApplication(unittest.TestCase):
             database_file=self.database_file,
         )
 
+    def test_activity_log_redirects_unauthenticated_user(self):
+        response = self.client.get(
+            "/activity-log",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    @patch(
+        "web_app.load_recent_activity_entries",
+        return_value=[
+            "2026-09-02 10:00:00 | INFO | Test activity.",
+            "2026-09-02 09:00:00 | INFO | <script>alert(1)</script>",
+        ],
+    )
+    def test_administrator_can_view_activity_log(
+        self,
+        mock_load_recent_activity_entries,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/activity-log")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Activity log", response.text)
+        self.assertIn("Recent activity", response.text)
+        self.assertIn("Test activity.", response.text)
+        self.assertIn(
+            "&lt;script&gt;alert(1)&lt;/script&gt;",
+            response.text,
+        )
+        self.assertNotIn("<script>alert(1)</script>", response.text)
+        self.assertIn(
+            'href="http://testserver/activity-log"',
+            response.text,
+        )
+        self.assertIn('aria-current="page"', response.text)
+        mock_load_recent_activity_entries.assert_called_once_with()
+
+    @patch("web_app.load_recent_activity_entries")
+    @patch("web_app.log_activity")
+    def test_viewer_cannot_view_activity_log(
+        self,
+        mock_log_activity,
+        mock_load_recent_activity_entries,
+    ):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        directory_response = self.client.get("/employees")
+
+        self.assertEqual(directory_response.status_code, 200)
+        self.assertNotIn(
+            'href="http://testserver/activity-log"',
+            directory_response.text,
+        )
+
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/activity-log")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_load_recent_activity_entries.assert_not_called()
+        mock_log_activity.assert_called_once_with(
+            "Web activity-log access denied "
+            f"for user {self.viewer_username}."
+        )
+
+    @patch(
+        "web_app.load_recent_activity_entries",
+        return_value=None,
+    )
+    def test_activity_log_handles_loading_failure(
+        self,
+        mock_load_recent_activity_entries,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/activity-log")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Activity log entries could not be loaded.",
+            response.text,
+        )
+        mock_load_recent_activity_entries.assert_called_once_with()
+
+    @patch(
+        "web_app.load_recent_activity_entries",
+        return_value=[],
+    )
+    def test_activity_log_displays_empty_state(
+        self,
+        mock_load_recent_activity_entries,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/activity-log")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "No activity has been recorded",
+            response.text,
+        )
+        self.assertIn(
+            "New application and security actions will appear here.",
+            response.text,
+        )
+        mock_load_recent_activity_entries.assert_called_once_with()
+
+
     def test_administrator_can_view_employee_directory(self):
         self.sign_in()
 

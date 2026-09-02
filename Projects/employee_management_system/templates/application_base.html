@@ -62,6 +62,24 @@
                         Reports
                     </a>
                 </li>
+                {% if user_has_permission(
+                    current_user,
+                    VIEW_ACTIVITY_LOG
+                ) %}
+                <li>
+                    <a
+                        class="navigation-link{% if active_page == 'activity_log' %} is-active{% endif %}"
+                        href="{{ url_for('activity_log_page') }}"
+                        {% if active_page == 'activity_log' %}aria-current="page"{% endif %}
+                    >
+                        <span
+                            class="navigation-icon"
+                            aria-hidden="true"
+                        >▤</span>
+                        Activity log
+                    </a>
+                </li>
+                {% endif %}
 
                 <li>
                     <a class="navigation-link" href="/docs">
