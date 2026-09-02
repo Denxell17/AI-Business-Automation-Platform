@@ -182,6 +182,34 @@ class TestWebApplication(unittest.TestCase):
 
         return form_data
 
+    def employee_directory_sort_records(self):
+        return [
+            {
+                "employee_id": "EMP-SORT-003",
+                "name": "Zoe Automation",
+                "department": "Engineering",
+                "position": "Automation Engineer",
+                "employment_status": "Active",
+                "salary": 65000,
+            },
+            {
+                "employee_id": "EMP-SORT-001",
+                "name": "Alice Business",
+                "department": "Operations",
+                "position": "Operations Analyst",
+                "employment_status": "Active",
+                "salary": 95000,
+            },
+            {
+                "employee_id": "EMP-SORT-002",
+                "name": "Marco Systems",
+                "department": "Engineering",
+                "position": "Systems Specialist",
+                "employment_status": "Inactive",
+                "salary": 78000,
+            },
+        ]
+
     def test_home_page_returns_employee_management_html(self):
         self.sign_in()
         response = self.client.get("/")
@@ -465,7 +493,152 @@ class TestWebApplication(unittest.TestCase):
         self.assertIn('name="department"', response.text)
         self.assertIn('name="minimum_salary"', response.text)
         self.assertIn('name="maximum_salary"', response.text)
+        self.assertIn('name="sort_by"', response.text)
+        self.assertIn("Name: A to Z", response.text)
+        self.assertIn("Salary: highest first", response.text)
         self.assertIn("Apply filters", response.text)
+
+    @patch("web_app.load_employee_records")
+    def test_employee_directory_sorts_by_name(
+        self,
+        mock_load_employee_records,
+    ):
+        mock_load_employee_records.return_value = (
+            self.employee_directory_sort_records()
+        )
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "sort_by": "name",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Clear filters", response.text)
+        self.assertLess(
+            response.text.index("Alice Business"),
+            response.text.index("Marco Systems"),
+        )
+        self.assertLess(
+            response.text.index("Marco Systems"),
+            response.text.index("Zoe Automation"),
+        )
+
+    @patch("web_app.load_employee_records")
+    def test_employee_directory_sorts_by_salary(
+        self,
+        mock_load_employee_records,
+    ):
+        mock_load_employee_records.return_value = (
+            self.employee_directory_sort_records()
+        )
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "sort_by": "salary",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Clear filters", response.text)
+        self.assertLess(
+            response.text.index("Alice Business"),
+            response.text.index("Marco Systems"),
+        )
+        self.assertLess(
+            response.text.index("Marco Systems"),
+            response.text.index("Zoe Automation"),
+        )
+
+    @patch("web_app.load_employee_records")
+    def test_employee_directory_sorts_filtered_results(
+        self,
+        mock_load_employee_records,
+    ):
+        mock_load_employee_records.return_value = (
+            self.employee_directory_sort_records()
+        )
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "department": "Engineering",
+                "sort_by": "salary",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Marco Systems", response.text)
+        self.assertIn("Zoe Automation", response.text)
+        self.assertNotIn("Alice Business", response.text)
+        self.assertLess(
+            response.text.index("Marco Systems"),
+            response.text.index("Zoe Automation"),
+        )
+
+    @patch("web_app.load_employee_records")
+    def test_employee_directory_ignores_unknown_sort_value(
+        self,
+        mock_load_employee_records,
+    ):
+        mock_load_employee_records.return_value = (
+            self.employee_directory_sort_records()
+        )
+        self.sign_in()
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "sort_by": "unknown",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Clear filters", response.text)
+        self.assertLess(
+            response.text.index("Zoe Automation"),
+            response.text.index("Alice Business"),
+        )
+        self.assertLess(
+            response.text.index("Alice Business"),
+            response.text.index("Marco Systems"),
+        )
+
+    @patch("web_app.load_employee_records")
+    def test_viewer_can_sort_employee_directory(
+        self,
+        mock_load_employee_records,
+    ):
+        mock_load_employee_records.return_value = (
+            self.employee_directory_sort_records()
+        )
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        response = self.client.get(
+            "/employees",
+            params={
+                "sort_by": "name",
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("WebViewer", response.text)
+        self.assertLess(
+            response.text.index("Alice Business"),
+            response.text.index("Marco Systems"),
+        )
+        self.assertLess(
+            response.text.index("Marco Systems"),
+            response.text.index("Zoe Automation"),
+        )
 
     def test_employee_directory_searches_by_name(self):
         self.sign_in()

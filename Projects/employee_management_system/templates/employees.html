@@ -99,6 +99,38 @@
                     value="{{ filter_values['maximum_salary'] }}"
                 >
             </div>
+
+            <div class="form-field">
+                <label for="sort_by">Sort results by</label>
+                <select id="sort_by" name="sort_by">
+                    <option
+                        value=""
+                        {% if not filter_values["sort_by"] %}
+                        selected
+                        {% endif %}
+                    >
+                        Default order
+                    </option>
+
+                    <option
+                        value="name"
+                        {% if filter_values["sort_by"] == "name" %}
+                        selected
+                        {% endif %}
+                    >
+                        Name: A to Z
+                    </option>
+
+                    <option
+                        value="salary"
+                        {% if filter_values["sort_by"] == "salary" %}
+                        selected
+                        {% endif %}
+                    >
+                        Salary: highest first
+                    </option>
+                </select>
+            </div>
         </div>
 
         <div class="directory-filter-actions">

@@ -124,6 +124,12 @@ The current Employee Management System can:
   failures, accessible filter controls, responsive layouts, and
   administrator-and-viewer access through the existing
   `VIEW_EMPLOYEE` permission
+- Provide protected, read-only browser employee-directory sorting with
+  default-order fallback, alphabetical name sorting, highest-salary-first
+  sorting, preserved sorting and filter query values, combined
+  filter-then-sort behavior, accessible sorting controls, responsive
+  select styling, and administrator-and-viewer access through the
+  existing `VIEW_EMPLOYEE` permission
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -416,6 +422,12 @@ python Projects\employee_management_system\run_tests.py
   composition, preserved filter values, clear-filter navigation,
   no-match states, accessible search forms, responsive filter grids,
   viewer-access regression coverage, and state-independent web tests
+- Protected read-only directory sorting, allowlisted query values,
+  default-order fallback, service-layer name and salary sorting,
+  filter-then-sort sequencing, preserved sorting controls, accessible
+  native select elements, shared input-and-select styling, controlled
+  multi-record web fixtures, order assertions, combined-control tests,
+  and viewer sorting regression coverage
 
 ## Project Status
 
@@ -490,37 +502,40 @@ The FastAPI interface now provides:
 - Active authenticated navigation
 - The accessible Warm Charcoal visual system, visible focus,
   reduced-motion support, and written status labels
-
 Day 84 established browser login and authenticated sessions. Day 85
 completed explicit logout and authenticated-session termination. Day 86
 introduced the protected read-only employee directory. Day 87 added
-protected individual employee profiles. Day 88 added protected employee
-payroll pages. Day 89 added protected browser employee creation. Day 90
-added protected browser employee editing. Day 91 added protected browser
-employee deletion. Day 92 added protected browser directory search and
-filtering.
+protected individual employee profiles. Day 88 added protected browser
+employee payroll pages. Day 89 added protected browser employee creation.
+Day 90 added protected browser employee editing. Day 91 added protected
+browser employee deletion. Day 92 added protected browser directory search
+and filtering. Day 93 added protected browser directory sorting.
 
-Directory searching and filtering requires an authenticated user with
-`VIEW_EMPLOYEE`. Both administrators and viewers can use the read-only
-GET form. Missing permission returns HTTP `403` before employee records
-are loaded, while unauthenticated users are redirected to `/login`.
+Directory searching, filtering, and sorting require an authenticated user
+with `VIEW_EMPLOYEE`. Both administrators and viewers can use the
+read-only GET form. Missing permission returns HTTP `403` before employee
+records are loaded, while unauthenticated users are redirected to `/login`.
 
 The directory accepts optional `search_text`, `department`,
-`minimum_salary`, and `maximum_salary` query parameters. Text values
-are normalized before filtering. The existing service functions perform
-case-insensitive partial-name searching, case-insensitive exact
-department matching, and inclusive salary-range filtering.
+`minimum_salary`, `maximum_salary`, and `sort_by` query parameters. Text
+values are normalized before filtering. The existing service functions
+perform case-insensitive partial-name searching, case-insensitive exact
+department matching, inclusive salary-range filtering, alphabetical name
+sorting, and highest-salary-first sorting.
 
-When several valid filters are provided, they run in sequence against
-the preceding result, so each displayed employee matches every selected
-condition. The form preserves submitted values and supplies a Clear
-filters link whenever a filter is active.
+When several valid filters are provided, they run in sequence against the
+preceding result, so each displayed employee matches every selected
+condition. Valid sorting happens after filtering, so the selected sort
+order applies to the final matching employee list. The form preserves
+submitted values and supplies a Clear filters link whenever a filter or
+sort option is active.
 
 Salary filtering requires both bounds. Non-integer, negative, incomplete,
-and reversed ranges return written validation messages while preserving
-the unfiltered employee list. A valid search with no results displays a
-distinct no-match state rather than suggesting that the SQLite database
-is empty.
+and reversed ranges return written validation messages while preserving the
+unfiltered employee list. An unknown `sort_by` value safely falls back to
+the default record order. A valid search with no results displays a
+distinct no-match state rather than suggesting that the SQLite database is
+empty.
 
 Employee deletion remains protected by `DELETE_EMPLOYEE`. Opening the
 confirmation page never modifies storage. The deletion POST route checks
@@ -529,12 +544,10 @@ uses the repository and existing service layer, commits the updated list
 in one SQLite transaction, logs only successful deletions, and redirects
 with HTTP `303`.
 
-The automated suite contains **299 passing tests**, including
-**82 FastAPI web tests**. Day 92 added **11 web tests** covering the
-filter form, name searches, department filters, salary-range filters,
-combined filters, no-match states, incomplete salary ranges,
-non-integer salary input, negative salary input, reversed salary ranges,
-and viewer filtering access.
+The automated suite contains **304 passing tests**, including
+**87 FastAPI web tests**. Day 93 added **5 web tests** covering
+alphabetical name sorting, highest-salary-first sorting, combined
+filter-and-sort behavior, unknown-sort fallback, and viewer sorting access.
 
 SQLite remains the live source of truth. Legacy JSON utilities remain
 available for migration, verification, and historical compatibility.

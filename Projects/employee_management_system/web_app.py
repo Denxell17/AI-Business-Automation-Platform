@@ -37,6 +37,8 @@ from employee_service import (
     find_employee_by_id,
     remove_employee,
     search_employees_by_name,
+    sort_employees_by_name,
+    sort_employees_by_salary,
     update_employee_contact_details,
     update_employee_details,
 )
@@ -553,6 +555,7 @@ def create_web_application(
         department: str = "",
         minimum_salary: str = "",
         maximum_salary: str = "",
+        sort_by: str = "",
     ) -> Response:
         current_user = load_authenticated_session_user(
             request,
@@ -582,6 +585,10 @@ def create_web_application(
         department = department.strip()
         minimum_salary = minimum_salary.strip()
         maximum_salary = maximum_salary.strip()
+        sort_by = sort_by.strip().casefold()
+
+        if sort_by not in ("", "name", "salary"):
+            sort_by = ""
 
         minimum_salary_value: int | None = None
         maximum_salary_value: int | None = None
@@ -637,6 +644,7 @@ def create_web_application(
                         "department": department,
                         "minimum_salary": minimum_salary,
                         "maximum_salary": maximum_salary,
+                        "sort_by": sort_by,
                     },
                     "filter_error": filter_error,
                     "filters_applied": any(
@@ -645,6 +653,7 @@ def create_web_application(
                             department,
                             minimum_salary,
                             maximum_salary,
+                            sort_by,
                         )
                     ),
                     "error_message": (
@@ -683,11 +692,21 @@ def create_web_application(
                     )
                 )
 
+        if sort_by == "name":
+            filtered_employee_list = sort_employees_by_name(
+                filtered_employee_list
+            )
+        elif sort_by == "salary":
+            filtered_employee_list = sort_employees_by_salary(
+                filtered_employee_list
+            )
+
         filter_values = {
             "search_text": search_text,
             "department": department,
             "minimum_salary": minimum_salary,
             "maximum_salary": maximum_salary,
+            "sort_by": sort_by,
         }
 
         filters_applied = any(filter_values.values())
