@@ -11,6 +11,7 @@ from authorization import (
     VIEW_EMPLOYEE,
     VIEW_PAYROLL,
     user_has_permission,
+    VIEW_ACTIVITY_LOG,
 )
 
 
@@ -33,6 +34,7 @@ class TestUserAuthorization(unittest.TestCase):
             MANAGE_USER_ACCOUNTS,
             BACKUP_DATABASE,
             RESTORE_DATABASE,
+            VIEW_ACTIVITY_LOG,
         ]
 
         for permission in permissions:
@@ -64,6 +66,7 @@ class TestUserAuthorization(unittest.TestCase):
             BACKUP_DATABASE,
             RESTORE_DATABASE,
             MANAGE_USER_ACCOUNTS,
+            VIEW_ACTIVITY_LOG,
         ]
 
         for permission in allowed_permissions:
@@ -108,6 +111,7 @@ class TestUserAuthorization(unittest.TestCase):
             BACKUP_DATABASE,
             RESTORE_DATABASE,
             MANAGE_USER_ACCOUNTS,
+            VIEW_ACTIVITY_LOG,
         ]
 
         for permission in permissions:

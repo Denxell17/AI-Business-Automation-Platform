@@ -16,13 +16,17 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
-from activity_logger import log_activity
+from activity_logger import (
+    load_recent_activity_entries,
+    log_activity,
+)
 from authorization import (
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
     REGISTER_EMPLOYEE,
     UPDATE_EMPLOYEE,
     VIEW_EMPLOYEE,
+    VIEW_ACTIVITY_LOG,
     VIEW_PAYROLL,
     user_has_permission,
 )
@@ -171,6 +175,10 @@ def build_employee_from_form(
 templates = Jinja2Templates(
     directory=TEMPLATES_DIRECTORY,
 )
+templates.env.globals["user_has_permission"] = (
+    user_has_permission
+)
+templates.env.globals["VIEW_ACTIVITY_LOG"] = VIEW_ACTIVITY_LOG
 
 
 def create_web_application(
@@ -809,6 +817,65 @@ def create_web_application(
                     current_user,
                     EXPORT_REPORT,
                 ),
+                "error_message": None,
+            },
+        )
+
+    @application.get(
+        "/activity-log",
+        response_class=HTMLResponse,
+    )
+    def activity_log_page(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_ACTIVITY_LOG,
+        ):
+            log_activity(
+                f"Web activity-log access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        activity_entries = load_recent_activity_entries()
+
+        if activity_entries is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="activity_log.html",
+                context={
+                    "page_title": "Activity log",
+                    "active_page": "activity_log",
+                    "current_user": current_user,
+                    "activity_entries": [],
+                    "error_message": (
+                        "Activity log entries could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="activity_log.html",
+            context={
+                "page_title": "Activity log",
+                "active_page": "activity_log",
+                "current_user": current_user,
+                "activity_entries": activity_entries,
                 "error_message": None,
             },
         )

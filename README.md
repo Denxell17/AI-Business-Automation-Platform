@@ -141,6 +141,13 @@ The current Employee Management System can:
   delivers the current SQLite employee report as an in-memory attachment,
   records successful downloads and denied attempts, and exposes salary
   values only to users who hold the explicit export permission
+- Provide a protected administrator-only browser activity-log page at
+  `/activity-log` that requires the dedicated `VIEW_ACTIVITY_LOG`
+  permission, reads only the fixed server-side activity-log file, shows
+  the latest 100 entries newest first, safely handles missing and unreadable
+  logs, hides the navigation link from unauthorized users, records denied
+  access, and uses a dedicated non-propagating application logger so
+  framework messages do not pollute audit history
 - Serve a tested static CSS stylesheet through FastAPI, connect it
   to the Jinja2 home page, and provide a responsive navy-and-teal
   business interface with constrained content width, reusable design
@@ -182,6 +189,7 @@ AI-Business-Automation-Platform/
 │       ├── tests/
 │       ├── templates/
 │       │   ├── application_base.html
+│       │   ├── activity_log.html
 │       │   ├── base.html
 │       │   ├── employee_form.html
 │       │   ├── employee_edit.html
@@ -449,6 +457,12 @@ python Projects\employee_management_system\run_tests.py
   attachment response headers, success-only download activity logging,
   denied-export logging, loading-failure handling, and exporter-plus-web
   regression coverage
+- Protected browser activity-log viewing, dedicated administrator-only
+  permissions, fixed server-side log paths, bounded newest-first file reads,
+  safe missing-file and unreadable-file states, Jinja2 activity-entry
+  escaping, permission-aware navigation, named Python loggers, handler
+  configuration, logger propagation control, framework-log isolation, and
+  activity-log authorization and route regression coverage
 
 ## Project Status
 
@@ -480,6 +494,7 @@ The FastAPI interface now provides:
   POST submission route at `/employees/{employee_id}/delete`
 - A protected workforce report at `/reports/workforce`
 - A protected employee CSV download at `/reports/employees.csv`
+- An administrator-only activity-log page at `/activity-log`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and
   `SameSite=Lax`
 - Signed-session CSRF protection for employee creation, editing, and
@@ -488,10 +503,10 @@ The FastAPI interface now provides:
 - Complete authenticated-session termination during logout
 - Repository-backed employee loading and saving
 - Separate `VIEW_EMPLOYEE`, `VIEW_PAYROLL`, `REGISTER_EMPLOYEE`,
-  `UPDATE_EMPLOYEE`, `DELETE_EMPLOYEE`, and `EXPORT_REPORT` permission
-  enforcement
+  `UPDATE_EMPLOYEE`, `DELETE_EMPLOYEE`, `EXPORT_REPORT`, and
+  `VIEW_ACTIVITY_LOG` permission enforcement
 - Permission-aware Add employee, Edit employee, Delete employee, View
-  payroll, and Download employee CSV actions
+  payroll, Download employee CSV, and Activity log actions
 - Default-deny responses and activity logging for missing permissions
 - Case-insensitive partial-name directory searches
 - Case-insensitive exact department directory filters
@@ -507,6 +522,10 @@ The FastAPI interface now provides:
 - CSV export downloads through `EXPORT_REPORT`
 - In-memory CSV attachments with salary values limited to export-authorized
   users
+- Activity-log access through administrator-only `VIEW_ACTIVITY_LOG`
+- Fixed server-side activity-log reading with no browser-provided file path
+- Bounded activity-log display of the latest 100 entries, newest first
+- Safe activity-log empty and loading-failure states
 - Explicit confirmation before permanent employee deletion
 - POST-only destructive employee deletion
 - CSRF validation before deletion reads or mutates employee storage
@@ -520,21 +539,24 @@ The FastAPI interface now provides:
 - POST-redirect-GET navigation after employee creation, editing, and
   deletion
 - Semantic employee tables, profile description lists, payroll
-  summaries, labelled forms, and labelled filter controls
+  summaries, labelled forms, labelled filter controls, and activity-log
+  entries
 - Accessible error, warning, confirmation, empty, and no-match states
 - Responsive employee tables, profile cards, payroll cards, forms,
-  confirmation pages, profile actions, directory filter controls, and
-  workforce report cards, tables, and download actions
+  confirmation pages, profile actions, directory filter controls,
+  workforce report cards, download actions, and activity-log entries
 - Written destructive-action labels that do not rely on color alone
 - Visible keyboard focus and narrow-screen controls
 - Peso currency formatting with two decimal places
-- Reuse of existing employee, payroll, report, export, search, and filter
-  services
+- Reuse of existing employee, payroll, report, export, search, filter,
+  and activity-logging services
 - Separation of general employee information from payroll-sensitive
   information
 - Active authenticated navigation
+- Administrator-only Activity log navigation
 - The accessible Warm Charcoal visual system, visible focus,
   reduced-motion support, and written status labels
+
 Day 84 established browser login and authenticated sessions. Day 85
 completed explicit logout and authenticated-session termination. Day 86
 introduced the protected read-only employee directory. Day 87 added
@@ -544,7 +566,8 @@ Day 90 added protected browser employee editing. Day 91 added protected
 browser employee deletion. Day 92 added protected browser directory search
 and filtering. Day 93 added protected browser directory sorting. Day 94
 added protected browser workforce reporting. Day 95 added protected browser
-employee CSV downloads.
+employee CSV downloads. Day 96 added protected administrator-only browser
+activity-log viewing.
 
 Directory searching, filtering, and sorting require an authenticated user
 with `VIEW_EMPLOYEE`. Both administrators and viewers can use the
@@ -587,6 +610,14 @@ existing report columns, including salary, so the download action is shown
 only to export-authorized users. Successful downloads and denied attempts
 are recorded in the activity log.
 
+The activity-log page requires the separate `VIEW_ACTIVITY_LOG` permission,
+which is assigned only to administrators. It reads the fixed server-side
+activity log and shows no more than the latest 100 entries, newest first.
+The route never accepts a browser-provided path. Missing logs display an
+empty state, unreadable logs return a safe error page, and denied requests
+are recorded. A dedicated `abap.activity` logger prevents FastAPI and file
+watcher messages from polluting the audit trail.
+
 Employee deletion remains protected by `DELETE_EMPLOYEE`. Opening the
 confirmation page never modifies storage. The deletion POST route checks
 authorization and signed-session CSRF protection before loading records,
@@ -594,11 +625,13 @@ uses the repository and existing service layer, commits the updated list
 in one SQLite transaction, logs only successful deletions, and redirects
 with HTTP `303`.
 
-The automated suite contains **317 passing tests**, including
-**99 FastAPI web tests**. Day 95 added **6 web tests** and **1 exporter
-test** covering unauthenticated redirects, administrator and viewer
-downloads, denied-export logging, loading failures, download-link display,
-CSV attachment headers and content, and service-level CSV generation.
+The automated suite contains **325 passing tests**, including
+**104 FastAPI web tests**. Day 96 added **5 web tests** and **3
+activity-logger tests** covering unauthenticated redirects, administrator
+access, viewer denial and denial logging, escaped activity entries,
+empty and unreadable-log states, permission-aware navigation, missing-log
+handling, latest-entry limits, newest-first ordering, and default-deny
+authorization.
 
 SQLite remains the live source of truth. Legacy JSON utilities remain
 available for migration, verification, and historical compatibility.
