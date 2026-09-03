@@ -40,9 +40,19 @@
             </p>
         </div>
 
-        <p class="user-accounts-count">
-            {{ user_account_summaries | length }} accounts
-        </p>
+        <div class="user-accounts-actions">
+            <a
+                class="user-account-create-link"
+                href="{{ url_for('viewer_account_create_form') }}"
+            >
+                <span aria-hidden="true">+</span>
+                Add viewer account
+            </a>
+
+            <p class="user-accounts-count">
+                {{ user_account_summaries | length }} accounts
+            </p>
+        </div>
     </header>
 
     {% if user_account_summaries %}

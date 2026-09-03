@@ -1,0 +1,126 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section user-account-form-section"
+    aria-labelledby="user-account-form-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('user_account_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to user accounts
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Access administration</p>
+
+            <h1
+                id="user-account-form-heading"
+                class="section-title"
+            >
+                Add viewer account
+            </h1>
+
+            <p class="page-message">
+                Create a viewer account with read-only employee access.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            Account management authorized
+        </span>
+    </div>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="{{ url_for('viewer_account_create') }}"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="viewer-account-details-heading"
+        >
+            <h2 id="viewer-account-details-heading">
+                Viewer account details
+            </h2>
+
+            <p class="user-account-form-note">
+                Viewer accounts can view employee records, payroll, and
+                approved reports. They cannot manage user accounts.
+            </p>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="username">Username</label>
+                    <input
+                        id="username"
+                        name="username"
+                        type="text"
+                        value="{{ form_values.get('username', '') }}"
+                        autocomplete="username"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="password">Password</label>
+                    <input
+                        id="password"
+                        name="password"
+                        type="password"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="password_confirmation">
+                        Confirm password
+                    </label>
+                    <input
+                        id="password_confirmation"
+                        name="password_confirmation"
+                        type="password"
+                        autocomplete="new-password"
+                        required
+                    >
+                </div>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for('user_account_directory') }}"
+            >
+                Cancel
+            </a>
+
+            <button type="submit">
+                <span aria-hidden="true">+</span>
+                Create viewer account
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

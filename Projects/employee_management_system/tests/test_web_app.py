@@ -7,6 +7,7 @@ from unittest.mock import patch
 from fastapi.testclient import TestClient
 from database import (
     insert_employee,
+    load_user_account_by_username,
     update_user_account_active_status,
 )
 from user_service import register_user_account
@@ -117,6 +118,24 @@ class TestWebApplication(unittest.TestCase):
         )
 
         self.assertIsNotNone(token_match)
+
+        return token_match.group(1)
+
+    def get_viewer_account_creation_csrf_token(self) -> str:
+        response = self.client.get("/users/new")
+
+        self.assertEqual(response.status_code, 200)
+
+        token_match = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"',
+            response.text,
+        )
+        self.assertIsNotNone(token_match)
+
+        if token_match is None:
+            self.fail(
+                "Viewer-account form did not contain a CSRF token."
+            )
 
         return token_match.group(1)
 
@@ -685,6 +704,247 @@ class TestWebApplication(unittest.TestCase):
         )
         mock_load_employee_records.assert_called_once_with(
             database_file=self.database_file,
+        )
+
+    def test_viewer_account_create_form_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/users/new",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    @patch("web_app.log_activity")
+    def test_viewer_account_creation_routes_deny_missing_permission(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+        mock_log_activity.reset_mock()
+
+        form_response = self.client.get("/users/new")
+        submission_response = self.client.post(
+            "/users/new",
+            data={
+                "csrf_token": "invalid-token",
+                "username": "BlockedViewer",
+                "password": "ViewerPassword123!",
+                "password_confirmation": "ViewerPassword123!",
+            },
+        )
+
+        self.assertEqual(form_response.status_code, 403)
+        self.assertEqual(submission_response.status_code, 403)
+        self.assertEqual(form_response.text, "Access denied.")
+        self.assertEqual(submission_response.text, "Access denied.")
+        self.assertEqual(mock_log_activity.call_count, 2)
+        mock_log_activity.assert_called_with(
+            "Web viewer-account-creation access denied "
+            f"for user {self.viewer_username}."
+        )
+
+    def test_administrator_can_view_viewer_account_create_form(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/users/new")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Add viewer account", response.text)
+        self.assertIn("Viewer account details", response.text)
+        self.assertIn(
+            'action="http://testserver/users/new"',
+            response.text,
+        )
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn('name="username"', response.text)
+        self.assertIn('name="password"', response.text)
+        self.assertIn('name="password_confirmation"', response.text)
+        self.assertIn('autocomplete="new-password"', response.text)
+        self.assertIn(
+            "Account management authorized",
+            response.text,
+        )
+
+    @patch("web_app.register_viewer_account")
+    @patch("web_app.log_activity")
+    def test_viewer_account_create_rejects_invalid_csrf_token(
+        self,
+        mock_log_activity,
+        mock_register_viewer_account,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/users/new",
+            data={
+                "csrf_token": "invalid-token",
+                "username": "NewViewer",
+                "password": "ViewerPassword123!",
+                "password_confirmation": "ViewerPassword123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.text,
+            "Your form could not be verified.",
+        )
+        mock_register_viewer_account.assert_not_called()
+        mock_log_activity.assert_called_once_with(
+            "Web viewer-account-creation CSRF validation failed "
+            f"for user {self.username}."
+        )
+
+    @patch("web_app.register_viewer_account")
+    def test_viewer_account_create_rejects_invalid_form_values(
+        self,
+        mock_register_viewer_account,
+    ):
+        self.sign_in()
+        csrf_token = self.get_viewer_account_creation_csrf_token()
+
+        invalid_cases = [
+            (
+                {
+                    "username": "",
+                    "password": "ViewerPassword123!",
+                    "password_confirmation": "ViewerPassword123!",
+                },
+                "Username, password, and password confirmation are required.",
+            ),
+            (
+                {
+                    "username": "NewViewer",
+                    "password": "",
+                    "password_confirmation": "",
+                },
+                "Username, password, and password confirmation are required.",
+            ),
+            (
+                {
+                    "username": "NewViewer",
+                    "password": "ViewerPassword123!",
+                    "password_confirmation": "DifferentPassword123!",
+                },
+                "Password confirmation does not match.",
+            ),
+        ]
+
+        for form_values, error_message in invalid_cases:
+            with self.subTest(form_values=form_values):
+                response = self.client.post(
+                    "/users/new",
+                    data={
+                        "csrf_token": csrf_token,
+                        **form_values,
+                    },
+                )
+
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(error_message, response.text)
+
+        mock_register_viewer_account.assert_not_called()
+
+    @patch(
+        "web_app.register_viewer_account",
+        return_value=False,
+    )
+    def test_viewer_account_create_handles_registration_failure(
+        self,
+        mock_register_viewer_account,
+    ):
+        self.sign_in()
+        csrf_token = self.get_viewer_account_creation_csrf_token()
+
+        response = self.client.post(
+            "/users/new",
+            data={
+                "csrf_token": csrf_token,
+                "username": "DuplicateViewer",
+                "password": "ViewerPassword123!",
+                "password_confirmation": "ViewerPassword123!",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "A viewer account could not be created.",
+            response.text,
+        )
+        mock_register_viewer_account.assert_called_once()
+
+        called_current_user = (
+            mock_register_viewer_account.call_args.args[0]
+        )
+
+        self.assertEqual(
+            called_current_user["username"],
+            self.username,
+        )
+        self.assertEqual(
+            mock_register_viewer_account.call_args.args[1:],
+            (
+                "DuplicateViewer",
+                "ViewerPassword123!",
+                self.database_file,
+            ),
+        )
+
+    @patch("web_app.log_activity")
+    def test_administrator_can_create_viewer_account(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in()
+        csrf_token = self.get_viewer_account_creation_csrf_token()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/users/new",
+            data={
+                "csrf_token": csrf_token,
+                "username": "NewViewer",
+                "password": "ViewerPassword123!",
+                "password_confirmation": "ViewerPassword123!",
+            },
+            follow_redirects=False,
+        )
+        stored_user = load_user_account_by_username(
+            "NewViewer",
+            self.database_file,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/users",
+        )
+        self.assertIsNotNone(stored_user)
+
+        if stored_user is None:
+            self.fail("The new viewer account was not found.")
+
+        self.assertEqual(stored_user["role"], "viewer")
+        self.assertTrue(stored_user["is_active"])
+        self.assertNotEqual(
+            stored_user["password_hash"],
+            "ViewerPassword123!",
+        )
+        mock_log_activity.assert_called_once_with(
+            "Web viewer account NewViewer was registered "
+            f"by user {self.username}."
         )
 
     def test_user_account_directory_redirects_unauthenticated_user(

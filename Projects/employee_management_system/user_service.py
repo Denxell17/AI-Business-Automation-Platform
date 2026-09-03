@@ -97,6 +97,12 @@ def register_viewer_account(
     ):
         return False
 
+    if (
+        not username.strip()
+        or not password.strip()
+    ):
+        return False
+
     return register_user_account(
         username,
         password,
