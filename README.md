@@ -476,6 +476,11 @@ python Projects\employee_management_system\run_tests.py
   permissions, denied-access audit logging, safe table template contexts,
   written active and inactive statuses, responsive account-table layouts,
   and account-directory regression coverage
+- Protected browser viewer-account creation, administrator-only creation
+  forms, session-based CSRF validation, required-field and password-match
+  validation, blank-value service protection, password-safe error contexts,
+  generic registration-failure handling, Post/Redirect/Get completion,
+  success-only audit logging, and creation-route regression coverage
 
 ## Project Status
 
@@ -509,10 +514,12 @@ The FastAPI interface now provides:
 - A protected employee CSV download at `/reports/employees.csv`
 - An administrator-only activity-log page at `/activity-log`
 - An administrator-only user-account directory at `/users`
+- An administrator-only viewer-account creation form and submission route at
+  `/users/new`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and
   `SameSite=Lax`
-- Signed-session CSRF protection for employee creation, editing, and
-  deletion
+- Signed-session CSRF protection for employee creation, editing, deletion,
+  and viewer-account creation
 - Live SQLite account revalidation before protected access
 - Complete authenticated-session termination during logout
 - Repository-backed employee loading and saving
@@ -520,7 +527,8 @@ The FastAPI interface now provides:
   `UPDATE_EMPLOYEE`, `DELETE_EMPLOYEE`, `EXPORT_REPORT`,
   `VIEW_ACTIVITY_LOG`, and `MANAGE_USER_ACCOUNTS` permission enforcement
 - Permission-aware Add employee, Edit employee, Delete employee, View
-  payroll, Download employee CSV, Activity log, and User accounts actions
+  payroll, Download employee CSV, Activity log, User accounts, and Add
+  viewer account actionsctivity log, and User accounts actions
 - Default-deny responses and activity logging for missing permissions
 - Case-insensitive partial-name directory searches
 - Case-insensitive exact department directory filters
@@ -547,8 +555,8 @@ The FastAPI interface now provides:
 - POST-only destructive employee deletion
 - CSRF validation before deletion reads or mutates employee storage
 - Transactional SQLite synchronization with rollback on failure
-- Success-only employee-creation, update, deletion, and CSV-download
-  activity logging
+- Success-only employee-creation, update, deletion, viewer-account
+  registration, and CSV-download activity logging
 - Safe employee-loading and saving failure handling
 - Safe missing-employee `404` pages
 - Case-insensitive employee-ID lookup
@@ -556,8 +564,8 @@ The FastAPI interface now provides:
 - POST-redirect-GET navigation after employee creation, editing, and
   deletion
 - Semantic employee tables, profile description lists, payroll
-  summaries, labelled forms, labelled filter controls, activity-log
-  entries, and user-account tables
+  summaries, labelled employee and viewer-account forms, labelled filter
+  controls, activity-log entries, and user-account tables
 - Accessible error, warning, confirmation, empty, and no-match states
 - Responsive employee tables, profile cards, payroll cards, forms,
   confirmation pages, profile actions, directory filter controls,
@@ -587,7 +595,8 @@ and filtering. Day 93 added protected browser directory sorting. Day 94
 added protected browser workforce reporting. Day 95 added protected browser
 employee CSV downloads. Day 96 added protected administrator-only browser
 activity-log viewing. Day 97 added protected administrator-only browser
-user-account viewing.
+user-account viewing. Day 98 added protected administrator-only browser
+viewer-account creation.
 
 Directory searching, filtering, and sorting require an authenticated user
 with `VIEW_EMPLOYEE`. Both administrators and viewers can use the
@@ -646,6 +655,14 @@ ordered case-insensitively by username. Unauthenticated users are redirected
 to `/login`, denied users receive HTTP `403` and an activity-log entry, and
 a SQLite loading failure returns a safe error page.
 
+Viewer-account creation also requires `MANAGE_USER_ACCOUNTS`. The `/users/new`
+form includes a signed-session CSRF token. The POST route validates the token,
+requires a username and matching nonblank passwords, and reuses
+`register_viewer_account()` for authorization, password hashing, role
+assignment, duplicate protection, and SQLite storage. Error pages preserve
+only the submitted username; they never return a password. Successful
+creation logs the action and redirects with HTTP `303` to `/users`.
+
 Employee deletion remains protected by `DELETE_EMPLOYEE`. Opening the
 confirmation page never modifies storage. The deletion POST route checks
 authorization and signed-session CSRF protection before loading records,
@@ -653,12 +670,13 @@ uses the repository and existing service layer, commits the updated list
 in one SQLite transaction, logs only successful deletions, and redirects
 with HTTP `303`.
 
-The automated suite contains **332 passing tests**, including
-**109 FastAPI web tests**. Day 97 added **5 web tests** and **2 database
-tests** covering unauthenticated redirects, administrator access, viewer
-denial and denial logging, safe account-summary fields, case-insensitive
-ordering, password-hash exclusion, SQLite loading failures, empty-state
-handling, and permission-aware navigation.
+The automated suite contains **340 passing tests**, including
+**116 FastAPI web tests**. Day 98 added **7 web tests** and **1 user-service
+test** covering unauthenticated redirects, administrator-only form access,
+viewer denial and denial logging, CSRF rejection, blank-field and
+password-confirmation validation, generic registration failure handling,
+successful viewer creation, password-hash storage, success-only logging, and
+blank username-or-password service protection.
 
 SQLite remains the live source of truth. Legacy JSON utilities remain
 available for migration, verification, and historical compatibility.

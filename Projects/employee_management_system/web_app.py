@@ -55,7 +55,10 @@ from exporter import build_employee_csv_content
 from payroll import calculate_payroll
 from models import Employee
 from reports import calculate_workforce_summary
-from user_service import authenticate_user_account
+from user_service import (
+    authenticate_user_account,
+    register_viewer_account,
+)
 from web_session import (
     begin_authenticated_session,
     clear_authenticated_session,
@@ -220,6 +223,148 @@ def create_web_application(
         StaticFiles(directory=STATIC_DIRECTORY),
         name="static",
     )
+
+    @application.get(
+        "/users/new",
+        response_class=HTMLResponse,
+    )
+    def viewer_account_create_form(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_USER_ACCOUNTS,
+        ):
+            log_activity(
+                f"Web viewer-account-creation access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="user_account_form.html",
+            context={
+                "page_title": "Add viewer account",
+                "active_page": "users",
+                "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "form_values": {},
+                "error_message": None,
+            },
+        )
+
+    @application.post("/users/new")
+    def viewer_account_create(
+        request: Request,
+        csrf_token: Annotated[str, Form()],
+        username: Annotated[str, Form()] = "",
+        password: Annotated[str, Form()] = "",
+        password_confirmation: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_USER_ACCOUNTS,
+        ):
+            log_activity(
+                f"Web viewer-account-creation access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web viewer-account-creation CSRF validation failed "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        form_values = {
+            "username": username.strip(),
+        }
+
+        if (
+            not form_values["username"]
+            or not password.strip()
+            or not password_confirmation.strip()
+        ):
+            error_message = (
+                "Username, password, and password confirmation "
+                "are required."
+            )
+        elif password != password_confirmation:
+            error_message = "Password confirmation does not match."
+        else:
+            registration_succeeded = register_viewer_account(
+                current_user,
+                form_values["username"],
+                password,
+                database_file,
+            )
+
+            if registration_succeeded:
+                log_activity(
+                    f"Web viewer account "
+                    f"{form_values['username']} was registered "
+                    f"by user {current_user['username']}."
+                )
+                return RedirectResponse(
+                    url=request.url_for(
+                        "user_account_directory"
+                    ),
+                    status_code=303,
+                )
+
+            error_message = (
+                "A viewer account could not be created."
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="user_account_form.html",
+            context={
+                "page_title": "Add viewer account",
+                "active_page": "users",
+                "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "form_values": form_values,
+                "error_message": error_message,
+            },
+            status_code=400,
+        )
 
     @application.get(
         "/users",

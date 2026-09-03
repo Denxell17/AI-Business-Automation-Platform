@@ -349,6 +349,47 @@ class TestUserService(unittest.TestCase):
                 )
             )
 
+    def test_administrator_cannot_register_viewer_with_blank_values(
+        self,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        blank_value_cases = [
+            ("", "ViewerPassword123!"),
+            ("   ", "ViewerPassword123!"),
+            ("ViewerOne", ""),
+            ("ViewerTwo", "   "),
+        ]
+
+        for username, password in blank_value_cases:
+            with self.subTest(
+                username=username,
+                password=password,
+            ):
+                with TemporaryDirectory() as temporary_directory:
+                    database_file = (
+                        Path(temporary_directory) / "employees.db"
+                    )
+
+                    registration_result = register_viewer_account(
+                        administrator,
+                        username,
+                        password,
+                        database_file,
+                    )
+                    stored_user = load_user_account_by_username(
+                        username,
+                        database_file,
+                    )
+
+                self.assertFalse(registration_result)
+                self.assertIsNone(stored_user)
+
     def test_viewer_cannot_register_viewer_account(self):
         viewer = {
             "user_id": 2,
