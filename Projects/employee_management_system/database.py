@@ -5,6 +5,7 @@ from models import (
     Employee,
     UserAccount,
     UserAccountSummary,
+    Workflow,
 )
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
@@ -17,7 +18,10 @@ DATABASE_BACKUP_FILE = (
 def get_database_connection(
     database_file: Path = DATABASE_FILE,
 ) -> sqlite3.Connection:
-    return sqlite3.connect(database_file)
+    connection = sqlite3.connect(database_file)
+    connection.execute("PRAGMA foreign_keys = ON")
+
+    return connection
 
 
 def initialize_database(
@@ -56,6 +60,25 @@ def initialize_database(
                 is_active INTEGER NOT NULL DEFAULT 1 CHECK (
                     is_active IN (0, 1)
                 )
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS workflows (
+                workflow_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL CHECK (
+                    length(trim(name)) > 0
+                ),
+                description TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL DEFAULT 'draft' CHECK (
+                    status IN ('draft', 'active', 'inactive')
+                ),
+                created_by_user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (created_by_user_id)
+                    REFERENCES users(user_id)
             )
             """
         )
@@ -198,6 +221,91 @@ def insert_employee(
         return False
     finally:
         connection.close()
+
+
+def insert_workflow(
+    workflow: Workflow,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        connection.execute(
+            """
+            INSERT INTO workflows (
+                workflow_id,
+                name,
+                description,
+                status,
+                created_by_user_id,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                workflow["workflow_id"],
+                workflow["name"],
+                workflow["description"],
+                workflow["status"],
+                workflow["created_by_user_id"],
+                workflow["created_at"],
+                workflow["updated_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_workflows_from_database(
+    database_file: Path = DATABASE_FILE,
+) -> list[Workflow]:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        rows = connection.execute(
+            """
+            SELECT
+                workflow_id,
+                name,
+                description,
+                status,
+                created_by_user_id,
+                created_at,
+                updated_at
+            FROM workflows
+            ORDER BY created_at, workflow_id
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    workflows: list[Workflow] = []
+
+    for row in rows:
+        workflow: Workflow = {
+            "workflow_id": row["workflow_id"],
+            "name": row["name"],
+            "description": row["description"],
+            "status": row["status"],
+            "created_by_user_id": row[
+                "created_by_user_id"
+            ],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+
+        workflows.append(workflow)
+
+    return workflows
 
 
 def load_employees_from_database(
