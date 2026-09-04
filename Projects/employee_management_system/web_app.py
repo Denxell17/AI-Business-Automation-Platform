@@ -638,10 +638,10 @@ def create_web_application(
             request=request,
             name="home.html",
             context={
-                "page_title": "Employee Management System",
+                "page_title": "ABAP Dashboard",
                 "page_message": (
-                    "Securely manage workforce information "
-                    "through a browser."
+                    "Your business automation workspace "
+                    "for managing connected modules."
                 ),
                 "active_page": "home",
                 "current_user": current_user,
