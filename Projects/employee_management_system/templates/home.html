@@ -2,16 +2,16 @@
 
 {% block content %}
 <section
-    class="welcome-card"
-    aria-labelledby="welcome-heading"
+    class="dashboard-hero"
+    aria-labelledby="dashboard-heading"
 >
-    <p class="section-eyebrow">Employee management</p>
+    <p class="section-eyebrow">AI Business Automation Platform</p>
 
     <h1
-        id="welcome-heading"
+        id="dashboard-heading"
         class="section-title"
     >
-        Welcome
+        ABAP Dashboard
     </h1>
 
     <p class="page-message">
@@ -23,22 +23,154 @@
             class="status-indicator"
             aria-hidden="true"
         >✓</span>
-        <span>Web interface foundation is running.</span>
+        <span>Platform access is secure and available.</span>
     </p>
 </section>
 
 <section
-    class="resource-section"
+    class="dashboard-section"
+    aria-labelledby="modules-heading"
+>
+    <div class="section-heading-group">
+        <p class="section-eyebrow">Portfolio modules</p>
+
+        <h2
+            id="modules-heading"
+            class="dashboard-section-title"
+        >
+            Business automation workspace
+        </h2>
+
+        <p class="dashboard-section-description">
+            Open an available module or review the capabilities
+            planned for the growing ABAP portfolio.
+        </p>
+    </div>
+
+    <div class="module-grid">
+        <article class="module-card is-available">
+            <div class="module-card-heading">
+                <span
+                    class="module-icon"
+                    aria-hidden="true"
+                >♙</span>
+
+                <span class="module-status is-available">
+                    <span aria-hidden="true">✓</span>
+                    Available
+                </span>
+            </div>
+
+            <h3>Employee Management</h3>
+
+            <p>
+                Manage employee records, payroll, workforce reports,
+                user accounts, and protected activity history.
+            </p>
+
+            <a
+                class="module-action"
+                href="/employees"
+            >
+                Open employee workspace
+                <span aria-hidden="true">→</span>
+            </a>
+        </article>
+
+        <article class="module-card">
+            <div class="module-card-heading">
+                <span
+                    class="module-icon"
+                    aria-hidden="true"
+                >↻</span>
+
+                <span class="module-status">
+                    Planned
+                </span>
+            </div>
+
+            <h3>Workflow Automation</h3>
+
+            <p>
+                Build reusable workflows, schedules, tasks, and
+                execution histories for business processes.
+            </p>
+        </article>
+
+        <article class="module-card">
+            <div class="module-card-heading">
+                <span
+                    class="module-icon"
+                    aria-hidden="true"
+                >◎</span>
+
+                <span class="module-status">
+                    Planned
+                </span>
+            </div>
+
+            <h3>Customer Management</h3>
+
+            <p>
+                Organize leads, customers, contact details, and
+                business relationships in one protected workspace.
+            </p>
+        </article>
+
+        <article class="module-card">
+            <div class="module-card-heading">
+                <span
+                    class="module-icon"
+                    aria-hidden="true"
+                >▤</span>
+
+                <span class="module-status">
+                    Planned
+                </span>
+            </div>
+
+            <h3>Invoice Management</h3>
+
+            <p>
+                Create and track invoices, payment states, customer
+                balances, and related business documents.
+            </p>
+        </article>
+
+        <article class="module-card">
+            <div class="module-card-heading">
+                <span
+                    class="module-icon"
+                    aria-hidden="true"
+                >✦</span>
+
+                <span class="module-status">
+                    Planned
+                </span>
+            </div>
+
+            <h3>AI Agents</h3>
+
+            <p>
+                Configure template-based assistants that support
+                repeatable business automation tasks.
+            </p>
+        </article>
+    </div>
+</section>
+
+<section
+    class="dashboard-section"
     aria-labelledby="resources-heading"
 >
     <div class="section-heading-group">
-        <p class="section-eyebrow">Available now</p>
+        <p class="section-eyebrow">Platform resources</p>
 
         <h2
             id="resources-heading"
-            class="resource-title"
+            class="dashboard-section-title"
         >
-            Development resources
+            Development and system tools
         </h2>
     </div>
 

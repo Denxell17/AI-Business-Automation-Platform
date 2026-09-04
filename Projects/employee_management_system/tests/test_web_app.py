@@ -3,6 +3,7 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
+from urllib import response
 
 from fastapi.testclient import TestClient
 from database import (
@@ -268,7 +269,7 @@ class TestWebApplication(unittest.TestCase):
             },
         ]
 
-    def test_home_page_returns_employee_management_html(self):
+    def test_home_page_returns_shared_abap_dashboard(self):
         self.sign_in()
         response = self.client.get("/")
 
@@ -278,13 +279,33 @@ class TestWebApplication(unittest.TestCase):
             response.headers["content-type"],
         )
         self.assertIn(
-            "Employee Management System",
+            "ABAP Dashboard",
             response.text,
         )
         self.assertIn(
-            "Securely manage workforce information",
+            "Your business automation workspace",
             response.text,
         )
+        self.assertIn(
+            "Employee Management",
+            response.text,
+        )
+        self.assertIn(
+            'href="/employees"',
+            response.text,
+        )
+
+    def test_home_page_identifies_available_and_planned_modules(self):
+        self.sign_in()
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Available", response.text)
+        self.assertIn("Planned", response.text)
+        self.assertIn("Workflow Automation", response.text)
+        self.assertIn("Customer Management", response.text)
+        self.assertIn("Invoice Management", response.text)
+        self.assertIn("AI Agents", response.text)
 
     def test_home_page_uses_reusable_navigation_layout(self):
         self.sign_in()
@@ -293,6 +314,14 @@ class TestWebApplication(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn(
             'aria-label="Primary navigation"',
+            response.text,
+        )
+        self.assertIn(
+            'aria-label="ABAP workspace navigation"',
+            response.text,
+        )
+        self.assertIn(
+            'class="topbar-label">ABAP workspace</p>',
             response.text,
         )
         self.assertIn(
@@ -3036,9 +3065,22 @@ class TestWebApplication(unittest.TestCase):
             "--color-background: #1b1d21",
             response.text,
         )
+        self.assertIn(
+            ".dashboard-hero",
+            response.text,
+        )
+        self.assertIn(
+            ".module-grid",
+            response.text,
+        )
+        self.assertIn(
+            ".module-status.is-available",
+            response.text,
+        )
 
     def test_navigation_script_is_available(self):
         response = self.client.get("/static/navigation.js")
+
 
         self.assertEqual(response.status_code, 200)
         self.assertIn(
