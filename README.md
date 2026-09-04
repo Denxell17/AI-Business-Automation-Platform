@@ -490,195 +490,87 @@ python Projects\employee_management_system\run_tests.py
 
 ## Project Status
 
-The Employee Management System is an actively developed,
-security-focused Python application with a complete console interface
-and a growing authenticated FastAPI web interface.
+### Employee Management System — Complete
 
-The backend provides employee CRUD, payroll and workforce analytics,
-filtering, reporting, CSV export, SQLite-primary storage, JSON migration
-and verification, database backup and protected restoration, activity
-logging, secure password hashing, administrator and viewer roles,
-default-deny authorization, viewer-account administration, and
-self-service password changes.
+Day 100 completes the original Employee Management System roadmap milestone.
 
-The FastAPI interface now provides:
+The module is a portfolio-ready, security-focused Python application with a
+working console interface and authenticated FastAPI web interface. SQLite is
+the live source of truth for employee and user-account data. Legacy JSON
+utilities remain available for migration, verification, and historical
+compatibility.
 
-- An application factory, `/health`, and `/docs`
-- A protected server-rendered dashboard at `/`
-- Accessible browser login at `/login`
-- POST-only browser logout at `/logout`
-- A protected employee directory at `/employees`
-- Protected employee profiles at `/employees/{employee_id}`
-- Protected payroll pages at `/employees/{employee_id}/payroll`
-- An administrator-only Add employee page and submission route at
-  `/employees/new`
-- An administrator-only Edit employee page and submission route at
-  `/employees/{employee_id}/edit`
-- An administrator-only employee-deletion confirmation page and POST route
-  at `/employees/{employee_id}/delete`
-- A protected workforce report at `/reports/workforce`
-- A protected employee CSV download at `/reports/employees.csv`
-- An administrator-only activity-log page at `/activity-log`
-- An administrator-only user-account directory at `/users`
-- An administrator-only viewer-account creation form and submission route at
-  `/users/new`
-- An administrator-only viewer-status update route at
-  `/users/{username}/status`
-- Signed eight-hour `abap_session` cookies with `HttpOnly` and
-  `SameSite=Lax`
-- Signed-session CSRF protection for employee creation, editing, deletion,
-  viewer-account creation, and viewer-status changes
+### Completed Business Capabilities
+
+- Employee CRUD with SQLite-primary storage, synchronization, migration,
+  verification, backups, restoration, and rollback-safe handling
+- Payroll calculations, compensation summaries, workforce analytics, reports,
+  filters, search, sorting, and CSV export
+- Console authentication, default-deny role-based authorization, protected
+  user-account management, activity logging, and password workflows
+- Administrator and viewer roles, with inactive-account protection
+- Protected browser employee directory, profiles, payroll, creation, editing,
+  and confirmed deletion
+- Browser directory searching, filtering, and sorting for authorized users
+- Protected workforce reports and CSV downloads
+- Administrator-only browser activity-log viewing
+- Administrator-only browser user-account viewing, viewer creation, and viewer
+  activation or deactivation
+- Accessible responsive layouts, visible focus states, semantic forms and
+  tables, written status labels, and safe empty and error states
+
+### Completed Web Security
+
+The FastAPI interface provides:
+
+- Accessible browser login at `/login` and POST-only logout at `/logout`
+- Signed eight-hour `abap_session` cookies with `HttpOnly` and `SameSite=Lax`
 - Live SQLite account revalidation before protected access
-- Complete authenticated-session termination during logout
-- Repository-backed employee loading and saving
-- Separate `VIEW_EMPLOYEE`, `VIEW_PAYROLL`, `REGISTER_EMPLOYEE`,
-  `UPDATE_EMPLOYEE`, `DELETE_EMPLOYEE`, `EXPORT_REPORT`,
-  `VIEW_ACTIVITY_LOG`, and `MANAGE_USER_ACCOUNTS` permission enforcement
-- Permission-aware employee, reporting, activity-log, user-account,
-  viewer-account creation, and viewer-status actions
-- Default-deny responses and activity logging for missing permissions
-- Case-insensitive partial-name directory searches
-- Case-insensitive exact department directory filters
-- Inclusive minimum-and-maximum salary directory filters
-- Combined directory filters that require all selected conditions
-- Server-side salary-range validation with preserved query values
-- Clear-filter navigation and distinct no-match directory states
-- Administrator and viewer directory filtering through `VIEW_EMPLOYEE`
-- Protected workforce reports through `VIEW_EMPLOYEE`
-- Aggregate employee and department headcounts without salary or payroll
-  values
-- CSV export downloads through `EXPORT_REPORT`
-- In-memory CSV attachments with salary values limited to export-authorized
-  users
-- Activity-log access through administrator-only `VIEW_ACTIVITY_LOG`
-- Fixed server-side activity-log reading with no browser-provided file path
-- Bounded activity-log display of the latest 100 entries, newest first
-- Safe activity-log empty and loading-failure states
-- User-account access through administrator-only `MANAGE_USER_ACCOUNTS`
-- Safe account-summary data that excludes password hashes
-- Case-insensitive username ordering and safe account-loading failure states
-- Administrator-only viewer-account creation with password-safe error pages
-- Administrator-only viewer activation and deactivation
-- Viewer-only status controls and written administrator unavailable actions
-- Boolean status allowlisting before account-status service calls
-- Explicit confirmation before permanent employee deletion
-- POST-only destructive employee deletion
-- CSRF validation before deletion reads or mutates employee storage
-- Transactional SQLite synchronization with rollback on failure
-- Success-only employee-creation, update, deletion, viewer-account
-  registration, viewer-status, and CSV-download activity logging
-- Safe employee-loading and saving failure handling
-- Safe missing-employee `404` pages
-- Case-insensitive employee-ID lookup
-- Generated employee-profile, payroll, edit, and delete links
-- Post/Redirect/Get navigation after employee creation, editing, deletion,
-  viewer-account creation, and viewer-status changes
-- Semantic employee tables, profile description lists, payroll summaries,
-  labelled employee and viewer-account forms, labelled filter controls,
-  activity-log entries, and user-account tables
-- Accessible error, warning, confirmation, empty, and no-match states
-- Responsive employee tables, profile cards, payroll cards, forms,
-  confirmation pages, profile actions, directory filter controls,
-  workforce report cards, download actions, activity-log entries, and
-  user-account status-action tables
-- Written destructive-action labels that do not rely on color alone
-- Visible keyboard focus and narrow-screen controls
-- Peso currency formatting with two decimal places
-- Reuse of existing employee, payroll, report, export, search, filter,
-  activity-logging, user-account, and viewer-status services
-- Separation of general employee information from payroll-sensitive
-  information
-- Separation of safe user-account summaries from password-hash data
-- Active authenticated navigation
-- Administrator-only Activity log and User accounts navigation
-- The accessible Warm Charcoal visual system, visible focus,
-  reduced-motion support, and written status labels
+- Default-deny permission enforcement for employee, payroll, report, export,
+  activity-log, and user-account workflows
+- Signed-session CSRF protection for every browser state-changing workflow
+- POST-only employee deletion, viewer creation, and viewer-status routes
+- Server-side input validation and allowlisted viewer-status values
+- Repository-backed and service-backed SQLite operations
+- Safe missing-record, validation, and storage-failure responses
+- Generic error messages for sensitive account-management failures
+- Success-only logging for sensitive completed actions, plus logged denied
+  access where appropriate
+- Password hashes excluded from user-account browser views
+- Post/Redirect/Get navigation after successful state changes
 
-Day 84 established browser login and authenticated sessions. Day 85
-completed explicit logout and authenticated-session termination. Day 86
-introduced the protected read-only employee directory. Day 87 added
-protected individual employee profiles. Day 88 added protected browser
-employee payroll pages. Day 89 added protected browser employee creation.
-Day 90 added protected browser employee editing. Day 91 added protected
-browser employee deletion. Day 92 added protected browser directory search
-and filtering. Day 93 added protected browser directory sorting. Day 94
-added protected browser workforce reporting. Day 95 added protected browser
-employee CSV downloads. Day 96 added protected administrator-only browser
-activity-log viewing. Day 97 added protected administrator-only browser
-user-account viewing. Day 98 added protected administrator-only browser
-viewer-account creation. Day 99 added protected administrator-only browser
-viewer activation and deactivation.
+### Important Browser Routes
 
-Directory searching, filtering, and sorting require an authenticated user
-with `VIEW_EMPLOYEE`. Both administrators and viewers can use the read-only
-GET form. Missing permission returns HTTP `403` before employee records are
-loaded, while unauthenticated users are redirected to `/login`.
+- `/` — protected dashboard
+- `/employees` — protected employee directory
+- `/employees/{employee_id}` — protected employee profile
+- `/employees/{employee_id}/payroll` — protected payroll page
+- `/employees/new` — administrator-only employee creation
+- `/employees/{employee_id}/edit` — administrator-only employee editing
+- `/employees/{employee_id}/delete` — administrator-only deletion
+  confirmation and POST submission
+- `/reports/workforce` — protected workforce report
+- `/reports/employees.csv` — protected CSV download
+- `/activity-log` — administrator-only activity log
+- `/users` — administrator-only user-account directory
+- `/users/new` — administrator-only viewer-account creation
+- `/users/{username}/status` — administrator-only viewer activation or
+  deactivation
 
-The directory accepts optional `search_text`, `department`,
-`minimum_salary`, `maximum_salary`, and `sort_by` query parameters. Text
-values are normalized before filtering. The existing service functions
-perform case-insensitive partial-name searching, case-insensitive exact
-department matching, inclusive salary-range filtering, alphabetical name
-sorting, and highest-salary-first sorting.
+### Verification
 
-The workforce report requires `VIEW_EMPLOYEE` and uses the existing
-`calculate_workforce_summary()` service. It exposes aggregate employee and
-department information without salary or payroll values in template context.
-The CSV download requires `EXPORT_REPORT`, generates an in-memory
-`employee_report.csv` attachment, includes a UTF-8 BOM for spreadsheet
-compatibility, and logs only successful downloads.
+Day 100 verification completed successfully:
 
-The activity-log page requires administrator-only `VIEW_ACTIVITY_LOG`. It
-reads only the fixed server-side log file, displays at most the latest 100
-entries newest first, safely handles missing and unreadable logs, and records
-denied access. A dedicated `abap.activity` logger keeps framework messages
-out of the audit trail.
+- **347 automated tests passed**
+- **123 FastAPI web tests passed**
+- An administrator browser smoke test confirmed employee search, filtering,
+  sorting, profiles, payroll, workforce reporting, activity-log viewing, and
+  user-account status controls without changing data
 
-The user-account directory requires administrator-only
-`MANAGE_USER_ACCOUNTS`. It loads only user ID, username, role, and active
-status from SQLite; password hashes are never selected or displayed.
-Accounts are ordered case-insensitively by username. Unauthenticated users
-are redirected to `/login`, denied users receive HTTP `403` and an
-activity-log entry, and a SQLite loading failure returns a safe error page.
+### Roadmap Position
 
-Viewer-account creation at `/users/new` also requires
-`MANAGE_USER_ACCOUNTS`. Its form uses a signed-session CSRF token, requires a
-username and matching nonblank passwords, and reuses
-`register_viewer_account()` for authorization, password hashing, role
-assignment, duplicate protection, and SQLite storage. Error pages preserve
-only the submitted username. Successful creation logs the action and
-redirects with HTTP `303` to `/users`.
+The original Employee Management System is complete.
 
-Viewer-status changes use POST requests to `/users/{username}/status`. Each
-viewer row contains a CSRF-protected form that submits an allowlisted
-`true` or `false` status value. The route checks authentication,
-authorization, and CSRF before calling
-`set_viewer_account_active_status()`. That existing service independently
-rejects missing accounts, administrator targets, unchanged statuses, viewer
-users, and inactive administrators. The browser shows status controls only
-for viewer accounts, returns a generic error on failure, logs only successful
-changes, and redirects with HTTP `303` back to `/users`.
-
-Employee deletion remains protected by `DELETE_EMPLOYEE`. Opening the
-confirmation page never modifies storage. The deletion POST route checks
-authorization and signed-session CSRF protection before loading records,
-uses the repository and existing service layer, commits the updated list in
-one SQLite transaction, logs only successful deletions, and redirects with
-HTTP `303`.
-
-The automated suite contains **347 passing tests**, including
-**123 FastAPI web tests**. Day 99 added **7 web tests** covering
-unauthenticated redirects, viewer denial and audit logging, invalid CSRF
-rejection, invalid status-value rejection, generic service failures,
-successful deactivation, successful reactivation, accessible action controls,
-and isolated mutable account fixtures.
-
-SQLite remains the live source of truth. Legacy JSON utilities remain
-available for migration, verification, and historical compatibility.
-The console application remains operational while protected browser
-workflows continue to grow.
-
-The permanent development plan is stored in
-`Notes/master_roadmap.md`. Day 100 remains the original Employee Management
-System milestone, while Day 155 is the target for the full ABAP portfolio
-MVP.
+Day 101 begins Phase 2: the Full ABAP Portfolio MVP. The next feature is the
+shared ABAP dashboard, which will become the entry point for multiple business
+automation modules on the path to the Day 155 MVP.
