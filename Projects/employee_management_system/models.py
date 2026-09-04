@@ -30,6 +30,28 @@ class UserAccountSummary(TypedDict):
     role: str
     is_active: bool
 
+WORKFLOW_STATUS_DRAFT = "draft"
+WORKFLOW_STATUS_ACTIVE = "active"
+WORKFLOW_STATUS_INACTIVE = "inactive"
+
+VALID_WORKFLOW_STATUSES = frozenset(
+    {
+        WORKFLOW_STATUS_DRAFT,
+        WORKFLOW_STATUS_ACTIVE,
+        WORKFLOW_STATUS_INACTIVE,
+    }
+)
+
+
+class Workflow(TypedDict):
+    workflow_id: str
+    name: str
+    description: str
+    status: str
+    created_by_user_id: int
+    created_at: str
+    updated_at: str
+
 
 class PayrollSummary(TypedDict):
     performance_rating: str

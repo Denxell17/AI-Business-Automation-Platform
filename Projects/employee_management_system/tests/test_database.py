@@ -10,8 +10,10 @@ from database import (
     get_database_connection,
     initialize_database,
     insert_employee,
+    insert_workflow,
     insert_user_account,
     load_employees_from_database,
+    load_workflows_from_database,
     load_user_account_by_username,
     load_user_account_summaries,
     migrate_employees_to_database,
@@ -351,6 +353,401 @@ class TestEmployeeDatabase(unittest.TestCase):
                 connection.close()
 
             self.assertIsNotNone(table)
+
+    def test_initialize_database_creates_workflows_table(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+
+            connection = get_database_connection(database_file)
+
+            try:
+                table = connection.execute(
+                    """
+                    SELECT name
+                    FROM sqlite_master
+                    WHERE type = 'table'
+                    AND name = 'workflows'
+                    """
+                ).fetchone()
+
+                columns = connection.execute(
+                    "PRAGMA table_info(workflows)"
+                ).fetchall()
+            finally:
+                connection.close()
+
+            column_names = {
+                column[1]
+                for column in columns
+            }
+
+            self.assertIsNotNone(table)
+            self.assertEqual(
+                column_names,
+                {
+                    "workflow_id",
+                    "name",
+                    "description",
+                    "status",
+                    "created_by_user_id",
+                    "created_at",
+                    "updated_at",
+                },
+            )
+
+    def test_workflows_table_rejects_invalid_status(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+
+            connection = get_database_connection(database_file)
+
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO users (
+                        username,
+                        password_hash,
+                        role
+                    )
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        "WorkflowAdmin",
+                        "temporary_hash",
+                        "admin",
+                    ),
+                )
+
+                creator = connection.execute(
+                    """
+                    SELECT user_id
+                    FROM users
+                    WHERE username = ?
+                    """,
+                    ("WorkflowAdmin",),
+                ).fetchone()
+
+                with self.assertRaises(sqlite3.IntegrityError):
+                    connection.execute(
+                        """
+                        INSERT INTO workflows (
+                            workflow_id,
+                            name,
+                            description,
+                            status,
+                            created_by_user_id,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            "WF-000001",
+                            "New employee onboarding",
+                            "",
+                            "unknown",
+                            creator[0],
+                            "2026-09-05T00:00:00+00:00",
+                            "2026-09-05T00:00:00+00:00",
+                        ),
+                    )
+            finally:
+                connection.close()
+
+    def test_workflows_table_rejects_missing_creator(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+
+            connection = get_database_connection(database_file)
+
+            try:
+                with self.assertRaises(sqlite3.IntegrityError):
+                    connection.execute(
+                        """
+                        INSERT INTO workflows (
+                            workflow_id,
+                            name,
+                            description,
+                            status,
+                            created_by_user_id,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            "WF-000002",
+                            "Customer follow-up review",
+                            "",
+                            "draft",
+                            999,
+                            "2026-09-05T00:00:00+00:00",
+                            "2026-09-05T00:00:00+00:00",
+                        ),
+                    )
+            finally:
+                connection.close()
+
+    def test_workflows_table_rejects_blank_name(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            initialize_database(database_file)
+
+            connection = get_database_connection(database_file)
+
+            try:
+                connection.execute(
+                    """
+                    INSERT INTO users (
+                        username,
+                        password_hash,
+                        role
+                    )
+                    VALUES (?, ?, ?)
+                    """,
+                    (
+                        "WorkflowAdmin",
+                        "temporary_hash",
+                        "admin",
+                    ),
+                )
+
+                creator = connection.execute(
+                    """
+                    SELECT user_id
+                    FROM users
+                    WHERE username = ?
+                    """,
+                    ("WorkflowAdmin",),
+                ).fetchone()
+
+                with self.assertRaises(sqlite3.IntegrityError):
+                    connection.execute(
+                        """
+                        INSERT INTO workflows (
+                            workflow_id,
+                            name,
+                            description,
+                            status,
+                            created_by_user_id,
+                            created_at,
+                            updated_at
+                        )
+                        VALUES (?, ?, ?, ?, ?, ?, ?)
+                        """,
+                        (
+                            "WF-000003",
+                            "   ",
+                            "",
+                            "draft",
+                            creator[0],
+                            "2026-09-05T00:00:00+00:00",
+                            "2026-09-05T00:00:00+00:00",
+                        ),
+                    )
+            finally:
+                connection.close()
+
+    def test_insert_workflow_saves_record(self):
+        workflow = {
+            "workflow_id": "WF-000001",
+            "name": "New employee onboarding",
+            "description": "Coordinate onboarding tasks.",
+            "status": "draft",
+            "created_by_user_id": 0,
+            "created_at": "2026-09-05T00:00:00+00:00",
+            "updated_at": "2026-09-05T00:00:00+00:00",
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_created = insert_user_account(
+                "WorkflowAdmin",
+                "temporary_hash",
+                "admin",
+                database_file,
+            )
+            creator = load_user_account_by_username(
+                "WorkflowAdmin",
+                database_file,
+            )
+
+            self.assertTrue(user_created)
+            self.assertIsNotNone(creator)
+
+            if creator is None:
+                self.fail(
+                    "The workflow creator account was not saved."
+                )
+
+            workflow["created_by_user_id"] = creator["user_id"]
+
+            workflow_saved = insert_workflow(
+                workflow,
+                database_file,
+            )
+
+            connection = get_database_connection(database_file)
+
+            try:
+                saved_workflow = connection.execute(
+                    """
+                    SELECT
+                        workflow_id,
+                        name,
+                        description,
+                        status,
+                        created_by_user_id,
+                        created_at,
+                        updated_at
+                    FROM workflows
+                    WHERE workflow_id = ?
+                    """,
+                    ("WF-000001",),
+                ).fetchone()
+            finally:
+                connection.close()
+
+            self.assertTrue(workflow_saved)
+            self.assertEqual(
+                saved_workflow,
+                (
+                    "WF-000001",
+                    "New employee onboarding",
+                    "Coordinate onboarding tasks.",
+                    "draft",
+                    creator["user_id"],
+                    "2026-09-05T00:00:00+00:00",
+                    "2026-09-05T00:00:00+00:00",
+                ),
+            )
+
+    def test_insert_workflow_rejects_duplicate_id(self):
+        workflow = {
+            "workflow_id": "WF-000002",
+            "name": "Customer follow-up review",
+            "description": "",
+            "status": "draft",
+            "created_by_user_id": 0,
+            "created_at": "2026-09-05T00:00:00+00:00",
+            "updated_at": "2026-09-05T00:00:00+00:00",
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_created = insert_user_account(
+                "WorkflowAdmin",
+                "temporary_hash",
+                "admin",
+                database_file,
+            )
+            creator = load_user_account_by_username(
+                "WorkflowAdmin",
+                database_file,
+            )
+
+            self.assertTrue(user_created)
+            self.assertIsNotNone(creator)
+
+            if creator is None:
+                self.fail(
+                    "The workflow creator account was not saved."
+                )
+
+            workflow["created_by_user_id"] = creator["user_id"]
+
+            first_result = insert_workflow(
+                workflow,
+                database_file,
+            )
+            second_result = insert_workflow(
+                workflow,
+                database_file,
+            )
+
+            self.assertTrue(first_result)
+            self.assertFalse(second_result)
+
+    def test_load_workflows_returns_saved_records(self):
+        workflow = {
+            "workflow_id": "WF-000003",
+            "name": "Invoice approval process",
+            "description": "Review and approve invoices.",
+            "status": "draft",
+            "created_by_user_id": 0,
+            "created_at": "2026-09-05T00:00:00+00:00",
+            "updated_at": "2026-09-05T00:00:00+00:00",
+        }
+
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            user_created = insert_user_account(
+                "WorkflowAdmin",
+                "temporary_hash",
+                "admin",
+                database_file,
+            )
+            creator = load_user_account_by_username(
+                "WorkflowAdmin",
+                database_file,
+            )
+
+            self.assertTrue(user_created)
+            self.assertIsNotNone(creator)
+
+            if creator is None:
+                self.fail(
+                    "The workflow creator account was not saved."
+                )
+
+            workflow["created_by_user_id"] = creator["user_id"]
+
+            workflow_saved = insert_workflow(
+                workflow,
+                database_file,
+            )
+            workflows = load_workflows_from_database(
+                database_file,
+            )
+
+            self.assertTrue(workflow_saved)
+            self.assertEqual(workflows, [workflow])
+
+    def test_load_workflows_returns_empty_list(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = (
+                Path(temporary_directory) / "employees.db"
+            )
+
+            workflows = load_workflows_from_database(
+                database_file,
+            )
+
+            self.assertEqual(workflows, [])
 
     def test_users_table_rejects_duplicate_username_case(self):
         with TemporaryDirectory() as temporary_directory:
