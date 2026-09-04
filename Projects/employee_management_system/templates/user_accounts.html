@@ -79,6 +79,7 @@
                         <th scope="col">Username</th>
                         <th scope="col">Role</th>
                         <th scope="col">Access status</th>
+                        <th scope="col">Status action</th>
                     </tr>
                 </thead>
 
@@ -105,6 +106,58 @@
                                     aria-hidden="true"
                                 ></span>
                                 Inactive
+                            </span>
+                            {% endif %}
+                        </td>
+                                                <td>
+                            {% if user_account["role"] == "viewer" %}
+                            <form
+                                class="user-account-status-form"
+                                method="post"
+                                action="{{ url_for(
+                                    'viewer_account_status_update',
+                                    username=user_account['username']
+                                ) }}"
+                            >
+                                <input
+                                    type="hidden"
+                                    name="csrf_token"
+                                    value="{{ csrf_token }}"
+                                >
+
+                                {% if user_account["is_active"] %}
+                                <input
+                                    type="hidden"
+                                    name="is_active"
+                                    value="false"
+                                >
+
+                                <button
+                                    class="user-account-status-button is-deactivate"
+                                    type="submit"
+                                    aria-label="Deactivate viewer account {{ user_account['username'] }}"
+                                >
+                                    Deactivate
+                                </button>
+                                {% else %}
+                                <input
+                                    type="hidden"
+                                    name="is_active"
+                                    value="true"
+                                >
+
+                                <button
+                                    class="user-account-status-button is-reactivate"
+                                    type="submit"
+                                    aria-label="Reactivate viewer account {{ user_account['username'] }}"
+                                >
+                                    Reactivate
+                                </button>
+                                {% endif %}
+                            </form>
+                            {% else %}
+                            <span class="user-account-no-status-action">
+                                No status action
                             </span>
                             {% endif %}
                         </td>

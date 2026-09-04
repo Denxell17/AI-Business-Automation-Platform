@@ -1787,6 +1787,45 @@ a {
     background: #d6a74c;
 }
 
+.user-account-status-form {
+    margin: 0;
+}
+
+.user-account-status-button {
+    padding: 0.45rem 0.7rem;
+    border: 1px solid transparent;
+    border-radius: 0.45rem;
+    font: inherit;
+    font-size: 0.85rem;
+    font-weight: 700;
+    cursor: pointer;
+}
+
+.user-account-status-button.is-deactivate {
+    background: #4a2629;
+    border-color: #a5545a;
+    color: #ffd9d9;
+}
+
+.user-account-status-button.is-deactivate:hover {
+    background: #643238;
+}
+
+.user-account-status-button.is-reactivate {
+    background: #123f3d;
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+}
+
+.user-account-status-button.is-reactivate:hover {
+    background: #18504d;
+}
+
+.user-account-no-status-action {
+    color: var(--color-muted);
+    font-size: 0.85rem;
+}
+
 @media (max-width: 640px) {
     .user-accounts-header {
         flex-direction: column;
@@ -1797,7 +1836,7 @@ a {
     }
 
     .user-accounts-table {
-        min-width: 28rem;
+        min-width: 36rem;
     }
 }
 
