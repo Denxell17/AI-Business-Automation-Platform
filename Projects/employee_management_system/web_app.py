@@ -58,6 +58,7 @@ from reports import calculate_workforce_summary
 from user_service import (
     authenticate_user_account,
     register_viewer_account,
+    set_viewer_account_active_status,
 )
 from web_session import (
     begin_authenticated_session,
@@ -366,6 +367,99 @@ def create_web_application(
             status_code=400,
         )
 
+    @application.post("/users/{username}/status")
+    def viewer_account_status_update(
+        request: Request,
+        username: str,
+        csrf_token: Annotated[str, Form()],
+        is_active: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_USER_ACCOUNTS,
+        ):
+            log_activity(
+                f"Web viewer-account-status access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web viewer-account-status CSRF validation failed "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        if is_active not in {"true", "false"}:
+            error_message = (
+                "The requested account status is invalid."
+            )
+        else:
+            requested_status = is_active == "true"
+
+            status_changed = set_viewer_account_active_status(
+                current_user,
+                username,
+                requested_status,
+                database_file,
+            )
+
+            if status_changed:
+                status_action = (
+                    "reactivated"
+                    if requested_status
+                    else "deactivated"
+                )
+                log_activity(
+                    f"Web viewer account {username} was "
+                    f"{status_action} by user "
+                    f"{current_user['username']}."
+                )
+                return RedirectResponse(
+                    url=request.url_for(
+                        "user_account_directory"
+                    ),
+                    status_code=303,
+                )
+
+            error_message = (
+                "The viewer account status could not be changed."
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="user_accounts.html",
+            context={
+                "page_title": "User accounts",
+                "active_page": "users",
+                "current_user": current_user,
+                "user_account_summaries": [],
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "error_message": error_message,
+            },
+            status_code=400,
+        )
+
     @application.get(
         "/users",
         response_class=HTMLResponse,
@@ -407,6 +501,9 @@ def create_web_application(
                     "page_title": "User accounts",
                     "active_page": "users",
                     "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
                     "user_account_summaries": [],
                     "error_message": (
                         "User accounts could not be loaded."
@@ -422,6 +519,9 @@ def create_web_application(
                 "page_title": "User accounts",
                 "active_page": "users",
                 "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
                 "user_account_summaries": user_account_summaries,
                 "error_message": None,
             },

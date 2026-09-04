@@ -10,7 +10,10 @@ from database import (
     load_user_account_by_username,
     update_user_account_active_status,
 )
-from user_service import register_user_account
+from user_service import (
+    register_user_account,
+    set_viewer_account_active_status,
+)
 
 from web_app import create_web_application
 
@@ -50,6 +53,24 @@ class TestWebApplication(unittest.TestCase):
             cls.viewer_username,
             cls.viewer_password,
             "viewer",
+            cls.database_file,
+        )
+
+        register_user_account(
+            "StatusActiveViewer",
+            "StatusActivePassword123!",
+            "viewer",
+            cls.database_file,
+        )
+        register_user_account(
+            "StatusInactiveViewer",
+            "StatusInactivePassword123!",
+            "viewer",
+            cls.database_file,
+        )
+        update_user_account_active_status(
+            "StatusInactiveViewer",
+            False,
             cls.database_file,
         )
 
@@ -135,6 +156,24 @@ class TestWebApplication(unittest.TestCase):
         if token_match is None:
             self.fail(
                 "Viewer-account form did not contain a CSRF token."
+            )
+
+        return token_match.group(1)
+
+    def get_user_account_directory_csrf_token(self) -> str:
+        response = self.client.get("/users")
+
+        self.assertEqual(response.status_code, 200)
+
+        token_match = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"',
+            response.text,
+        )
+        self.assertIsNotNone(token_match)
+
+        if token_match is None:
+            self.fail(
+                "User-account directory did not contain a CSRF token."
             )
 
         return token_match.group(1)
@@ -947,6 +986,224 @@ class TestWebApplication(unittest.TestCase):
             f"by user {self.username}."
         )
 
+    def test_viewer_account_status_update_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.post(
+            "/users/WebViewer/status",
+            data={
+                "csrf_token": "not-needed-before-login-redirect",
+                "is_active": "false",
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    @patch("web_app.set_viewer_account_active_status")
+    @patch("web_app.log_activity")
+    def test_viewer_cannot_change_viewer_account_status(
+        self,
+        mock_log_activity,
+        mock_set_viewer_account_active_status,
+    ):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/users/InactiveViewer/status",
+            data={
+                "csrf_token": "not-needed-after-denial",
+                "is_active": "true",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_set_viewer_account_active_status.assert_not_called()
+        mock_log_activity.assert_called_once_with(
+            "Web viewer-account-status access denied "
+            f"for user {self.viewer_username}."
+        )
+
+    @patch("web_app.set_viewer_account_active_status")
+    @patch("web_app.log_activity")
+    def test_viewer_account_status_update_rejects_invalid_csrf_token(
+        self,
+        mock_log_activity,
+        mock_set_viewer_account_active_status,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/users/WebViewer/status",
+            data={
+                "csrf_token": "invalid-token",
+                "is_active": "false",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.text,
+            "Your form could not be verified.",
+        )
+        mock_set_viewer_account_active_status.assert_not_called()
+        mock_log_activity.assert_called_once_with(
+            "Web viewer-account-status CSRF validation failed "
+            f"for user {self.username}."
+        )
+
+    @patch("web_app.set_viewer_account_active_status")
+    def test_viewer_account_status_update_rejects_invalid_status_value(
+        self,
+        mock_set_viewer_account_active_status,
+    ):
+        self.sign_in()
+        csrf_token = self.get_user_account_directory_csrf_token()
+
+        response = self.client.post(
+            "/users/WebViewer/status",
+            data={
+                "csrf_token": csrf_token,
+                "is_active": "unknown",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "The requested account status is invalid.",
+            response.text,
+        )
+        mock_set_viewer_account_active_status.assert_not_called()
+
+    @patch(
+        "web_app.set_viewer_account_active_status",
+        return_value=False,
+    )
+    def test_viewer_account_status_update_handles_service_failure(
+        self,
+        mock_set_viewer_account_active_status,
+    ):
+        self.sign_in()
+        csrf_token = self.get_user_account_directory_csrf_token()
+
+        response = self.client.post(
+            "/users/WebViewer/status",
+            data={
+                "csrf_token": csrf_token,
+                "is_active": "false",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "The viewer account status could not be changed.",
+            response.text,
+        )
+        mock_set_viewer_account_active_status.assert_called_once()
+
+        called_current_user = (
+            mock_set_viewer_account_active_status.call_args.args[0]
+        )
+
+        self.assertEqual(
+            called_current_user["username"],
+            self.username,
+        )
+        self.assertEqual(
+            mock_set_viewer_account_active_status.call_args.args[1:],
+            (
+                "WebViewer",
+                False,
+                self.database_file,
+            ),
+        )
+
+    @patch("web_app.log_activity")
+    def test_administrator_can_deactivate_viewer_account(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in()
+        csrf_token = self.get_user_account_directory_csrf_token()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/users/StatusActiveViewer/status",
+            data={
+                "csrf_token": csrf_token,
+                "is_active": "false",
+            },
+            follow_redirects=False,
+        )
+        stored_user = load_user_account_by_username(
+            "StatusActiveViewer",
+            self.database_file,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/users",
+        )
+        self.assertIsNotNone(stored_user)
+
+        if stored_user is None:
+            self.fail("The viewer account was not found.")
+
+        self.assertFalse(stored_user["is_active"])
+        mock_log_activity.assert_called_once_with(
+            "Web viewer account StatusActiveViewer was deactivated "
+            f"by user {self.username}."
+        )
+
+    @patch("web_app.log_activity")
+    def test_administrator_can_reactivate_viewer_account(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in()
+        csrf_token = self.get_user_account_directory_csrf_token()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/users/StatusInactiveViewer/status",
+            data={
+                "csrf_token": csrf_token,
+                "is_active": "true",
+            },
+            follow_redirects=False,
+        )
+        stored_user = load_user_account_by_username(
+            "StatusInactiveViewer",
+            self.database_file,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/users",
+        )
+        self.assertIsNotNone(stored_user)
+
+        if stored_user is None:
+            self.fail("The inactive viewer account was not found.")
+
+        self.assertTrue(stored_user["is_active"])
+        mock_log_activity.assert_called_once_with(
+            "Web viewer account StatusInactiveViewer was reactivated "
+            f"by user {self.username}."
+        )
+
     def test_user_account_directory_redirects_unauthenticated_user(
         self,
     ):
@@ -983,6 +1240,17 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
         self.assertIn('aria-current="page"', response.text)
+        self.assertIn(
+            'action="http://testserver/users/WebViewer/status"',
+            response.text,
+        )
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn('name="is_active"', response.text)
+        self.assertIn('value="false"', response.text)
+        self.assertIn('value="true"', response.text)
+        self.assertIn("Deactivate", response.text)
+        self.assertIn("Reactivate", response.text)
+        self.assertIn("No status action", response.text)
 
     @patch("web_app.load_user_account_summaries")
     @patch("web_app.log_activity")
