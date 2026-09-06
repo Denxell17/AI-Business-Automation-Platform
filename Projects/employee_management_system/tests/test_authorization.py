@@ -5,6 +5,7 @@ from authorization import (
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
     MANAGE_USER_ACCOUNTS,
+    MANAGE_WORKFLOWS,
     REGISTER_EMPLOYEE,
     RESTORE_DATABASE,
     UPDATE_EMPLOYEE,
@@ -92,6 +93,35 @@ class TestUserAuthorization(unittest.TestCase):
                         permission,
                     )
                 )
+
+    def test_workflow_management_is_administrator_only(self):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        viewer = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+
+        self.assertTrue(
+            user_has_permission(
+                administrator,
+                MANAGE_WORKFLOWS,
+            )
+        )
+        self.assertFalse(
+            user_has_permission(
+                viewer,
+                MANAGE_WORKFLOWS,
+            )
+        )
 
     def test_unknown_role_has_no_permissions(self):
         unknown_user = {
