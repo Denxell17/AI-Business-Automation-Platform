@@ -1,3 +1,4 @@
+import sqlite3
 import re
 import unittest
 from pathlib import Path
@@ -303,6 +304,14 @@ class TestWebApplication(unittest.TestCase):
         self.assertIn("Available", response.text)
         self.assertIn("Planned", response.text)
         self.assertIn("Workflow Automation", response.text)
+        self.assertIn(
+            "Open workflow directory",
+            response.text,
+        )
+        self.assertIn(
+            'href="/workflows"',
+            response.text,
+        )
         self.assertIn("Customer Management", response.text)
         self.assertIn("Invoice Management", response.text)
         self.assertIn("AI Agents", response.text)
@@ -330,6 +339,14 @@ class TestWebApplication(unittest.TestCase):
         )
         self.assertIn(
             "API documentation",
+            response.text,
+        )
+        self.assertIn(
+            'href="http://testserver/workflows"',
+            response.text,
+        )
+        self.assertIn(
+            "Workflows",
             response.text,
         )
         self.assertIn(
@@ -546,6 +563,121 @@ class TestWebApplication(unittest.TestCase):
         self.assertEqual(
             response.headers["location"],
             "http://testserver/login",
+        )
+
+    def test_workflow_directory_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/workflows",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_administrator_can_view_empty_workflow_directory(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/workflows")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Workflow directory", response.text)
+        self.assertIn("No workflows found", response.text)
+        self.assertIn(
+            "Workflow records will appear here",
+            response.text,
+        )
+
+    @patch(
+        "web_app.load_workflows_from_database",
+        return_value=[
+            {
+                "workflow_id": "WF-000001",
+                "name": "New employee onboarding",
+                "description": "Coordinate onboarding tasks.",
+                "status": "draft",
+                "created_by_user_id": 1,
+                "created_at": "2026-09-07T00:00:00+00:00",
+                "updated_at": "2026-09-07T00:00:00+00:00",
+            },
+        ],
+    )
+    def test_viewer_can_view_workflow_directory(
+        self,
+        mock_load_workflows_from_database,
+    ):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+
+        response = self.client.get("/workflows")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Workflow directory", response.text)
+        self.assertIn(
+            "New employee onboarding",
+            response.text,
+        )
+        self.assertIn("Draft", response.text)
+        self.assertIn("WebViewer", response.text)
+        self.assertIn("Viewer", response.text)
+        mock_load_workflows_from_database.assert_called_once_with(
+            self.database_file,
+        )
+
+    @patch(
+        "web_app.user_has_permission",
+        return_value=False,
+    )
+    @patch("web_app.log_activity")
+    def test_workflow_directory_denies_missing_permission(
+        self,
+        mock_log_activity,
+        mock_user_has_permission,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/workflows")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_user_has_permission.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            "Web workflow-directory access denied "
+            f"for user {self.username}."
+        )
+
+    @patch(
+        "web_app.load_workflows_from_database",
+        side_effect=sqlite3.Error("Database connection failed."),
+    )
+    def test_workflow_directory_handles_database_error_safely(
+        self,
+        mock_load_workflows_from_database,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/workflows")
+
+        self.assertEqual(response.status_code, 500)
+        self.assertIn(
+            "Workflow records could not be loaded.",
+            response.text,
+        )
+        self.assertNotIn(
+            "Database connection failed.",
+            response.text,
+        )
+        mock_load_workflows_from_database.assert_called_once_with(
+            self.database_file,
         )
 
     def test_workforce_report_redirects_unauthenticated_user(self):

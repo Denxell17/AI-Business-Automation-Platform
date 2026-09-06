@@ -6,6 +6,7 @@ from authorization import (
     EXPORT_REPORT,
     MANAGE_USER_ACCOUNTS,
     MANAGE_WORKFLOWS,
+    VIEW_WORKFLOWS,
     REGISTER_EMPLOYEE,
     RESTORE_DATABASE,
     UPDATE_EMPLOYEE,
@@ -33,6 +34,7 @@ class TestUserAuthorization(unittest.TestCase):
             DELETE_EMPLOYEE,
             EXPORT_REPORT,
             MANAGE_USER_ACCOUNTS,
+            VIEW_WORKFLOWS,
             BACKUP_DATABASE,
             RESTORE_DATABASE,
             VIEW_ACTIVITY_LOG,
@@ -59,6 +61,7 @@ class TestUserAuthorization(unittest.TestCase):
             VIEW_EMPLOYEE,
             VIEW_PAYROLL,
             EXPORT_REPORT,
+            VIEW_WORKFLOWS,
         ]
         denied_permissions = [
             REGISTER_EMPLOYEE,
@@ -67,6 +70,7 @@ class TestUserAuthorization(unittest.TestCase):
             BACKUP_DATABASE,
             RESTORE_DATABASE,
             MANAGE_USER_ACCOUNTS,
+            MANAGE_WORKFLOWS,
             VIEW_ACTIVITY_LOG,
         ]
 
@@ -123,6 +127,37 @@ class TestUserAuthorization(unittest.TestCase):
             )
         )
 
+    def test_workflow_viewing_is_available_to_admins_and_viewers(
+        self,
+    ):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        viewer = {
+            "user_id": 2,
+            "username": "Viewer",
+            "password_hash": "protected_hash",
+            "role": "viewer",
+            "is_active": True,
+        }
+
+        self.assertTrue(
+            user_has_permission(
+                administrator,
+                VIEW_WORKFLOWS,
+            )
+        )
+        self.assertTrue(
+            user_has_permission(
+                viewer,
+                VIEW_WORKFLOWS,
+            )
+        )
+
     def test_unknown_role_has_no_permissions(self):
         unknown_user = {
             "user_id": 3,
@@ -141,6 +176,7 @@ class TestUserAuthorization(unittest.TestCase):
             BACKUP_DATABASE,
             RESTORE_DATABASE,
             MANAGE_USER_ACCOUNTS,
+            VIEW_WORKFLOWS,
             VIEW_ACTIVITY_LOG,
         ]
 

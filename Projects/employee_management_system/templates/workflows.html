@@ -1,0 +1,101 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="directory-section"
+    aria-labelledby="workflow-directory-heading"
+>
+    <div class="directory-heading">
+        <div>
+            <p class="section-eyebrow">Workflow automation</p>
+
+            <h1
+                id="workflow-directory-heading"
+                class="section-title"
+            >
+                Workflow directory
+            </h1>
+
+            <p class="page-message">
+                View the current workflow definitions stored in SQLite.
+            </p>
+        </div>
+
+        {% if not error_message %}
+        <p class="directory-count">
+            <strong>{{ workflow_list | length }}</strong>
+            {% if workflow_list | length == 1 %}
+                workflow
+            {% else %}
+                workflows
+            {% endif %}
+        </p>
+        {% endif %}
+    </div>
+
+    {% if error_message %}
+    <p class="directory-message directory-message-error" role="alert">
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% elif workflow_list %}
+    <div
+        class="employee-table-wrapper"
+        tabindex="0"
+        aria-label="Scrollable workflow directory"
+    >
+        <table class="employee-table">
+            <caption>
+                Current workflow records
+            </caption>
+
+            <thead>
+                <tr>
+                    <th scope="col">Workflow ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">Updated</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for workflow in workflow_list %}
+                <tr>
+                    <th scope="row">
+                        {{ workflow["workflow_id"] }}
+                    </th>
+                    <td>{{ workflow["name"] }}</td>
+                    <td>
+                        <span class="employee-status">
+                            <span
+                                class="status-dot"
+                                aria-hidden="true"
+                            ></span>
+                            {{ workflow["status"] | title }}
+                        </span>
+                    </td>
+                    <td>{{ workflow["created_at"] }}</td>
+                    <td>{{ workflow["updated_at"] }}</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% else %}
+    <div class="directory-empty-state">
+        <span
+            class="directory-empty-icon"
+            aria-hidden="true"
+        >○</span>
+
+        <div>
+            <h2>No workflows found</h2>
+            <p>
+                Workflow records will appear here after they are created.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

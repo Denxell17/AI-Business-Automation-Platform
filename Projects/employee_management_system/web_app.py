@@ -1,4 +1,5 @@
 import secrets
+import sqlite3
 from pathlib import Path
 from typing import Annotated
 
@@ -29,10 +30,12 @@ from authorization import (
     VIEW_EMPLOYEE,
     VIEW_ACTIVITY_LOG,
     VIEW_PAYROLL,
+    VIEW_WORKFLOWS,
     user_has_permission,
 )
 from database import (
     DATABASE_FILE,
+    load_workflows_from_database,
     load_user_account_summaries,
 )
 from data_validation import get_employee_record_errors
@@ -647,6 +650,68 @@ def create_web_application(
                 "current_user": current_user,
             },
         )
+
+    @application.get(
+        "/workflows",
+        response_class=HTMLResponse,
+    )
+    def workflow_directory(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_WORKFLOWS,
+        ):
+            log_activity(
+                f"Web workflow-directory access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        try:
+            workflow_list = load_workflows_from_database(
+                database_file,
+            )
+        except sqlite3.Error:
+            return templates.TemplateResponse(
+                request=request,
+                name="workflows.html",
+                context={
+                    "page_title": "Workflow directory",
+                    "active_page": "workflows",
+                    "current_user": current_user,
+                    "workflow_list": [],
+                    "error_message": (
+                        "Workflow records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="workflows.html",
+            context={
+                "page_title": "Workflow directory",
+                "active_page": "workflows",
+                "current_user": current_user,
+                "workflow_list": workflow_list,
+                "error_message": None,
+            },
+        )
+
 
     @application.get(
         "/employees/new",

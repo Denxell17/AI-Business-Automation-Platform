@@ -11,6 +11,7 @@ BACKUP_DATABASE = "database.backup"
 RESTORE_DATABASE = "database.restore"
 MANAGE_USER_ACCOUNTS = "users.manage"
 MANAGE_WORKFLOWS = "workflows.manage"
+VIEW_WORKFLOWS = "workflows.view"
 VIEW_ACTIVITY_LOG = "activity_log.view"
 
 
@@ -26,12 +27,14 @@ ROLE_PERMISSIONS = {
         RESTORE_DATABASE,
         MANAGE_USER_ACCOUNTS,
         MANAGE_WORKFLOWS,
+        VIEW_WORKFLOWS,
         VIEW_ACTIVITY_LOG,
     },
     "viewer": {
         VIEW_EMPLOYEE,
         VIEW_PAYROLL,
         EXPORT_REPORT,
+        VIEW_WORKFLOWS,
     },
 }
 
