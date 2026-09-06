@@ -144,6 +144,24 @@ class TestWebApplication(unittest.TestCase):
 
         return token_match.group(1)
 
+    def get_workflow_create_csrf_token(self) -> str:
+        response = self.client.get("/workflows/new")
+
+        self.assertEqual(response.status_code, 200)
+
+        token_match = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"',
+            response.text,
+        )
+        self.assertIsNotNone(token_match)
+
+        if token_match is None:
+            self.fail(
+                "Workflow-create form did not contain a CSRF token."
+            )
+
+        return token_match.group(1)
+
     def get_viewer_account_creation_csrf_token(self) -> str:
         response = self.client.get("/users/new")
 
@@ -589,6 +607,7 @@ class TestWebApplication(unittest.TestCase):
         self.assertEqual(response.status_code, 200)
         self.assertIn("Workflow directory", response.text)
         self.assertIn("No workflows found", response.text)
+        self.assertIn("Create workflow", response.text)
         self.assertIn(
             "Workflow records will appear here",
             response.text,
@@ -628,6 +647,7 @@ class TestWebApplication(unittest.TestCase):
         self.assertIn("Draft", response.text)
         self.assertIn("WebViewer", response.text)
         self.assertIn("Viewer", response.text)
+        self.assertNotIn("Create workflow", response.text)
         mock_load_workflows_from_database.assert_called_once_with(
             self.database_file,
         )
@@ -678,6 +698,195 @@ class TestWebApplication(unittest.TestCase):
         )
         mock_load_workflows_from_database.assert_called_once_with(
             self.database_file,
+        )
+
+    def test_workflow_create_form_redirects_unauthenticated_user(
+        self,
+    ):
+        response = self.client.get(
+            "/workflows/new",
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/login",
+        )
+
+    def test_administrator_can_view_workflow_create_form(
+        self,
+    ):
+        self.sign_in()
+
+        response = self.client.get("/workflows/new")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("Create workflow", response.text)
+        self.assertIn(
+            "Workflow management access authorized",
+            response.text,
+        )
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn('name="workflow_id"', response.text)
+        self.assertIn('name="name"', response.text)
+        self.assertIn('name="description"', response.text)
+        self.assertIn('name="status"', response.text)
+
+    @patch("web_app.log_activity")
+    def test_viewer_cannot_view_workflow_create_form(
+        self,
+        mock_log_activity,
+    ):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/workflows/new")
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_log_activity.assert_called_once_with(
+            "Web workflow-creation access denied "
+            f"for user {self.viewer_username}."
+        )
+
+    @patch(
+        "web_app.create_workflow",
+        return_value=True,
+    )
+    @patch("web_app.log_activity")
+    def test_administrator_can_create_workflow_from_form(
+        self,
+        mock_log_activity,
+        mock_create_workflow,
+    ):
+        self.sign_in()
+        csrf_token = self.get_workflow_create_csrf_token()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/workflows/new",
+            data={
+                "csrf_token": csrf_token,
+                "workflow_id": "WF-WEB-001",
+                "name": "Web workflow",
+                "description": "Created through the browser form.",
+                "status": "draft",
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            response.headers["location"],
+            "http://testserver/workflows",
+        )
+        mock_create_workflow.assert_called_once()
+        mock_log_activity.assert_called_once_with(
+            f"Web workflow WF-WEB-001 was created "
+            f"by user {self.username}."
+        )
+
+    @patch("web_app.create_workflow")
+    @patch("web_app.log_activity")
+    def test_workflow_create_rejects_invalid_csrf_token(
+        self,
+        mock_log_activity,
+        mock_create_workflow,
+    ):
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/workflows/new",
+            data={
+                "csrf_token": "invalid-csrf-token",
+                "workflow_id": "WF-WEB-CSRF",
+                "name": "CSRF workflow",
+                "description": "This request must be rejected.",
+                "status": "draft",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(
+            response.text,
+            "Your form could not be verified.",
+        )
+        mock_create_workflow.assert_not_called()
+        mock_log_activity.assert_called_once_with(
+            "Web workflow-creation CSRF validation failed "
+            f"for user {self.username}."
+        )
+
+    @patch(
+        "web_app.create_workflow",
+        return_value=False,
+    )
+    def test_workflow_create_preserves_values_after_validation_error(
+        self,
+        mock_create_workflow,
+    ):
+        self.sign_in()
+        csrf_token = self.get_workflow_create_csrf_token()
+
+        response = self.client.post(
+            "/workflows/new",
+            data={
+                "csrf_token": csrf_token,
+                "workflow_id": "WF-WEB-INVALID",
+                "name": "Workflow name retained",
+                "description": "Description retained after an error.",
+                "status": "unknown",
+            },
+        )
+
+        self.assertEqual(response.status_code, 400)
+        self.assertIn(
+            "Workflow could not be created.",
+            response.text,
+        )
+        self.assertIn("WF-WEB-INVALID", response.text)
+        self.assertIn("Workflow name retained", response.text)
+        self.assertIn(
+            "Description retained after an error.",
+            response.text,
+        )
+        mock_create_workflow.assert_called_once()
+
+    @patch("web_app.create_workflow")
+    @patch("web_app.log_activity")
+    def test_viewer_cannot_create_workflow(
+        self,
+        mock_log_activity,
+        mock_create_workflow,
+    ):
+        self.sign_in(
+            username=self.viewer_username,
+            password=self.viewer_password,
+        )
+        mock_log_activity.reset_mock()
+
+        response = self.client.post(
+            "/workflows/new",
+            data={
+                "csrf_token": "not-needed-for-denied-access",
+                "workflow_id": "WF-VIEWER-001",
+                "name": "Viewer workflow",
+                "description": "This must not be created.",
+                "status": "draft",
+            },
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Access denied.")
+        mock_create_workflow.assert_not_called()
+        mock_log_activity.assert_called_once_with(
+            "Web workflow-creation access denied "
+            f"for user {self.viewer_username}."
         )
 
     def test_workforce_report_redirects_unauthenticated_user(self):
