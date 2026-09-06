@@ -501,22 +501,22 @@ remain available for migration, verification, and historical compatibility.
 
 ### Phase 2 — Full ABAP Portfolio MVP In Progress
 
-Day 101 created the shared ABAP dashboard. Days 102 and 103 began the Workflow
-Automation module with a documented domain model, tested SQLite persistence,
-and a secure service-layer workflow-creation boundary.
+Day 101 created the shared ABAP dashboard. Days 102 through 104 established
+the Workflow Automation domain, tested SQLite persistence, secure creation
+rules, and a protected read-only browser directory.
 
-The dashboard remains the authenticated entry point for the growing business
-automation portfolio. Employee Management is available. Workflow Automation is
-still marked Planned because protected browser workflow pages are not yet
-available.
+The dashboard is the authenticated entry point for the growing business
+automation portfolio. Employee Management and the Workflow Automation
+directory are available. Workflow scheduling, tasks, and execution history
+remain planned.
 
 ### Shared Dashboard Capabilities
 
 - Protected dashboard access through the existing signed session
 - Shared `ABAP workspace` navigation and top-bar language
 - Available Employee Management module with a working directory link
+- Available Workflow Automation module with a working directory link
 - Written `Available` and `Planned` module statuses
-- Planned-module cards without links to nonexistent routes
 - API documentation and system-health resources
 - Semantic dashboard sections and headings
 - Responsive module cards for desktop and mobile layouts
@@ -524,7 +524,7 @@ available.
 - Warm Charcoal styling consistent with the official ABAP visual direction
 - Status information communicated with written labels rather than color alone
 
-### Workflow Automation Foundation
+### Workflow Automation Capabilities
 
 The Workflow Automation domain defines:
 
@@ -545,10 +545,9 @@ The tested SQLite workflow foundation provides:
 - Safe workflow insertion with parameterized SQL and rollback handling
 - Deterministic workflow loading and safe empty-list handling
 
-The Workflow Automation service layer now provides:
+The Workflow Automation service layer provides:
 
 - Explicit administrator-only `workflows.manage` authorization
-- Default-deny viewer access
 - Live SQLite account revalidation before workflow creation
 - Rejection of missing, deactivated, mismatched, or unauthorized accounts
 - Normalization of workflow IDs, names, descriptions, and statuses
@@ -556,6 +555,18 @@ The Workflow Automation service layer now provides:
 - Server-side workflow-status allowlisting
 - Server-generated UTC creation and update timestamps
 - Validated typed workflow records passed to the repository
+
+The protected workflow directory provides:
+
+- A dedicated `workflows.view` permission for administrators and viewers
+- Redirects to login for unauthenticated visitors
+- Default-deny `403` handling for missing permissions
+- Activity logging for denied directory access
+- Safe SQLite loading-error pages without raw exception details
+- Accessible workflow table headings, caption, and scrollable wrapper
+- Accessible empty state when no workflow records exist
+- Workflow ID, name, status, created time, and updated time display
+- Shared sidebar navigation and active-page highlighting
 
 ### Completed Employee Management Capabilities
 
@@ -596,6 +607,7 @@ The FastAPI interface continues to provide:
 ### Important Browser Routes
 
 - `/` — protected shared ABAP dashboard
+- `/workflows` — protected read-only workflow directory
 - `/employees` — protected employee directory
 - `/employees/{employee_id}` — protected employee profile
 - `/employees/{employee_id}/payroll` — protected payroll page
@@ -613,20 +625,21 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 103 Verification
+### Day 104 Verification
 
-- **361 automated tests passed**
-- **9 targeted authorization and workflow-service tests passed**
-- Workflow creation, authorization, input validation, and live account
-  revalidation passed automated verification
-- Existing Employee Management database and web workflows remained covered by
-  the complete regression suite
+- **367 automated tests passed**
+- **139 focused authorization, workflow-service, and web tests passed**
+- Workflow viewing, authorization, dashboard navigation, empty states, and
+  safe database-error handling passed automated verification
+- Existing Employee Management and Workflow Automation foundations remained
+  covered by the complete regression suite
 - No application data was changed during verification
 
 ### Roadmap Position
 
-Day 103 is complete after the documentation is saved.
+Day 104 is complete after the documentation is saved.
 
-ABAP now has a secure Workflow Automation service foundation. The next roadmap
-step is protected read-only workflow-directory access, including a dedicated
-`workflows.view` permission and an accessible empty-state page.
+ABAP now has a secure read-only Workflow Automation directory. The next
+roadmap step is an administrator-only workflow-creation form with CSRF
+protection, service-layer validation, safe validation-error handling, and
+Post/Redirect/Get navigation back to the directory.
