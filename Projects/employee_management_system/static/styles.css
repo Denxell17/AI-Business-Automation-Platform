@@ -698,7 +698,8 @@ a {
 }
 
 .form-field input,
-.form-field select {
+.form-field select,
+.form-field textarea {
     width: 100%;
     min-height: 3rem;
     padding: 0.75rem 0.875rem;
@@ -710,12 +711,14 @@ a {
 }
 
 .form-field input:hover,
-.form-field select:hover {
+.form-field select:hover,
+.form-field textarea:hover {
     border-color: var(--color-muted);
 }
 
 .form-field input:focus,
-.form-field select:focus {
+.form-field select:focus,
+.form-field textarea:focus {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(86, 200, 192, 0.2);
 }
@@ -1425,7 +1428,8 @@ a {
 }
 
 .form-field input,
-.form-field select {
+.form-field select,
+.form-field textarea {
     width: 100%;
     min-height: 2.75rem;
     padding: 0.65rem 0.75rem;
@@ -1446,7 +1450,8 @@ a {
 }
 
 .form-field input:focus,
-.form-field select:focus {
+.form-field select:focus,
+.form-field textarea:focus {
     outline: 3px solid var(--color-focus);
     outline-offset: 2px;
     border-color: var(--color-primary);

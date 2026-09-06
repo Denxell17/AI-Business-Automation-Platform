@@ -24,6 +24,7 @@ from activity_logger import (
 from authorization import (
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
+    MANAGE_WORKFLOWS,
     MANAGE_USER_ACCOUNTS,
     REGISTER_EMPLOYEE,
     UPDATE_EMPLOYEE,
@@ -68,6 +69,7 @@ from web_session import (
     clear_authenticated_session,
     load_authenticated_session_user,
 )
+from workflow_service import create_workflow
 
 
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
@@ -652,6 +654,141 @@ def create_web_application(
         )
 
     @application.get(
+        "/workflows/new",
+        response_class=HTMLResponse,
+    )
+    def workflow_create_form(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_WORKFLOWS,
+        ):
+            log_activity(
+                f"Web workflow-creation access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="workflow_form.html",
+            context={
+                "page_title": "Create workflow",
+                "active_page": "workflows",
+                "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "form_values": {},
+                "error_message": None,
+            },
+        )
+
+    @application.post("/workflows/new")
+    def workflow_create(
+        request: Request,
+        csrf_token: Annotated[str, Form()],
+        workflow_id: Annotated[str, Form()] = "",
+        name: Annotated[str, Form()] = "",
+        description: Annotated[str, Form()] = "",
+        status: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_WORKFLOWS,
+        ):
+            log_activity(
+                f"Web workflow-creation access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web workflow-creation CSRF validation failed "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        form_values = {
+            "workflow_id": workflow_id,
+            "name": name,
+            "description": description,
+            "status": status,
+        }
+
+        workflow_created = create_workflow(
+            current_user,
+            workflow_id,
+            name,
+            description,
+            status,
+            database_file,
+        )
+
+        if not workflow_created:
+            return templates.TemplateResponse(
+                request=request,
+                name="workflow_form.html",
+                context={
+                    "page_title": "Create workflow",
+                    "active_page": "workflows",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "form_values": form_values,
+                    "error_message": (
+                        "Workflow could not be created. Verify the "
+                        "workflow ID, name, and status."
+                    ),
+                },
+                status_code=400,
+            )
+
+        log_activity(
+            f"Web workflow {workflow_id.strip().upper()} was created "
+            f"by user {current_user['username']}."
+        )
+
+        return RedirectResponse(
+            url=request.url_for("workflow_directory"),
+            status_code=303,
+        )
+
+
+
+    @application.get(
         "/workflows",
         response_class=HTMLResponse,
     )
@@ -692,6 +829,10 @@ def create_web_application(
                     "page_title": "Workflow directory",
                     "active_page": "workflows",
                     "current_user": current_user,
+                    "can_manage_workflows": user_has_permission(
+                        current_user,
+                        MANAGE_WORKFLOWS,
+                    ),
                     "workflow_list": [],
                     "error_message": (
                         "Workflow records could not be loaded."
@@ -707,6 +848,10 @@ def create_web_application(
                 "page_title": "Workflow directory",
                 "active_page": "workflows",
                 "current_user": current_user,
+                    "can_manage_workflows": user_has_permission(
+                        current_user,
+                        MANAGE_WORKFLOWS,
+                    ),
                 "workflow_list": workflow_list,
                 "error_message": None,
             },

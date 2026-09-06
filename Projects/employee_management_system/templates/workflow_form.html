@@ -1,0 +1,145 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section"
+    aria-labelledby="workflow-form-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('workflow_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to workflow directory
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Workflow automation</p>
+
+            <h1
+                id="workflow-form-heading"
+                class="section-title"
+            >
+                Create workflow
+            </h1>
+
+            <p class="page-message">
+                Create a reusable workflow definition in the SQLite database.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            Workflow management access authorized
+        </span>
+    </div>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="/workflows/new"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="workflow-details-heading"
+        >
+            <h2 id="workflow-details-heading">Workflow details</h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="workflow_id">Workflow ID</label>
+                    <input
+                        id="workflow_id"
+                        name="workflow_id"
+                        type="text"
+                        value="{{ form_values.get(
+                            'workflow_id',
+                            ''
+                        ) }}"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="name">Workflow name</label>
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        value="{{ form_values.get('name', '') }}"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="status">Status</label>
+                    <select id="status" name="status" required>
+                        <option
+                            value="draft"
+                            {% if form_values.get(
+                                'status',
+                                'draft'
+                            ) == 'draft' %}selected{% endif %}
+                        >
+                            Draft
+                        </option>
+                        <option
+                            value="active"
+                            {% if form_values.get('status') == 'active' %}selected{% endif %}
+                        >
+                            Active
+                        </option>
+                        <option
+                            value="inactive"
+                            {% if form_values.get('status') == 'inactive' %}selected{% endif %}
+                        >
+                            Inactive
+                        </option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="form-field">
+                <label for="description">Description</label>
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="5"
+                >{{ form_values.get('description', '') }}</textarea>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for('workflow_directory') }}"
+            >
+                Cancel
+            </a>
+
+            <button class="employee-submit-button" type="submit">
+                <span aria-hidden="true">+</span>
+                Create workflow
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
