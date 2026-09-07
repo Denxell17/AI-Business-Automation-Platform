@@ -47,5 +47,22 @@
             <dd>{{ workflow["description"] or "No description provided." }}</dd>
         </div>
     </dl>
+
+    <section aria-labelledby="workflow-tasks-heading">
+        <h2 id="workflow-tasks-heading" class="section-title">Workflow tasks</h2>
+        {% if workflow_tasks %}
+        <ol>
+            {% for task in workflow_tasks %}
+            <li value="{{ task['sequence_number'] }}">
+                <h3>{{ task["title"] }}</h3>
+                <p>{{ task["task_type"] | title }} · {{ "Required" if task["is_required"] else "Optional" }}</p>
+                <p>{{ task["instructions"] or "No instructions provided." }}</p>
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="page-message">No tasks have been added to this workflow yet.</p>
+        {% endif %}
+    </section>
 </section>
 {% endblock %}

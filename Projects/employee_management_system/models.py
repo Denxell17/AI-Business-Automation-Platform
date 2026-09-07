@@ -53,6 +53,22 @@ class Workflow(TypedDict):
     updated_at: str
 
 
+WORKFLOW_TASK_TYPE_MANUAL = "manual"
+VALID_WORKFLOW_TASK_TYPES = frozenset({WORKFLOW_TASK_TYPE_MANUAL})
+
+
+class WorkflowTask(TypedDict):
+    task_id: str
+    workflow_id: str
+    sequence_number: int
+    title: str
+    instructions: str
+    task_type: str
+    is_required: bool
+    created_at: str
+    updated_at: str
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float

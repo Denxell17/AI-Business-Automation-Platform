@@ -6,6 +6,7 @@ from models import (
     UserAccount,
     UserAccountSummary,
     Workflow,
+    WorkflowTask,
 )
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
@@ -79,6 +80,32 @@ def initialize_database(
                 updated_at TEXT NOT NULL,
                 FOREIGN KEY (created_by_user_id)
                     REFERENCES users(user_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS workflow_tasks (
+                task_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(task_id)) > 0
+                ),
+                workflow_id TEXT NOT NULL,
+                sequence_number INTEGER NOT NULL CHECK (
+                    typeof(sequence_number) = 'integer'
+                    AND sequence_number > 0
+                ),
+                title TEXT NOT NULL CHECK (length(trim(title)) > 0),
+                instructions TEXT NOT NULL DEFAULT '',
+                task_type TEXT NOT NULL DEFAULT 'manual' CHECK (
+                    task_type IN ('manual')
+                ),
+                is_required INTEGER NOT NULL DEFAULT 1 CHECK (
+                    is_required IN (0, 1)
+                ),
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                UNIQUE (workflow_id, sequence_number),
+                FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id)
             )
             """
         )
@@ -382,6 +409,76 @@ def update_workflow_in_database(
         return False
     finally:
         connection.close()
+
+
+def insert_workflow_task(
+    task: WorkflowTask,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        connection.execute(
+            """
+            INSERT INTO workflow_tasks (
+                task_id, workflow_id, sequence_number, title,
+                instructions, task_type, is_required, created_at, updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                task["task_id"], task["workflow_id"],
+                task["sequence_number"], task["title"],
+                task["instructions"], task["task_type"],
+                task["is_required"], task["created_at"], task["updated_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_workflow_tasks(
+    workflow_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowTask]:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        rows = connection.execute(
+            """
+            SELECT task_id, workflow_id, sequence_number, title,
+                   instructions, task_type, is_required, created_at, updated_at
+            FROM workflow_tasks
+            WHERE workflow_id = ?
+            ORDER BY sequence_number
+            """,
+            (workflow_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return [
+        {
+            "task_id": row["task_id"],
+            "workflow_id": row["workflow_id"],
+            "sequence_number": row["sequence_number"],
+            "title": row["title"],
+            "instructions": row["instructions"],
+            "task_type": row["task_type"],
+            "is_required": bool(row["is_required"]),
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+        for row in rows
+    ]
 
 
 def load_employees_from_database(
