@@ -35,6 +35,9 @@
         >
             Add task
         </a>
+        {% if workflow_tasks %}
+        <a class="add-employee-link" href="{{ url_for('workflow_task_resequence_form', workflow_id=workflow['workflow_id']) }}">Set task order</a>
+        {% endif %}
         {% endif %}
     </div>
 
@@ -64,6 +67,7 @@
             {% for task in workflow_tasks %}
             <li value="{{ task['sequence_number'] }}">
                 <h3>{{ task["title"] }}</h3>
+                {% if can_manage_workflows %}<a href="{{ url_for('workflow_task_edit_form', workflow_id=workflow['workflow_id'], task_id=task['task_id']) }}">Edit task</a>{% endif %}
                 <p>{{ task["task_type"] | title }} · {{ "Required" if task["is_required"] else "Optional" }}</p>
                 <p>{{ task["instructions"] or "No instructions provided." }}</p>
             </li>

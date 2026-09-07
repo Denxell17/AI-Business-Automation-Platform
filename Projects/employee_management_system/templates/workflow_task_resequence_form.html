@@ -1,0 +1,19 @@
+{% extends "application_base.html" %}
+{% block content %}
+<section class="employee-form-section" aria-labelledby="resequence-heading">
+    <a class="back-link" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}"><span aria-hidden="true">←</span>Back to workflow</a>
+    <div class="employee-form-heading"><div><p class="section-eyebrow">Workflow automation</p><h1 id="resequence-heading" class="section-title">Resequence workflow tasks</h1><p class="page-message">Choose the task for each position. Every task must appear exactly once.</p></div></div>
+    {% if error_message %}<p class="directory-message directory-message-error" role="alert">{{ error_message }}</p>{% endif %}
+    {% if tasks %}
+    <form class="employee-form" method="post" action="{{ url_for('workflow_task_resequence', workflow_id=workflow['workflow_id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <section class="employee-form-card"><h2>New task order</h2>
+            {% for position in range(1, tasks|length + 1) %}
+            <div class="form-field"><label for="task-{{ position }}">Position {{ position }}</label><select id="task-{{ position }}" name="task_ids" required>{% for task in tasks %}<option value="{{ task['task_id'] }}" {% if task['sequence_number'] == position %}selected{% endif %}>{{ task['title'] }} ({{ task['task_id'] }})</option>{% endfor %}</select></div>
+            {% endfor %}
+        </section>
+        <div class="employee-form-actions"><a class="form-cancel-link" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}">Cancel</a><button class="employee-submit-button" type="submit">Save order</button></div>
+    </form>
+    {% else %}<p class="page-message">Add tasks before setting their order.</p>{% endif %}
+</section>
+{% endblock %}

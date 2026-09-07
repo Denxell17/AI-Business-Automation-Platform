@@ -692,10 +692,11 @@ remain available for migration, verification, and historical compatibility.
 
 ### Phase 2 — Full ABAP Portfolio MVP In Progress
 
-Day 101 created the shared ABAP dashboard. Days 102 through 114 established
+Day 101 created the shared ABAP dashboard. Days 102 through 120 established
 the Workflow Automation domain, tested SQLite persistence, secure creation
 and lifecycle rules, protected browser access, workflow detail pages,
-administrator-only editing, ordered task storage, and task creation.
+administrator-only editing, ordered task storage, task creation, task editing,
+task resequencing, and activation readiness rules.
 
 The dashboard is the authenticated entry point for the growing business
 automation portfolio. Employee Management and Workflow Automation are
@@ -739,6 +740,7 @@ The tested SQLite workflow foundation provides:
 - Unique, positive sequence numbers within each workflow
 - Manual task types, required/optional flags, instructions, and UTC timestamps
 - Parameterized task insertion and ordered per-workflow retrieval
+- Atomic task resequencing that preserves unique positions throughout the update
 
 The Workflow Automation service layer provides:
 
@@ -753,6 +755,9 @@ The Workflow Automation service layer provides:
 - Administrator-only task creation with live account revalidation
 - Normalized task IDs, workflow IDs, titles, instructions, and task types
 - Strict sequence-number and required-flag validation
+- Task-detail editing that preserves task IDs, parent workflows, and positions
+- Complete-list validation before resequencing task positions
+- Rejection of active workflows that do not contain at least one task
 
 The protected workflow browser experience provides:
 
@@ -763,6 +768,8 @@ The protected workflow browser experience provides:
 - Administrator-only workflow editing for name, description, and status
 - Ordered task display on protected workflow detail pages
 - Administrator-only task creation form linked from workflow details
+- Administrator-only task-detail editing and task-order forms
+- Deliberate contiguous task resequencing with duplicate and missing-task rejection
 - Required/optional task labels, empty states, and instruction display
 - Signed-session CSRF protection for workflow submissions
 - Signed-session CSRF protection for task submissions
@@ -772,6 +779,7 @@ The protected workflow browser experience provides:
 - Activity logging for denied access, invalid CSRF, and successful creation
 - Activity logging for workflow updates
 - Activity logging for denied task access, invalid CSRF, and successful task creation
+- Activity logging for task edits and resequencing
 - Default-deny `403` handling for missing permissions
 - Safe SQLite loading-error pages without raw exception details
 - Accessible workflow table headings, caption, and scrollable wrapper
@@ -827,6 +835,10 @@ The FastAPI interface continues to provide:
   POST submission
 - `/workflows/{workflow_id}/tasks/new` — administrator-only task creation form
   and POST submission
+- `/workflows/{workflow_id}/tasks/{task_id}/edit` — administrator-only task
+  edit form and POST submission
+- `/workflows/{workflow_id}/tasks/resequence` — administrator-only task-order
+  form and POST submission
 - `/employees` — protected employee directory
 - `/employees/{employee_id}` — protected employee profile
 - `/employees/{employee_id}/payroll` — protected payroll page
@@ -844,11 +856,12 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 114 Verification
+### Day 120 Verification
 
-- **409 automated tests passed**
-- Workflow task persistence, service authorization, browser task creation,
-  CSRF boundaries, validation, activity logging, and ordered display passed
+- **417 automated tests passed**
+- Workflow task persistence, editing, resequencing, activation readiness,
+  service authorization, browser task creation, CSRF boundaries, validation,
+  activity logging, and ordered display passed
   automated verification
 - Existing Employee Management and Workflow Automation foundations remained
   covered by the complete regression suite
@@ -856,7 +869,8 @@ The FastAPI interface continues to provide:
 
 ### Roadmap Position
 
-Day 114 is complete after the documentation is saved.
+Day 120 is complete after the documentation is saved.
 
 ABAP now supports secure workflow lifecycle management and administrator task
-creation. The next roadmap step is task editing and deliberate resequencing.
+creation, editing, and resequencing. The next roadmap step is task deletion
+with deliberate resequencing, followed by workflow execution records.
