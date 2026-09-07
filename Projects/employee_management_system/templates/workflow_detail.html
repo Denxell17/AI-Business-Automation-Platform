@@ -1,0 +1,51 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section class="directory-section" aria-labelledby="workflow-heading">
+    <a class="back-link" href="{{ url_for('workflow_directory') }}">
+        <span aria-hidden="true">←</span>
+        Back to workflow directory
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Workflow automation</p>
+            <h1 id="workflow-heading" class="section-title">
+                {{ workflow["name"] }}
+            </h1>
+            <p class="page-message">Workflow ID: {{ workflow["workflow_id"] }}</p>
+        </div>
+
+        {% if can_manage_workflows %}
+        <a
+            class="add-employee-link"
+            href="{{ url_for(
+                'workflow_edit_form',
+                workflow_id=workflow['workflow_id']
+            ) }}"
+        >
+            Edit workflow
+        </a>
+        {% endif %}
+    </div>
+
+    <dl class="profile-details">
+        <div class="profile-detail-card">
+            <dt>Status</dt>
+            <dd>{{ workflow["status"] | title }}</dd>
+        </div>
+        <div class="profile-detail-card">
+            <dt>Created</dt>
+            <dd>{{ workflow["created_at"] }}</dd>
+        </div>
+        <div class="profile-detail-card">
+            <dt>Last updated</dt>
+            <dd>{{ workflow["updated_at"] }}</dd>
+        </div>
+        <div class="profile-detail-card profile-detail-card-wide">
+            <dt>Description</dt>
+            <dd>{{ workflow["description"] or "No description provided." }}</dd>
+        </div>
+    </dl>
+</section>
+{% endblock %}

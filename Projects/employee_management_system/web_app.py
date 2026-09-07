@@ -36,6 +36,7 @@ from authorization import (
 )
 from database import (
     DATABASE_FILE,
+    load_workflow_by_id,
     load_workflows_from_database,
     load_user_account_summaries,
 )
@@ -57,7 +58,10 @@ from employee_service import (
 )
 from exporter import build_employee_csv_content
 from payroll import calculate_payroll
-from models import Employee
+from models import (
+    Employee,
+    VALID_WORKFLOW_STATUSES,
+)
 from reports import calculate_workforce_summary
 from user_service import (
     authenticate_user_account,
@@ -69,7 +73,10 @@ from web_session import (
     clear_authenticated_session,
     load_authenticated_session_user,
 )
-from workflow_service import create_workflow
+from workflow_service import (
+    create_workflow,
+    update_workflow,
+)
 
 
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
@@ -789,10 +796,206 @@ def create_web_application(
 
 
     @application.get(
+        "/workflows/{workflow_id}/edit",
+        response_class=HTMLResponse,
+    )
+    def workflow_edit_form(
+        request: Request,
+        workflow_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-edit access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+
+        try:
+            workflow = load_workflow_by_id(
+                workflow_id.strip().upper(),
+                database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse(
+                "Workflow records could not be loaded.",
+                status_code=500,
+            )
+
+        if workflow is None:
+            return HTMLResponse("Workflow not found.", status_code=404)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="workflow_edit_form.html",
+            context={
+                "page_title": f"Edit {workflow['name']}",
+                "active_page": "workflows",
+                "current_user": current_user,
+                "workflow": workflow,
+                "csrf_token": get_or_create_csrf_token(request),
+                "form_values": workflow,
+                "error_message": None,
+            },
+        )
+
+    @application.post("/workflows/{workflow_id}/edit")
+    def workflow_edit(
+        request: Request,
+        workflow_id: str,
+        csrf_token: Annotated[str, Form()],
+        name: Annotated[str, Form()] = "",
+        description: Annotated[str, Form()] = "",
+        status: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-edit access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web workflow-edit CSRF validation failed "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                "Your form could not be verified.",
+                status_code=403,
+            )
+
+        normalized_workflow_id = workflow_id.strip().upper()
+        form_values = {
+            "workflow_id": normalized_workflow_id,
+            "name": name,
+            "description": description,
+            "status": status,
+        }
+        workflow_updated = update_workflow(
+            current_user,
+            normalized_workflow_id,
+            name,
+            description,
+            status,
+            database_file,
+        )
+
+        if not workflow_updated:
+            return templates.TemplateResponse(
+                request=request,
+                name="workflow_edit_form.html",
+                context={
+                    "page_title": "Edit workflow",
+                    "active_page": "workflows",
+                    "current_user": current_user,
+                    "workflow": form_values,
+                    "csrf_token": get_or_create_csrf_token(request),
+                    "form_values": form_values,
+                    "error_message": (
+                        "Workflow could not be updated. Verify the "
+                        "workflow name and status."
+                    ),
+                },
+                status_code=400,
+            )
+
+        log_activity(
+            f"Web workflow {normalized_workflow_id} was updated "
+            f"by user {current_user['username']}."
+        )
+        return RedirectResponse(
+            url=request.url_for(
+                "workflow_detail",
+                workflow_id=normalized_workflow_id,
+            ),
+            status_code=303,
+        )
+
+    @application.get(
+        "/workflows/{workflow_id}",
+        response_class=HTMLResponse,
+    )
+    def workflow_detail(
+        request: Request,
+        workflow_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(current_user, VIEW_WORKFLOWS):
+            log_activity(
+                f"Web workflow-detail access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+
+        try:
+            workflow = load_workflow_by_id(
+                workflow_id.strip().upper(),
+                database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse(
+                "Workflow records could not be loaded.",
+                status_code=500,
+            )
+
+        if workflow is None:
+            return HTMLResponse("Workflow not found.", status_code=404)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="workflow_detail.html",
+            context={
+                "page_title": workflow["name"],
+                "active_page": "workflows",
+                "current_user": current_user,
+                "workflow": workflow,
+                "can_manage_workflows": user_has_permission(
+                    current_user,
+                    MANAGE_WORKFLOWS,
+                ),
+            },
+        )
+
+    @application.get(
         "/workflows",
         response_class=HTMLResponse,
     )
-    def workflow_directory(request: Request) -> Response:
+    def workflow_directory(
+        request: Request,
+        status: str = "",
+    ) -> Response:
         current_user = load_authenticated_session_user(
             request,
             database_file,
@@ -817,6 +1020,17 @@ def create_web_application(
                 status_code=403,
             )
 
+        selected_status = status.strip().casefold()
+
+        if (
+            selected_status
+            and selected_status not in VALID_WORKFLOW_STATUSES
+        ):
+            return HTMLResponse(
+                content="Workflow status filter is invalid.",
+                status_code=400,
+            )
+
         try:
             workflow_list = load_workflows_from_database(
                 database_file,
@@ -834,12 +1048,20 @@ def create_web_application(
                         MANAGE_WORKFLOWS,
                     ),
                     "workflow_list": [],
+                    "selected_status": selected_status,
                     "error_message": (
                         "Workflow records could not be loaded."
                     ),
                 },
                 status_code=500,
             )
+
+        if selected_status:
+            workflow_list = [
+                workflow
+                for workflow in workflow_list
+                if workflow["status"] == selected_status
+            ]
 
         return templates.TemplateResponse(
             request=request,
@@ -848,11 +1070,12 @@ def create_web_application(
                 "page_title": "Workflow directory",
                 "active_page": "workflows",
                 "current_user": current_user,
-                    "can_manage_workflows": user_has_permission(
-                        current_user,
-                        MANAGE_WORKFLOWS,
-                    ),
+                "can_manage_workflows": user_has_permission(
+                    current_user,
+                    MANAGE_WORKFLOWS,
+                ),
                 "workflow_list": workflow_list,
+                "selected_status": selected_status,
                 "error_message": None,
             },
         )
