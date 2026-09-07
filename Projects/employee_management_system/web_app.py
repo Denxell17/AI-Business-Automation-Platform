@@ -37,6 +37,7 @@ from authorization import (
 from database import (
     DATABASE_FILE,
     load_workflow_by_id,
+    load_workflow_tasks,
     load_workflows_from_database,
     load_user_account_summaries,
 )
@@ -973,6 +974,16 @@ def create_web_application(
         if workflow is None:
             return HTMLResponse("Workflow not found.", status_code=404)
 
+        try:
+            workflow_tasks = load_workflow_tasks(
+                workflow["workflow_id"], database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse(
+                "Workflow records could not be loaded.",
+                status_code=500,
+            )
+
         return templates.TemplateResponse(
             request=request,
             name="workflow_detail.html",
@@ -981,6 +992,7 @@ def create_web_application(
                 "active_page": "workflows",
                 "current_user": current_user,
                 "workflow": workflow,
+                "workflow_tasks": workflow_tasks,
                 "can_manage_workflows": user_has_permission(
                     current_user,
                     MANAGE_WORKFLOWS,

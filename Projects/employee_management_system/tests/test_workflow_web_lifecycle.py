@@ -1,10 +1,13 @@
 import re
 import unittest
+import sqlite3
+from unittest.mock import patch
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from fastapi.testclient import TestClient
 from database import (
+    insert_workflow_task,
     load_user_account_by_username,
     load_workflow_by_id,
 )
@@ -105,6 +108,58 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
         self.assertNotIn("Edit workflow", detail_response.text)
         self.assertEqual(edit_response.status_code, 403)
         self.assertEqual(edit_response.text, "Access denied.")
+
+    def test_roles_can_read_ordered_tasks_with_escaped_content(self):
+        for sequence in (3, 1):
+            self.assertTrue(insert_workflow_task({
+                "task_id": f"TASK-{sequence}",
+                "workflow_id": "WF-WEB-LIFECYCLE",
+                "sequence_number": sequence,
+                "title": f"Step {sequence} <script>alert(1)</script>",
+                "instructions": "<b>Review documents</b>" if sequence == 1 else "",
+                "task_type": "manual",
+                "is_required": sequence == 1,
+                "created_at": "2026-09-07T00:00:00+00:00",
+                "updated_at": "2026-09-07T00:00:00+00:00",
+            }, self.database_file))
+        for username, password in (
+            (self.admin_username, self.admin_password),
+            (self.viewer_username, self.viewer_password),
+        ):
+            with self.subTest(username=username):
+                self.sign_in(username, password)
+                response = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+                self.assertEqual(response.status_code, 200)
+                self.assertLess(response.text.index("Step 1"), response.text.index("Step 3"))
+                self.assertIn('value="3"', response.text)
+                self.assertIn("Required", response.text)
+                self.assertIn("Optional", response.text)
+                self.assertIn("No instructions provided.", response.text)
+                self.assertIn("&lt;script&gt;", response.text)
+                self.assertIn("&lt;b&gt;Review documents&lt;/b&gt;", response.text)
+                self.assertNotIn("<script>alert(1)</script>", response.text)
+                self.client.post("/logout")
+
+    def test_empty_task_message(self):
+        self.sign_in(self.viewer_username, self.viewer_password)
+        response = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("No tasks have been added to this workflow yet.", response.text)
+
+    def test_anonymous_request_does_not_load_tasks(self):
+        with patch("web_app.load_workflow_tasks") as load_tasks:
+            response = self.client.get(
+                "/workflows/WF-WEB-LIFECYCLE", follow_redirects=False,
+            )
+        self.assertEqual(response.status_code, 303)
+        load_tasks.assert_not_called()
+
+    def test_task_storage_error_returns_safe_response(self):
+        self.sign_in(self.viewer_username, self.viewer_password)
+        with patch("web_app.load_workflow_tasks", side_effect=sqlite3.OperationalError("private details")):
+            response = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.text, "Workflow records could not be loaded.")
 
     def test_administrator_can_edit_workflow(self):
         self.sign_in(self.admin_username, self.admin_password)
