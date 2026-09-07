@@ -26,6 +26,15 @@
         >
             Edit workflow
         </a>
+        <a
+            class="add-employee-link"
+            href="{{ url_for(
+                'workflow_task_create_form',
+                workflow_id=workflow['workflow_id']
+            ) }}"
+        >
+            Add task
+        </a>
         {% endif %}
     </div>
 
