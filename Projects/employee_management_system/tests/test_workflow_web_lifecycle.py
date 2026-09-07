@@ -123,6 +123,50 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
         self.assertIn("Confirm documents", detail.text)
         self.assertIn("Required", detail.text)
 
+    def create_browser_task(self, task_id, position):
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/new",
+            data={"csrf_token": self.get_task_csrf_token(), "task_id": task_id,
+                  "sequence_number": str(position), "title": task_id,
+                  "is_required": "true"}, follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+
+    def test_administrator_can_edit_a_task(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        self.create_browser_task("TASK-EDIT", 1)
+        form = self.client.get("/workflows/WF-WEB-LIFECYCLE/tasks/TASK-EDIT/edit")
+        token = re.search(r'name="csrf_token" value="([^"]+)"', form.text).group(1)
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/TASK-EDIT/edit",
+            data={"csrf_token": token, "title": "Edited task", "instructions": "New instructions", "is_required": "false"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertIn("Edited task", detail.text)
+        self.assertIn("Optional", detail.text)
+
+    def test_administrator_can_resequence_tasks(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        self.create_browser_task("TASK-FIRST", 1)
+        self.create_browser_task("TASK-SECOND", 2)
+        form = self.client.get("/workflows/WF-WEB-LIFECYCLE/tasks/resequence")
+        token = re.search(r'name="csrf_token" value="([^"]+)"', form.text).group(1)
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/resequence",
+            data={"csrf_token": token, "task_ids": ["TASK-SECOND", "TASK-FIRST"]},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertLess(detail.text.index("TASK-SECOND"), detail.text.index("TASK-FIRST"))
+
+    def test_viewer_cannot_edit_or_resequence_tasks(self):
+        self.sign_in(self.viewer_username, self.viewer_password)
+        self.assertEqual(self.client.get("/workflows/WF-WEB-LIFECYCLE/tasks/TASK/edit").status_code, 403)
+        self.assertEqual(self.client.get("/workflows/WF-WEB-LIFECYCLE/tasks/resequence").status_code, 403)
+
     def test_task_form_preserves_values_after_validation_failure(self):
         self.sign_in(self.admin_username, self.admin_password)
         response = self.client.post(
@@ -274,7 +318,7 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
                 "csrf_token": csrf_token,
                 "name": "Updated browser workflow",
                 "description": "Updated in the browser.",
-                "status": "active",
+                "status": "inactive",
             },
             follow_redirects=False,
         )
@@ -294,7 +338,7 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
             self.fail("The updated workflow was not loaded.")
 
         self.assertEqual(workflow["name"], "Updated browser workflow")
-        self.assertEqual(workflow["status"], "active")
+        self.assertEqual(workflow["status"], "inactive")
 
     def test_edit_rejects_invalid_csrf_token(self):
         self.sign_in(self.admin_username, self.admin_password)

@@ -481,6 +481,101 @@ def load_workflow_tasks(
     ]
 
 
+def load_workflow_task_by_id(
+    task_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> WorkflowTask | None:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        row = connection.execute(
+            """
+            SELECT task_id, workflow_id, sequence_number, title,
+                   instructions, task_type, is_required, created_at, updated_at
+            FROM workflow_tasks WHERE task_id = ?
+            """,
+            (task_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    if row is None:
+        return None
+    return {
+        "task_id": row["task_id"], "workflow_id": row["workflow_id"],
+        "sequence_number": row["sequence_number"], "title": row["title"],
+        "instructions": row["instructions"], "task_type": row["task_type"],
+        "is_required": bool(row["is_required"]),
+        "created_at": row["created_at"], "updated_at": row["updated_at"],
+    }
+
+
+def update_workflow_task(
+    task: WorkflowTask,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        cursor = connection.execute(
+            """
+            UPDATE workflow_tasks SET title = ?, instructions = ?,
+                task_type = ?, is_required = ?, updated_at = ?
+            WHERE task_id = ? AND workflow_id = ?
+            """,
+            (task["title"], task["instructions"], task["task_type"],
+             task["is_required"], task["updated_at"], task["task_id"],
+             task["workflow_id"]),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def resequence_workflow_tasks(
+    workflow_id: str,
+    task_ids: list[str],
+    updated_at: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Persist one complete task order atomically for a workflow."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        saved_rows = connection.execute(
+            "SELECT task_id, sequence_number FROM workflow_tasks WHERE workflow_id = ?",
+            (workflow_id,),
+        ).fetchall()
+        saved_ids = [row[0] for row in saved_rows]
+        if len(task_ids) != len(saved_ids) or set(task_ids) != set(saved_ids):
+            return False
+        maximum_sequence = max((row[1] for row in saved_rows), default=0)
+        offset = maximum_sequence + len(task_ids)
+        if offset > 9223372036854775807:
+            return False
+        connection.execute("BEGIN")
+        connection.execute(
+            "UPDATE workflow_tasks SET sequence_number = sequence_number + ? WHERE workflow_id = ?",
+            (offset, workflow_id),
+        )
+        connection.executemany(
+            "UPDATE workflow_tasks SET sequence_number = ?, updated_at = ? WHERE task_id = ? AND workflow_id = ?",
+            [(position, updated_at, task_id, workflow_id)
+             for position, task_id in enumerate(task_ids, start=1)],
+        )
+        connection.commit()
+        return True
+    except sqlite3.Error:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
 def load_employees_from_database(
     database_file: Path = DATABASE_FILE,
 ) -> list[Employee]:

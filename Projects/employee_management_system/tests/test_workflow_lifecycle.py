@@ -82,7 +82,7 @@ class TestWorkflowLifecycle(unittest.TestCase):
             " wf-lifecycle-001 ",
             " Updated workflow ",
             " Updated description. ",
-            " ACTIVE ",
+            " INACTIVE ",
             self.database_file,
         )
         after_update = load_workflow_by_id(
@@ -102,7 +102,7 @@ class TestWorkflowLifecycle(unittest.TestCase):
             after_update["description"],
             "Updated description.",
         )
-        self.assertEqual(after_update["status"], "active")
+        self.assertEqual(after_update["status"], "inactive")
         self.assertEqual(
             after_update["created_at"],
             before_update["created_at"],
