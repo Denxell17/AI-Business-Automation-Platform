@@ -93,6 +93,109 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
 
         return token_match.group(1)
 
+    def get_task_csrf_token(self) -> str:
+        response = self.client.get("/workflows/WF-WEB-LIFECYCLE/tasks/new")
+        self.assertEqual(response.status_code, 200)
+        token_match = re.search(r'name="csrf_token" value="([^"]+)"', response.text)
+        self.assertIsNotNone(token_match)
+        if token_match is None:
+            self.fail("Task form did not contain a CSRF token.")
+        return token_match.group(1)
+
+    def test_administrator_can_create_task_and_is_redirected_to_detail(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        csrf_token = self.get_task_csrf_token()
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/new",
+            data={
+                "csrf_token": csrf_token,
+                "task_id": " task-web-001 ",
+                "sequence_number": "2",
+                "title": " Confirm documents ",
+                "instructions": " Review documents. ",
+                "is_required": "true",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "http://testserver/workflows/WF-WEB-LIFECYCLE")
+        detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertIn("Confirm documents", detail.text)
+        self.assertIn("Required", detail.text)
+
+    def test_task_form_preserves_values_after_validation_failure(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/new",
+            data={
+                "csrf_token": self.get_task_csrf_token(),
+                "task_id": "TASK-BAD",
+                "sequence_number": "not-a-number",
+                "title": "Retained task title",
+                "instructions": "Retained instructions",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Task could not be created.", response.text)
+        self.assertIn('value="TASK-BAD"', response.text)
+        self.assertIn('value="not-a-number"', response.text)
+        self.assertIn("Retained task title", response.text)
+        self.assertIn("Retained instructions", response.text)
+
+    def test_viewer_cannot_access_or_submit_task_form(self):
+        self.sign_in(self.viewer_username, self.viewer_password)
+        get_response = self.client.get("/workflows/WF-WEB-LIFECYCLE/tasks/new")
+        post_response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/new",
+            data={"csrf_token": "invalid"},
+        )
+        self.assertEqual(get_response.status_code, 403)
+        self.assertEqual(post_response.status_code, 403)
+        self.assertEqual(get_response.text, "Access denied.")
+        self.assertEqual(post_response.text, "Access denied.")
+
+    def test_task_form_rejects_invalid_csrf_before_service_call(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        with patch("web_app.create_workflow_task") as create_task:
+            response = self.client.post(
+                "/workflows/WF-WEB-LIFECYCLE/tasks/new",
+                data={"csrf_token": "invalid"},
+            )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(response.text, "Your form could not be verified.")
+        create_task.assert_not_called()
+
+    def test_task_form_rejects_invalid_required_value_safely(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/new",
+            data={
+                "csrf_token": self.get_task_csrf_token(),
+                "task_id": "TASK-BAD-REQUIRED",
+                "sequence_number": "1",
+                "title": "Invalid required value",
+                "is_required": "maybe",
+            },
+        )
+        self.assertEqual(response.status_code, 400)
+        self.assertIn("Task could not be created.", response.text)
+
+    def test_task_form_returns_safe_message_for_service_database_error(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        with patch("web_app.create_workflow_task", side_effect=sqlite3.OperationalError("private details")):
+            response = self.client.post(
+                "/workflows/WF-WEB-LIFECYCLE/tasks/new",
+                data={
+                    "csrf_token": self.get_task_csrf_token(),
+                    "task_id": "TASK-ERROR",
+                    "sequence_number": "1",
+                    "title": "Database error task",
+                    "is_required": "true",
+                },
+            )
+        self.assertEqual(response.status_code, 500)
+        self.assertEqual(response.text, "Workflow records could not be loaded.")
+
     def test_viewer_can_view_detail_but_not_edit(self):
         self.sign_in(self.viewer_username, self.viewer_password)
 

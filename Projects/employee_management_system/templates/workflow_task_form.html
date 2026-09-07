@@ -1,0 +1,57 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section class="employee-form-section" aria-labelledby="task-form-heading">
+    <a class="back-link" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}">
+        <span aria-hidden="true">←</span>
+        Back to workflow
+    </a>
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Workflow automation</p>
+            <h1 id="task-form-heading" class="section-title">Add workflow task</h1>
+            <p class="page-message">Add an ordered manual step to {{ workflow['name'] }}.</p>
+        </div>
+        <span class="form-access-badge"><span aria-hidden="true">✓</span>Workflow management access authorized</span>
+    </div>
+    {% if error_message %}
+    <p class="directory-message directory-message-error" role="alert">
+        <span aria-hidden="true">!</span><span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+    <form class="employee-form" method="post" action="{{ url_for('workflow_task_create', workflow_id=workflow['workflow_id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <section class="employee-form-card" aria-labelledby="task-details-heading">
+            <h2 id="task-details-heading">Task details</h2>
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="task_id">Task ID</label>
+                    <input id="task_id" name="task_id" type="text" value="{{ form_values.get('task_id', '') }}" autocomplete="off" required>
+                </div>
+                <div class="form-field">
+                    <label for="sequence_number">Sequence number</label>
+                    <input id="sequence_number" name="sequence_number" type="number" min="1" step="1" value="{{ form_values.get('sequence_number', '1') }}" required>
+                </div>
+                <div class="form-field">
+                    <label for="title">Task title</label>
+                    <input id="title" name="title" type="text" value="{{ form_values.get('title', '') }}" required>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="instructions">Instructions</label>
+                <textarea id="instructions" name="instructions" rows="5">{{ form_values.get('instructions', '') }}</textarea>
+            </div>
+            <div class="form-field">
+                <label for="is_required">
+                    <input id="is_required" name="is_required" type="checkbox" value="true" {% if form_values.get('is_required', True) %}checked{% endif %}>
+                    Required to complete this workflow
+                </label>
+            </div>
+        </section>
+        <div class="employee-form-actions">
+            <a class="form-cancel-link" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}">Cancel</a>
+            <button class="employee-submit-button" type="submit"><span aria-hidden="true">+</span>Add task</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

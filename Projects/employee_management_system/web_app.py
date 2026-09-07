@@ -76,6 +76,7 @@ from web_session import (
 )
 from workflow_service import (
     create_workflow,
+    create_workflow_task,
     update_workflow,
 )
 
@@ -795,6 +796,146 @@ def create_web_application(
         )
 
 
+
+    @application.get(
+        "/workflows/{workflow_id}/tasks/new",
+        response_class=HTMLResponse,
+    )
+    def workflow_task_create_form(
+        request: Request,
+        workflow_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"), status_code=303,
+            )
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-task creation access denied for user "
+                f"{current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+
+        try:
+            workflow = load_workflow_by_id(
+                workflow_id.strip().upper(), database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse(
+                "Workflow records could not be loaded.", status_code=500,
+            )
+        if workflow is None:
+            return HTMLResponse("Workflow not found.", status_code=404)
+
+        return templates.TemplateResponse(
+            request=request,
+            name="workflow_task_form.html",
+            context={
+                "page_title": "Add workflow task",
+                "active_page": "workflows",
+                "current_user": current_user,
+                "workflow": workflow,
+                "csrf_token": get_or_create_csrf_token(request),
+                "form_values": {"sequence_number": "1", "is_required": True},
+                "error_message": None,
+            },
+        )
+
+    @application.post("/workflows/{workflow_id}/tasks/new")
+    def workflow_task_create(
+        request: Request,
+        workflow_id: str,
+        csrf_token: Annotated[str, Form()],
+        task_id: Annotated[str, Form()] = "",
+        sequence_number: Annotated[str, Form()] = "",
+        title: Annotated[str, Form()] = "",
+        instructions: Annotated[str, Form()] = "",
+        is_required: Annotated[str, Form()] = "false",
+    ) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"), status_code=303,
+            )
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-task creation access denied for user "
+                f"{current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web workflow-task creation CSRF validation failed for user "
+                f"{current_user['username']}."
+            )
+            return HTMLResponse("Your form could not be verified.", status_code=403)
+
+        normalized_workflow_id = workflow_id.strip().upper()
+        form_values = {
+            "task_id": task_id,
+            "sequence_number": sequence_number,
+            "title": title,
+            "instructions": instructions,
+            "is_required": is_required,
+        }
+        try:
+            workflow = load_workflow_by_id(normalized_workflow_id, database_file)
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+        if workflow is None:
+            return HTMLResponse("Workflow not found.", status_code=404)
+
+        try:
+            task_sequence = int(sequence_number)
+        except ValueError:
+            task_sequence = 0
+
+        required_value = is_required.strip().casefold()
+        if required_value == "true":
+            task_is_required = True
+        elif required_value == "false":
+            task_is_required = False
+        else:
+            task_is_required = None
+
+        try:
+            task_created = task_is_required is not None and create_workflow_task(
+                current_user, task_id, normalized_workflow_id, task_sequence,
+                title, instructions, "manual", task_is_required, database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+
+        if not task_created:
+            return templates.TemplateResponse(
+                request=request,
+                name="workflow_task_form.html",
+                context={
+                    "page_title": "Add workflow task",
+                    "active_page": "workflows",
+                    "current_user": current_user,
+                    "workflow": workflow,
+                    "csrf_token": get_or_create_csrf_token(request),
+                    "form_values": form_values,
+                    "error_message": (
+                        "Task could not be created. Verify the task ID, title, "
+                        "and sequence number."
+                    ),
+                },
+                status_code=400,
+            )
+
+        log_activity(
+            f"Web workflow task {task_id.strip().upper()} was created for "
+            f"workflow {normalized_workflow_id} by user "
+            f"{current_user['username']}."
+        )
+        return RedirectResponse(
+            url=request.url_for("workflow_detail", workflow_id=normalized_workflow_id),
+            status_code=303,
+        )
 
     @application.get(
         "/workflows/{workflow_id}/edit",
