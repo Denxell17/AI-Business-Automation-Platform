@@ -679,23 +679,6 @@ done
 
 
 
-3:10 PM
-
-
-
-
-
-
-Worked for 10s
-
-
-
-The Day 105 summary is saved correctly, and git diff --check found no whitespace errors.
-Now update the README.
-File: C:\Users\user\OneDrive\Documents\Projects\AI-Business-Automation-Platform\README.md
-Exact location: find:
-## Project Status
-Replace everything from that heading through the end of the file with the following content. Paste with no indentation:
 ## Project Status
 
 ### Phase 1 — Employee Management System Complete
@@ -709,14 +692,14 @@ remain available for migration, verification, and historical compatibility.
 
 ### Phase 2 — Full ABAP Portfolio MVP In Progress
 
-Day 101 created the shared ABAP dashboard. Days 102 through 110 established
+Day 101 created the shared ABAP dashboard. Days 102 through 114 established
 the Workflow Automation domain, tested SQLite persistence, secure creation
-and lifecycle rules, protected browser access, workflow detail pages, and
-administrator-only editing.
+and lifecycle rules, protected browser access, workflow detail pages,
+administrator-only editing, ordered task storage, and task creation.
 
 The dashboard is the authenticated entry point for the growing business
 automation portfolio. Employee Management and Workflow Automation are
-available. Workflow scheduling, tasks, and execution history remain planned.
+available. Workflow scheduling and execution history remain planned.
 
 ### Shared Dashboard Capabilities
 
@@ -737,7 +720,7 @@ available. Workflow scheduling, tasks, and execution history remain planned.
 The Workflow Automation domain defines:
 
 - Workflows as reusable business-process definitions
-- Ordered workflow tasks as future process steps
+- Ordered workflow tasks as reusable process steps
 - Stored schedules as future run-eligibility rules
 - Workflow executions as historical run records
 - Task executions as historical task-result records
@@ -752,6 +735,10 @@ The tested SQLite workflow foundation provides:
 - SQLite foreign-key enforcement on every database connection
 - Safe workflow insertion with parameterized SQL and rollback handling
 - Deterministic workflow loading and safe empty-list handling
+- A `workflow_tasks` table with stable task IDs and parent-workflow foreign keys
+- Unique, positive sequence numbers within each workflow
+- Manual task types, required/optional flags, instructions, and UTC timestamps
+- Parameterized task insertion and ordered per-workflow retrieval
 
 The Workflow Automation service layer provides:
 
@@ -763,6 +750,9 @@ The Workflow Automation service layer provides:
 - Server-side workflow-status allowlisting
 - Server-generated UTC creation and update timestamps
 - Validated typed workflow records passed to the repository
+- Administrator-only task creation with live account revalidation
+- Normalized task IDs, workflow IDs, titles, instructions, and task types
+- Strict sequence-number and required-flag validation
 
 The protected workflow browser experience provides:
 
@@ -771,12 +761,17 @@ The protected workflow browser experience provides:
 - An administrator-only workflow creation form
 - Protected workflow detail pages for administrators and viewers
 - Administrator-only workflow editing for name, description, and status
+- Ordered task display on protected workflow detail pages
+- Administrator-only task creation form linked from workflow details
+- Required/optional task labels, empty states, and instruction display
 - Signed-session CSRF protection for workflow submissions
+- Signed-session CSRF protection for task submissions
 - Post/Redirect/Get navigation after successful creation
 - Post/Redirect/Get navigation after successful updates
 - Safe validation errors with submitted-value preservation
 - Activity logging for denied access, invalid CSRF, and successful creation
 - Activity logging for workflow updates
+- Activity logging for denied task access, invalid CSRF, and successful task creation
 - Default-deny `403` handling for missing permissions
 - Safe SQLite loading-error pages without raw exception details
 - Accessible workflow table headings, caption, and scrollable wrapper
@@ -830,6 +825,8 @@ The FastAPI interface continues to provide:
 - `/workflows/{workflow_id}` — protected workflow detail page
 - `/workflows/{workflow_id}/edit` — administrator-only workflow edit form and
   POST submission
+- `/workflows/{workflow_id}/tasks/new` — administrator-only task creation form
+  and POST submission
 - `/employees` — protected employee directory
 - `/employees/{employee_id}` — protected employee profile
 - `/employees/{employee_id}/payroll` — protected payroll page
@@ -847,20 +844,19 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 110 Verification
+### Day 114 Verification
 
-- **384 automated tests passed**
-- **14 focused workflow lifecycle and workflow-service tests passed**
-- Workflow detail access, lifecycle updates, CSRF boundaries, activity
-  logging, and status filtering passed automated verification
+- **409 automated tests passed**
+- Workflow task persistence, service authorization, browser task creation,
+  CSRF boundaries, validation, activity logging, and ordered display passed
+  automated verification
 - Existing Employee Management and Workflow Automation foundations remained
   covered by the complete regression suite
 - No application data was changed during verification
 
 ### Roadmap Position
 
-Day 110 is complete after the documentation is saved.
+Day 114 is complete after the documentation is saved.
 
-ABAP now has secure workflow lifecycle management. The next roadmap step is
-workflow tasks: ordered task records, task persistence, and task display on
-the protected workflow detail page.
+ABAP now supports secure workflow lifecycle management and administrator task
+creation. The next roadmap step is task editing and deliberate resequencing.
