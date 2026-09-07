@@ -709,10 +709,10 @@ remain available for migration, verification, and historical compatibility.
 
 ### Phase 2 — Full ABAP Portfolio MVP In Progress
 
-Day 101 created the shared ABAP dashboard. Days 102 through 105 established
+Day 101 created the shared ABAP dashboard. Days 102 through 110 established
 the Workflow Automation domain, tested SQLite persistence, secure creation
-rules, protected read-only browser access, and an administrator workflow
-creation form.
+and lifecycle rules, protected browser access, workflow detail pages, and
+administrator-only editing.
 
 The dashboard is the authenticated entry point for the growing business
 automation portfolio. Employee Management and Workflow Automation are
@@ -769,16 +769,21 @@ The protected workflow browser experience provides:
 - A dedicated `workflows.view` permission for administrators and viewers
 - A protected read-only workflow directory
 - An administrator-only workflow creation form
+- Protected workflow detail pages for administrators and viewers
+- Administrator-only workflow editing for name, description, and status
 - Signed-session CSRF protection for workflow submissions
 - Post/Redirect/Get navigation after successful creation
+- Post/Redirect/Get navigation after successful updates
 - Safe validation errors with submitted-value preservation
 - Activity logging for denied access, invalid CSRF, and successful creation
+- Activity logging for workflow updates
 - Default-deny `403` handling for missing permissions
 - Safe SQLite loading-error pages without raw exception details
 - Accessible workflow table headings, caption, and scrollable wrapper
 - Accessible empty state when no workflow records exist
 - Conditional Create workflow action visible only to administrators
 - Accessible labels, status selector, error alert, and textarea focus styling
+- Allowlisted workflow-directory filtering by status
 
 ### Completed Employee Management Capabilities
 
@@ -822,6 +827,9 @@ The FastAPI interface continues to provide:
 - `/workflows` — protected workflow directory
 - `/workflows/new` — administrator-only workflow creation form and POST
   submission
+- `/workflows/{workflow_id}` — protected workflow detail page
+- `/workflows/{workflow_id}/edit` — administrator-only workflow edit form and
+  POST submission
 - `/employees` — protected employee directory
 - `/employees/{employee_id}` — protected employee profile
 - `/employees/{employee_id}/payroll` — protected payroll page
@@ -839,20 +847,20 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 105 Verification
+### Day 110 Verification
 
-- **374 automated tests passed**
-- **146 focused authorization, workflow-service, and web tests passed**
-- Workflow creation form access, CSRF protection, validation errors, activity
-  logging, and directory action visibility passed automated verification
+- **384 automated tests passed**
+- **14 focused workflow lifecycle and workflow-service tests passed**
+- Workflow detail access, lifecycle updates, CSRF boundaries, activity
+  logging, and status filtering passed automated verification
 - Existing Employee Management and Workflow Automation foundations remained
   covered by the complete regression suite
 - No application data was changed during verification
 
 ### Roadmap Position
 
-Day 105 is complete after the documentation is saved.
+Day 110 is complete after the documentation is saved.
 
-ABAP now has a secure administrator workflow-creation form. The next roadmap
-step is a protected workflow detail page and administrator-only lifecycle
-updates for workflow name, description, and status.
+ABAP now has secure workflow lifecycle management. The next roadmap step is
+workflow tasks: ordered task records, task persistence, and task display on
+the protected workflow detail page.

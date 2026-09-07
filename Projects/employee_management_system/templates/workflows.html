@@ -45,6 +45,36 @@
         </div>
     </div>
 
+    {% if not error_message %}
+    <form
+        class="directory-filter-form"
+        method="get"
+        action="{{ url_for('workflow_directory') }}"
+        aria-label="Filter workflows by status"
+    >
+        <div class="directory-filter-fields">
+            <div class="form-field">
+                <label for="status">Filter by status</label>
+                <select id="status" name="status">
+                    <option value="">All statuses</option>
+                    {% for option in ('draft', 'active', 'inactive') %}
+                    <option
+                        value="{{ option }}"
+                        {% if selected_status == option %}selected{% endif %}
+                    >{{ option | title }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="directory-filter-actions">
+            <button class="employee-submit-button" type="submit">
+                Apply filter
+            </button>
+        </div>
+    </form>
+    {% endif %}
+
     {% if error_message %}
     <p class="directory-message directory-message-error" role="alert">
         <span aria-hidden="true">!</span>
@@ -75,7 +105,15 @@
                 {% for workflow in workflow_list %}
                 <tr>
                     <th scope="row">
-                        {{ workflow["workflow_id"] }}
+                        <a
+                            class="employee-profile-link"
+                            href="{{ url_for(
+                                'workflow_detail',
+                                workflow_id=workflow['workflow_id']
+                            ) }}"
+                        >
+                            {{ workflow["workflow_id"] }}
+                        </a>
                     </th>
                     <td>{{ workflow["name"] }}</td>
                     <td>

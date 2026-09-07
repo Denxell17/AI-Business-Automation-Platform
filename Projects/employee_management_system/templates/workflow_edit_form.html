@@ -1,0 +1,99 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section class="employee-form-section" aria-labelledby="workflow-edit-heading">
+    <a
+        class="back-link"
+        href="{{ url_for(
+            'workflow_detail',
+            workflow_id=workflow['workflow_id']
+        ) }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to workflow
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Workflow automation</p>
+            <h1 id="workflow-edit-heading" class="section-title">
+                Edit workflow
+            </h1>
+            <p class="page-message">
+                Update this workflow's name, description, or lifecycle status.
+            </p>
+        </div>
+    </div>
+
+    {% if error_message %}
+    <p class="directory-message directory-message-error" role="alert">
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="{{ url_for(
+            'workflow_edit',
+            workflow_id=workflow['workflow_id']
+        ) }}"
+    >
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+
+        <section class="employee-form-card" aria-labelledby="details-heading">
+            <h2 id="details-heading">Workflow details</h2>
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="workflow_id">Workflow ID</label>
+                    <input
+                        id="workflow_id"
+                        type="text"
+                        value="{{ workflow['workflow_id'] }}"
+                        readonly
+                    >
+                </div>
+                <div class="form-field">
+                    <label for="name">Workflow name</label>
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        value="{{ form_values.get('name', '') }}"
+                        required
+                    >
+                </div>
+                <div class="form-field">
+                    <label for="status">Status</label>
+                    <select id="status" name="status" required>
+                        {% for option in ('draft', 'active', 'inactive') %}
+                        <option
+                            value="{{ option }}"
+                            {% if form_values.get('status') == option %}selected{% endif %}
+                        >{{ option | title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="description">Description</label>
+                <textarea id="description" name="description" rows="5">{{ form_values.get('description', '') }}</textarea>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for(
+                    'workflow_detail',
+                    workflow_id=workflow['workflow_id']
+                ) }}"
+            >Cancel</a>
+            <button class="employee-submit-button" type="submit">
+                Save workflow
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

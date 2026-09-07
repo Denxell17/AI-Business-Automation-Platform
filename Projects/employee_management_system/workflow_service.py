@@ -9,6 +9,8 @@ from database import (
     DATABASE_FILE,
     insert_workflow,
     load_user_account_by_username,
+    load_workflow_by_id,
+    update_workflow_in_database,
 )
 from models import (
     UserAccount,
@@ -71,5 +73,70 @@ def create_workflow(
 
     return insert_workflow(
         workflow,
+        database_file,
+    )
+
+
+def update_workflow(
+    current_user: UserAccount,
+    workflow_id: str,
+    name: str,
+    description: str,
+    status: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    if not current_user["is_active"]:
+        return False
+
+    stored_user = load_user_account_by_username(
+        current_user["username"],
+        database_file,
+    )
+
+    if (
+        stored_user is None
+        or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+        or not user_has_permission(
+            stored_user,
+            MANAGE_WORKFLOWS,
+        )
+    ):
+        return False
+
+    normalized_workflow_id = workflow_id.strip().upper()
+    normalized_name = name.strip()
+    normalized_description = description.strip()
+    normalized_status = status.strip().casefold()
+
+    if (
+        not normalized_workflow_id
+        or not normalized_name
+        or normalized_status not in VALID_WORKFLOW_STATUSES
+    ):
+        return False
+
+    existing_workflow = load_workflow_by_id(
+        normalized_workflow_id,
+        database_file,
+    )
+
+    if existing_workflow is None:
+        return False
+
+    updated_workflow: Workflow = {
+        "workflow_id": existing_workflow["workflow_id"],
+        "name": normalized_name,
+        "description": normalized_description,
+        "status": normalized_status,
+        "created_by_user_id": existing_workflow[
+            "created_by_user_id"
+        ],
+        "created_at": existing_workflow["created_at"],
+        "updated_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    return update_workflow_in_database(
+        updated_workflow,
         database_file,
     )
