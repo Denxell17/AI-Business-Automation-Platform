@@ -37,9 +37,11 @@ from authorization import (
 from database import (
     DATABASE_FILE,
     load_workflow_executions,
+    load_workflow_task_executions,
     load_workflow_by_id,
     load_workflow_task_by_id,
     load_workflow_tasks,
+    load_workflow_schedules,
     load_workflows_from_database,
     load_user_account_summaries,
 )
@@ -83,6 +85,9 @@ from workflow_service import (
     resequence_workflow_task_list,
     start_workflow_execution,
     finish_workflow_execution_record,
+    finish_workflow_task_execution_record,
+    create_workflow_schedule,
+    set_workflow_schedule_enabled,
     update_workflow_task_details,
     update_workflow,
 )
@@ -1240,6 +1245,150 @@ def create_web_application(
         )
 
     @application.get(
+        "/workflows/{workflow_id}/schedules/new",
+        response_class=HTMLResponse,
+    )
+    def workflow_schedule_create_form(request: Request, workflow_id: str) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if current_user["role"] != "admin" or not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-schedule creation access denied for user {current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+        try:
+            workflow = load_workflow_by_id(workflow_id.strip().upper(), database_file)
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+        if workflow is None:
+            return HTMLResponse("Workflow not found.", status_code=404)
+        if workflow["status"] != "active":
+            return HTMLResponse("Only active workflows can have schedules.", status_code=400)
+        return templates.TemplateResponse(
+            request=request, name="workflow_schedule_form.html",
+            context={
+                "page_title": "Add workflow schedule", "active_page": "workflows",
+                "current_user": current_user, "workflow": workflow,
+                "csrf_token": get_or_create_csrf_token(request),
+                "form_values": {"schedule_type": "manual", "is_enabled": True},
+                "error_message": None,
+            },
+        )
+
+    @application.post("/workflows/{workflow_id}/schedules/new")
+    def workflow_schedule_create(
+        request: Request, workflow_id: str,
+        csrf_token: Annotated[str, Form()] = "",
+        schedule_id: Annotated[str, Form()] = "",
+        schedule_type: Annotated[str, Form()] = "",
+        scheduled_time: Annotated[str, Form()] = "",
+        day_of_week: Annotated[str, Form()] = "",
+        is_enabled: Annotated[str, Form()] = "false",
+    ) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if current_user["role"] != "admin" or not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-schedule creation access denied for user {current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web workflow-schedule creation CSRF validation failed for user {current_user['username']}."
+            )
+            return HTMLResponse("Your form could not be verified.", status_code=403)
+        normalized_workflow_id = workflow_id.strip().upper()
+        try:
+            workflow = load_workflow_by_id(normalized_workflow_id, database_file)
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+        if workflow is None:
+            return HTMLResponse("Workflow not found.", status_code=404)
+        enabled_value = is_enabled.strip().casefold()
+        enabled = True if enabled_value == "true" else False if enabled_value == "false" else None
+        form_values = {
+            "schedule_id": schedule_id, "schedule_type": schedule_type,
+            "scheduled_time": scheduled_time, "day_of_week": day_of_week,
+            "is_enabled": is_enabled,
+        }
+        try:
+            created = enabled is not None and create_workflow_schedule(
+                current_user, schedule_id, normalized_workflow_id, schedule_type,
+                scheduled_time, day_of_week, enabled, database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse("Workflow schedules could not be saved.", status_code=500)
+        if not created:
+            return templates.TemplateResponse(
+                request=request, name="workflow_schedule_form.html",
+                context={
+                    "page_title": "Add workflow schedule", "active_page": "workflows",
+                    "current_user": current_user, "workflow": workflow,
+                    "csrf_token": get_or_create_csrf_token(request),
+                    "form_values": form_values,
+                    "error_message": (
+                        "Schedule could not be created. Verify its ID, type, time, "
+                        "weekday, and that the workflow is active."
+                    ),
+                },
+                status_code=400,
+            )
+        log_activity(
+            f"Web workflow schedule {schedule_id.strip().upper()} was created for "
+            f"{normalized_workflow_id} by user {current_user['username']}."
+        )
+        return RedirectResponse(
+            url=request.url_for("workflow_detail", workflow_id=normalized_workflow_id),
+            status_code=303,
+        )
+
+    @application.post("/workflows/{workflow_id}/schedules/{schedule_id}/status")
+    def workflow_schedule_status_update(
+        request: Request, workflow_id: str, schedule_id: str,
+        csrf_token: Annotated[str, Form()] = "",
+        is_enabled: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if current_user["role"] != "admin" or not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-schedule status access denied for user {current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web workflow-schedule status CSRF validation failed for user {current_user['username']}."
+            )
+            return HTMLResponse("Your form could not be verified.", status_code=403)
+        enabled_value = is_enabled.strip().casefold()
+        enabled = True if enabled_value == "true" else False if enabled_value == "false" else None
+        if enabled is None:
+            return HTMLResponse("Schedule status could not be updated.", status_code=400)
+        normalized_workflow_id = workflow_id.strip().upper()
+        normalized_schedule_id = schedule_id.strip().upper()
+        try:
+            updated = set_workflow_schedule_enabled(
+                current_user, normalized_workflow_id, normalized_schedule_id,
+                enabled, database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse("Workflow schedules could not be saved.", status_code=500)
+        if not updated:
+            return HTMLResponse("Schedule status could not be updated.", status_code=400)
+        state = "enabled" if enabled else "disabled"
+        log_activity(
+            f"Web workflow schedule {normalized_schedule_id} was {state} for "
+            f"{normalized_workflow_id} by user {current_user['username']}."
+        )
+        return RedirectResponse(
+            url=request.url_for("workflow_detail", workflow_id=normalized_workflow_id),
+            status_code=303,
+        )
+
+    @application.get(
         "/workflows/{workflow_id}",
         response_class=HTMLResponse,
     )
@@ -1281,9 +1430,18 @@ def create_web_application(
 
         try:
             workflow_tasks = load_workflow_tasks(workflow["workflow_id"], database_file)
+            workflow_schedules = load_workflow_schedules(
+                workflow["workflow_id"], database_file,
+            )
             workflow_executions = load_workflow_executions(
                 workflow["workflow_id"], database_file,
             )
+            task_executions_by_run = {
+                execution["execution_id"]: load_workflow_task_executions(
+                    execution["execution_id"], database_file,
+                )
+                for execution in workflow_executions
+            }
         except sqlite3.Error:
             return HTMLResponse(
                 "Workflow records could not be loaded.",
@@ -1299,7 +1457,9 @@ def create_web_application(
                 "current_user": current_user,
                 "workflow": workflow,
                 "workflow_tasks": workflow_tasks,
+                "workflow_schedules": workflow_schedules,
                 "workflow_executions": workflow_executions,
+                "task_executions_by_run": task_executions_by_run,
                 "csrf_token": get_or_create_csrf_token(request),
                 "can_manage_workflows": user_has_permission(
                     current_user,
@@ -1347,6 +1507,47 @@ def create_web_application(
         )
         return RedirectResponse(
             url=request.url_for("workflow_detail", workflow_id=normalized_workflow_id),
+            status_code=303,
+        )
+
+    @application.post(
+        "/workflows/{workflow_id}/executions/{execution_id}/tasks/{task_execution_id}/finish"
+    )
+    def workflow_task_execution_finish(
+        request: Request, workflow_id: str, execution_id: str, task_execution_id: str,
+        csrf_token: Annotated[str, Form()] = "",
+        status: Annotated[str, Form()] = "",
+        result_summary: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if current_user["role"] != "admin" or not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web task-execution finish access denied for user {current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web task-execution finish CSRF validation failed for user {current_user['username']}."
+            )
+            return HTMLResponse("Your form could not be verified.", status_code=403)
+        try:
+            finished = finish_workflow_task_execution_record(
+                current_user, workflow_id, execution_id, task_execution_id,
+                status, result_summary, database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse("Task execution could not be saved.", status_code=500)
+        if not finished:
+            return HTMLResponse("Task execution could not be finished.", status_code=400)
+        log_activity(
+            f"Web task execution {task_execution_id.strip().upper()} "
+            f"in execution {execution_id.strip().upper()} for {workflow_id.strip().upper()} "
+            f"was {status.strip().casefold()} by user {current_user['username']}."
+        )
+        return RedirectResponse(
+            url=request.url_for("workflow_detail", workflow_id=workflow_id.strip().upper()),
             status_code=303,
         )
 

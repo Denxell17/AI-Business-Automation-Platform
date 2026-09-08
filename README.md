@@ -692,16 +692,17 @@ remain available for migration, verification, and historical compatibility.
 
 ### Phase 2 — Full ABAP Portfolio MVP In Progress
 
-Day 101 created the shared ABAP dashboard. Days 102 through 121 established
+Day 101 created the shared ABAP dashboard. Days 102 through 135 established
 the Workflow Automation domain, tested SQLite persistence, secure creation
 and lifecycle rules, protected browser access, workflow detail pages,
 administrator-only editing, ordered task storage, task creation, task editing,
-task resequencing, activation readiness rules, and transaction-safe task
-deletion with automatic contiguous resequencing.
+task resequencing, activation readiness rules, transaction-safe task deletion,
+execution history, task outcomes, and stored workflow schedules.
 
 The dashboard is the authenticated entry point for the growing business
 automation portfolio. Employee Management and Workflow Automation are
-available. Workflow scheduling and execution history remain planned.
+available. Workflow schedules now store manual, daily, and weekly eligibility
+rules; automatic background execution remains planned.
 
 ### Shared Dashboard Capabilities
 
@@ -744,6 +745,13 @@ The tested SQLite workflow foundation provides:
 - Atomic task resequencing that preserves unique positions throughout the update
 - Atomic task deletion and contiguous resequencing of remaining tasks
 - A `workflow_executions` table with workflow-name snapshots and run status
+- A `workflow_task_executions` table with immutable task-name, task-ID, and
+  sequence snapshots for each workflow run
+- A `workflow_schedules` table with stable IDs, workflow and creator foreign keys,
+  allowlisted schedule types, enabled state, creator references, and timestamps
+- Ordered workflow-scoped schedule loading and exact-ID schedule lookup
+- Atomic workflow lifecycle updates that disable enabled schedules when a
+  workflow leaves Active
 
 The Workflow Automation service layer provides:
 
@@ -764,6 +772,14 @@ The Workflow Automation service layer provides:
 - Protection against removing the final task from an active workflow
 - Administrator-only active-workflow execution starts with live account checks
 - Rejection of active workflows that do not contain at least one task
+- Administrator-only task-execution completion and failure updates with live
+  account revalidation, terminal-state protection, and parent-run scoping
+- Administrator-only schedule creation and enable/disable controls with live
+  account revalidation
+- Manual, daily, and weekly schedule validation with strict `HH:MM` times and
+  allowlisted weekdays
+- Rejection of schedule creation for Draft, Inactive, or missing workflows
+- Rejection of schedule enabling unless the parent workflow is Active
 
 The protected workflow browser experience provides:
 
@@ -776,11 +792,17 @@ The protected workflow browser experience provides:
 - Administrator-only task creation form linked from workflow details
 - Administrator-only task-detail editing and task-order forms
 - Administrator-only task-deletion confirmation and POST action
-- Administrator-only execution starts and read-only execution history
+- Administrator-only execution starts and controlled task outcome updates
+- Task outcomes displayed beneath their parent workflow execution
+- Stored schedules displayed on protected workflow detail pages
+- Administrator-only schedule creation forms and enable/disable actions
+- Written schedule state and timing descriptions for viewers and administrators
 - Deliberate contiguous task resequencing with duplicate and missing-task rejection
 - Required/optional task labels, empty states, and instruction display
 - Signed-session CSRF protection for workflow submissions
 - Signed-session CSRF protection for task submissions
+- Signed-session CSRF protection for task outcome submissions
+- Signed-session CSRF protection for schedule creation and status changes
 - Post/Redirect/Get navigation after successful creation
 - Post/Redirect/Get navigation after successful updates
 - Safe validation errors with submitted-value preservation
@@ -790,6 +812,9 @@ The protected workflow browser experience provides:
 - Activity logging for task edits and resequencing
 - Activity logging for denied, invalid-CSRF, and successful task deletion
 - Activity logging for denied, invalid-CSRF, and successful execution starts
+- Activity logging for denied, invalid-CSRF, and successful task outcome updates
+- Activity logging for denied, invalid-CSRF, successful schedule creation, and
+  successful schedule status changes
 - Default-deny `403` handling for missing permissions
 - Safe SQLite loading-error pages without raw exception details
 - Accessible workflow table headings, caption, and scrollable wrapper
@@ -853,6 +878,12 @@ The FastAPI interface continues to provide:
   deletion confirmation and POST submission
 - `/workflows/{workflow_id}/executions` — administrator-only execution-start
   POST submission
+- `/workflows/{workflow_id}/executions/{execution_id}/tasks/{task_execution_id}/finish`
+  — administrator-only task completion or failure POST submission
+- `/workflows/{workflow_id}/schedules/new` — administrator-only schedule form
+  and creation submission
+- `/workflows/{workflow_id}/schedules/{schedule_id}/status` —
+  administrator-only schedule enable or disable POST submission
 - `/employees` — protected employee directory
 - `/employees/{employee_id}` — protected employee profile
 - `/employees/{employee_id}/payroll` — protected payroll page
@@ -870,20 +901,23 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 130 Verification
+### Day 135 Verification
 
-- **428 automated tests passed**
-- Workflow execution starts and terminal completion/failure states use
-  repository-backed authorization, CSRF protection, activity logging, and safe
-  execution-history display.
+- **448 automated tests passed**
+- Stored workflow schedules use typed models, constrained SQLite persistence,
+  administrator-only service operations, live account revalidation, signed
+  session CSRF protection, safe browser errors, and accessible display.
+- Schedule lifecycle controls automatically disable schedules when a workflow
+  leaves Active and reject enabling while it is Draft or Inactive.
 - Existing Employee Management and Workflow Automation foundations remained
   covered by the complete regression suite
 - No application data was changed during verification
 
 ### Roadmap Position
 
-Day 130 is complete after the documentation is saved.
+Day 135 is complete after the documentation is saved.
 
 ABAP now supports secure workflow lifecycle management and administrator task
-creation, editing, resequencing, deletion, and execution history. The next
-roadmap step is task-execution records and controlled task processing.
+creation, editing, resequencing, deletion, execution history, controlled task
+outcomes, and stored scheduling rules. The next roadmap step is schedule
+eligibility evaluation before any background execution worker is introduced.

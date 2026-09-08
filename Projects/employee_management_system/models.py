@@ -104,6 +104,33 @@ class WorkflowTaskExecution(TypedDict):
     result_summary: str
 
 
+WORKFLOW_SCHEDULE_TYPE_MANUAL = "manual"
+WORKFLOW_SCHEDULE_TYPE_DAILY = "daily"
+WORKFLOW_SCHEDULE_TYPE_WEEKLY = "weekly"
+VALID_WORKFLOW_SCHEDULE_TYPES = frozenset(
+    {
+        WORKFLOW_SCHEDULE_TYPE_MANUAL,
+        WORKFLOW_SCHEDULE_TYPE_DAILY,
+        WORKFLOW_SCHEDULE_TYPE_WEEKLY,
+    }
+)
+VALID_WORKFLOW_SCHEDULE_WEEKDAYS = frozenset(
+    {"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"}
+)
+
+
+class WorkflowSchedule(TypedDict):
+    schedule_id: str
+    workflow_id: str
+    schedule_type: str
+    scheduled_time: str | None
+    day_of_week: str | None
+    is_enabled: bool
+    created_by_user_id: int
+    created_at: str
+    updated_at: str
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float
