@@ -743,6 +743,7 @@ The tested SQLite workflow foundation provides:
 - Parameterized task insertion and ordered per-workflow retrieval
 - Atomic task resequencing that preserves unique positions throughout the update
 - Atomic task deletion and contiguous resequencing of remaining tasks
+- A `workflow_executions` table with workflow-name snapshots and run status
 
 The Workflow Automation service layer provides:
 
@@ -761,6 +762,7 @@ The Workflow Automation service layer provides:
 - Complete-list validation before resequencing task positions
 - Administrator-only task deletion with live account revalidation
 - Protection against removing the final task from an active workflow
+- Administrator-only active-workflow execution starts with live account checks
 - Rejection of active workflows that do not contain at least one task
 
 The protected workflow browser experience provides:
@@ -774,6 +776,7 @@ The protected workflow browser experience provides:
 - Administrator-only task creation form linked from workflow details
 - Administrator-only task-detail editing and task-order forms
 - Administrator-only task-deletion confirmation and POST action
+- Administrator-only execution starts and read-only execution history
 - Deliberate contiguous task resequencing with duplicate and missing-task rejection
 - Required/optional task labels, empty states, and instruction display
 - Signed-session CSRF protection for workflow submissions
@@ -786,6 +789,7 @@ The protected workflow browser experience provides:
 - Activity logging for denied task access, invalid CSRF, and successful task creation
 - Activity logging for task edits and resequencing
 - Activity logging for denied, invalid-CSRF, and successful task deletion
+- Activity logging for denied, invalid-CSRF, and successful execution starts
 - Default-deny `403` handling for missing permissions
 - Safe SQLite loading-error pages without raw exception details
 - Accessible workflow table headings, caption, and scrollable wrapper
@@ -847,6 +851,8 @@ The FastAPI interface continues to provide:
   form and POST submission
 - `/workflows/{workflow_id}/tasks/{task_id}/delete` — administrator-only task
   deletion confirmation and POST submission
+- `/workflows/{workflow_id}/executions` — administrator-only execution-start
+  POST submission
 - `/employees` — protected employee directory
 - `/employees/{employee_id}` — protected employee profile
 - `/employees/{employee_id}/payroll` — protected payroll page
@@ -864,21 +870,20 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 121 Verification
+### Day 125 Verification
 
-- **422 automated tests passed**
-- Workflow task persistence, editing, resequencing, deletion, activation
-  readiness, service authorization, browser confirmation, CSRF boundaries,
-  validation, activity logging, and ordered display passed automated
-  verification
+- **428 automated tests passed**
+- Workflow execution starts and terminal completion/failure states use
+  repository-backed authorization, CSRF protection, activity logging, and safe
+  execution-history display.
 - Existing Employee Management and Workflow Automation foundations remained
   covered by the complete regression suite
 - No application data was changed during verification
 
 ### Roadmap Position
 
-Day 121 is complete after the documentation is saved.
+Day 125 is complete after the documentation is saved.
 
 ABAP now supports secure workflow lifecycle management and administrator task
-creation, editing, resequencing, and deletion. The next roadmap step is
-workflow execution records.
+creation, editing, resequencing, deletion, and execution history. The next
+roadmap step is task-execution records and controlled task processing.

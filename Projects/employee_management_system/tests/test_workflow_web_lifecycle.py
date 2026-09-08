@@ -13,7 +13,7 @@ from database import (
 )
 from user_service import register_user_account
 from web_app import create_web_application
-from workflow_service import create_workflow
+from workflow_service import create_workflow, create_workflow_task, update_workflow
 
 
 class TestWorkflowWebLifecycle(unittest.TestCase):
@@ -161,6 +161,52 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
         self.assertEqual(response.status_code, 303)
         detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
         self.assertLess(detail.text.index("TASK-SECOND"), detail.text.index("TASK-FIRST"))
+
+    def test_administrator_can_start_active_workflow_execution(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        administrator = load_user_account_by_username(
+            self.admin_username, self.database_file,
+        )
+        self.assertTrue(create_workflow_task(
+            administrator, "TASK-RUN", "WF-WEB-LIFECYCLE", 1, "Run task", "",
+            "manual", True, self.database_file,
+        ))
+        self.assertTrue(update_workflow(
+            administrator, "WF-WEB-LIFECYCLE", "Browser workflow",
+            "A workflow used for browser tests.", "active", self.database_file,
+        ))
+        detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertIn("Start execution", detail.text)
+        token = re.search(r'name="csrf_token" value="([^"]+)"', detail.text).group(1)
+
+        with patch("web_app.log_activity") as log_activity_mock:
+            response = self.client.post(
+                "/workflows/WF-WEB-LIFECYCLE/executions",
+                data={"csrf_token": token}, follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("was started", log_activity_mock.call_args.args[0])
+        updated_detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertIn("Execution history", updated_detail.text)
+        self.assertIn("Execution started.", updated_detail.text)
+
+    def test_execution_start_rejects_invalid_csrf_and_viewer(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/executions",
+            data={"csrf_token": "invalid"}, follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.client.post("/logout")
+        self.sign_in(self.viewer_username, self.viewer_password)
+        self.assertNotIn("Start execution", self.client.get(
+            "/workflows/WF-WEB-LIFECYCLE"
+        ).text)
+        self.assertEqual(self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/executions",
+            data={"csrf_token": "invalid"}, follow_redirects=False,
+        ).status_code, 403)
 
     def test_administrator_confirms_and_deletes_task(self):
         self.sign_in(self.admin_username, self.admin_password)

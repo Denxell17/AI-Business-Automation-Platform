@@ -38,6 +38,12 @@
         {% if workflow_tasks %}
         <a class="add-employee-link" href="{{ url_for('workflow_task_resequence_form', workflow_id=workflow['workflow_id']) }}">Set task order</a>
         {% endif %}
+        {% if workflow['status'] == 'active' %}
+        <form method="post" action="{{ url_for('workflow_execution_start', workflow_id=workflow['workflow_id']) }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <button class="employee-submit-button" type="submit">Start execution</button>
+        </form>
+        {% endif %}
         {% endif %}
     </div>
 
@@ -75,6 +81,33 @@
         </ol>
         {% else %}
         <p class="page-message">No tasks have been added to this workflow yet.</p>
+        {% endif %}
+    </section>
+
+    <section aria-labelledby="workflow-executions-heading">
+        <h2 id="workflow-executions-heading" class="section-title">Execution history</h2>
+        {% if workflow_executions %}
+        <ol>
+            {% for execution in workflow_executions %}
+            <li>
+                <h3>{{ execution['status'] | title }}</h3>
+                <p>Execution ID: {{ execution['execution_id'] }}</p>
+                <p>Started: {{ execution['started_at'] }}</p>
+                <p>{{ execution['result_summary'] }}</p>
+                {% if can_manage_workflows and execution['status'] == 'running' %}
+                <form method="post" action="{{ url_for('workflow_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id']) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <label for="result-{{ execution['execution_id'] }}">Result summary</label>
+                    <input id="result-{{ execution['execution_id'] }}" name="result_summary" type="text" required>
+                    <button class="employee-submit-button" name="status" value="completed" type="submit">Mark completed</button>
+                    <button class="employee-submit-button" name="status" value="failed" type="submit">Mark failed</button>
+                </form>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="page-message">This workflow has not been run yet.</p>
         {% endif %}
     </section>
 </section>

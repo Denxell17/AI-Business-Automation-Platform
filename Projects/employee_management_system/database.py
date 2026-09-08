@@ -6,6 +6,7 @@ from models import (
     UserAccount,
     UserAccountSummary,
     Workflow,
+    WorkflowExecution,
     WorkflowTask,
 )
 
@@ -106,6 +107,26 @@ def initialize_database(
                 updated_at TEXT NOT NULL,
                 UNIQUE (workflow_id, sequence_number),
                 FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS workflow_executions (
+                execution_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(execution_id)) > 0
+                ),
+                workflow_id TEXT NOT NULL,
+                workflow_name TEXT NOT NULL CHECK (length(trim(workflow_name)) > 0),
+                status TEXT NOT NULL CHECK (
+                    status IN ('running', 'completed', 'failed')
+                ),
+                started_by_user_id INTEGER NOT NULL,
+                started_at TEXT NOT NULL,
+                finished_at TEXT,
+                result_summary TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id),
+                FOREIGN KEY (started_by_user_id) REFERENCES users(user_id)
             )
             """
         )
@@ -508,6 +529,98 @@ def load_workflow_task_by_id(
         "is_required": bool(row["is_required"]),
         "created_at": row["created_at"], "updated_at": row["updated_at"],
     }
+
+
+def insert_workflow_execution(
+    execution: WorkflowExecution,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute(
+            """
+            INSERT INTO workflow_executions (
+                execution_id, workflow_id, workflow_name, status,
+                started_by_user_id, started_at, finished_at, result_summary
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                execution["execution_id"], execution["workflow_id"],
+                execution["workflow_name"], execution["status"],
+                execution["started_by_user_id"], execution["started_at"],
+                execution["finished_at"], execution["result_summary"],
+            ),
+        )
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_workflow_executions(
+    workflow_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowExecution]:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """
+            SELECT execution_id, workflow_id, workflow_name, status,
+                   started_by_user_id, started_at, finished_at, result_summary
+            FROM workflow_executions
+            WHERE workflow_id = ?
+            ORDER BY started_at DESC, execution_id DESC
+            """,
+            (workflow_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+    return [
+        {
+            "execution_id": row["execution_id"],
+            "workflow_id": row["workflow_id"],
+            "workflow_name": row["workflow_name"],
+            "status": row["status"],
+            "started_by_user_id": row["started_by_user_id"],
+            "started_at": row["started_at"],
+            "finished_at": row["finished_at"],
+            "result_summary": row["result_summary"],
+        }
+        for row in rows
+    ]
+
+
+def finish_workflow_execution(
+    execution_id: str,
+    status: str,
+    finished_at: str,
+    result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        cursor = connection.execute(
+            """
+            UPDATE workflow_executions
+            SET status = ?, finished_at = ?, result_summary = ?
+            WHERE execution_id = ? AND status = 'running'
+            """,
+            (status, finished_at, result_summary, execution_id),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
 
 
 def update_workflow_task(
