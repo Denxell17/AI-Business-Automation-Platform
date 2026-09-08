@@ -1,0 +1,68 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section class="employee-form-section" aria-labelledby="schedule-form-heading">
+    <a class="back-link" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}">
+        <span aria-hidden="true">←</span>
+        Back to workflow
+    </a>
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">Workflow automation</p>
+            <h1 id="schedule-form-heading" class="section-title">Add workflow schedule</h1>
+            <p class="page-message">Store a run-eligibility rule for {{ workflow['name'] }}. Automatic background execution is not enabled yet.</p>
+        </div>
+        <span class="form-access-badge"><span aria-hidden="true">✓</span>Workflow management access authorized</span>
+    </div>
+    {% if error_message %}
+    <p class="directory-message directory-message-error" role="alert">
+        <span aria-hidden="true">!</span><span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+    <form class="employee-form" method="post" action="{{ url_for('workflow_schedule_create', workflow_id=workflow['workflow_id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <section class="employee-form-card" aria-labelledby="schedule-details-heading">
+            <h2 id="schedule-details-heading">Schedule details</h2>
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="schedule_id">Schedule ID</label>
+                    <input id="schedule_id" name="schedule_id" type="text" value="{{ form_values.get('schedule_id', '') }}" autocomplete="off" required>
+                </div>
+                <div class="form-field">
+                    <label for="schedule_type">Schedule type</label>
+                    <select id="schedule_type" name="schedule_type" required>
+                        {% for value in ['manual', 'daily', 'weekly'] %}
+                        <option value="{{ value }}" {% if form_values.get('schedule_type', 'manual') == value %}selected{% endif %}>{{ value | title }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="form-field">
+                    <label for="scheduled_time">Scheduled time</label>
+                    <input id="scheduled_time" name="scheduled_time" type="time" value="{{ form_values.get('scheduled_time', '') }}" aria-describedby="scheduled-time-help">
+                    <small id="scheduled-time-help">Required for daily and weekly schedules. Stored as HH:MM.</small>
+                </div>
+                <div class="form-field">
+                    <label for="day_of_week">Day of week</label>
+                    <select id="day_of_week" name="day_of_week" aria-describedby="weekday-help">
+                        <option value="">Not applicable</option>
+                        {% for value in ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] %}
+                        <option value="{{ value }}" {% if form_values.get('day_of_week', '') == value %}selected{% endif %}>{{ value | title }}</option>
+                        {% endfor %}
+                    </select>
+                    <small id="weekday-help">Required only for weekly schedules.</small>
+                </div>
+            </div>
+            <div class="form-field">
+                <label for="is_enabled">
+                    <input id="is_enabled" name="is_enabled" type="checkbox" value="true" {% if form_values.get('is_enabled', True) in [True, 'true'] %}checked{% endif %}>
+                    Enable this schedule
+                </label>
+            </div>
+        </section>
+        <div class="employee-form-actions">
+            <a class="form-cancel-link" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}">Cancel</a>
+            <button class="employee-submit-button" type="submit"><span aria-hidden="true">+</span>Add schedule</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

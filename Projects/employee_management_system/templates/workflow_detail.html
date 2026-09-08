@@ -39,6 +39,9 @@
         <a class="add-employee-link" href="{{ url_for('workflow_task_resequence_form', workflow_id=workflow['workflow_id']) }}">Set task order</a>
         {% endif %}
         {% if workflow['status'] == 'active' %}
+        <a class="add-employee-link" href="{{ url_for('workflow_schedule_create_form', workflow_id=workflow['workflow_id']) }}">Add schedule</a>
+        {% endif %}
+        {% if workflow['status'] == 'active' %}
         <form method="post" action="{{ url_for('workflow_execution_start', workflow_id=workflow['workflow_id']) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
             <button class="employee-submit-button" type="submit">Start execution</button>
@@ -84,6 +87,44 @@
         {% endif %}
     </section>
 
+    <section aria-labelledby="workflow-schedules-heading">
+        <h2 id="workflow-schedules-heading" class="section-title">Workflow schedules</h2>
+        <p class="page-message">Schedules store future run-eligibility rules. They do not start background work yet.</p>
+        {% if workflow_schedules %}
+        <ol>
+            {% for schedule in workflow_schedules %}
+            <li>
+                <h3>{{ schedule['schedule_type'] | title }} schedule</h3>
+                <p>Schedule ID: {{ schedule['schedule_id'] }}</p>
+                <p>Status: {{ 'Enabled' if schedule['is_enabled'] else 'Disabled' }}</p>
+                {% if schedule['schedule_type'] == 'manual' %}
+                <p>Timing: Manual eligibility only</p>
+                {% elif schedule['schedule_type'] == 'daily' %}
+                <p>Timing: Daily at {{ schedule['scheduled_time'] }}</p>
+                {% else %}
+                <p>Timing: Every {{ schedule['day_of_week'] | title }} at {{ schedule['scheduled_time'] }}</p>
+                {% endif %}
+                <p>Created: {{ schedule['created_at'] }}</p>
+                {% if can_manage_workflows and current_user['role'] == 'admin' %}
+                <form method="post" action="{{ url_for('workflow_schedule_status_update', workflow_id=workflow['workflow_id'], schedule_id=schedule['schedule_id']) }}">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                    <input type="hidden" name="is_enabled" value="{{ 'false' if schedule['is_enabled'] else 'true' }}">
+                    <button class="employee-submit-button" type="submit" {% if not schedule['is_enabled'] and workflow['status'] != 'active' %}disabled aria-describedby="schedule-inactive-{{ schedule['schedule_id'] }}"{% endif %}>
+                        {{ 'Disable schedule' if schedule['is_enabled'] else 'Enable schedule' }}
+                    </button>
+                    {% if not schedule['is_enabled'] and workflow['status'] != 'active' %}
+                    <span id="schedule-inactive-{{ schedule['schedule_id'] }}">Activate the workflow before enabling this schedule.</span>
+                    {% endif %}
+                </form>
+                {% endif %}
+            </li>
+            {% endfor %}
+        </ol>
+        {% else %}
+        <p class="page-message">No schedules have been added to this workflow yet.</p>
+        {% endif %}
+    </section>
+
     <section aria-labelledby="workflow-executions-heading">
         <h2 id="workflow-executions-heading" class="section-title">Execution history</h2>
         {% if workflow_executions %}
@@ -94,6 +135,37 @@
                 <p>Execution ID: {{ execution['execution_id'] }}</p>
                 <p>Started: {{ execution['started_at'] }}</p>
                 <p>{{ execution['result_summary'] }}</p>
+                <section aria-labelledby="tasks-{{ execution['execution_id'] }}">
+                    <h4 id="tasks-{{ execution['execution_id'] }}">Task outcomes</h4>
+                    {% if task_executions_by_run[execution['execution_id']] %}
+                    <ol>
+                        {% for task_run in task_executions_by_run[execution['execution_id']] %}
+                        <li value="{{ task_run['sequence_number'] }}">
+                            <h5>{{ task_run['task_title'] }}</h5>
+                            <p>Task ID: {{ task_run['task_id'] }}</p>
+                            <p>Status: {{ task_run['status'] | title }}</p>
+                            <p>Started: {{ task_run['started_at'] }}</p>
+                            <p>Finished: {{ task_run['finished_at'] or 'Not finished' }}</p>
+                            <p>{{ task_run['result_summary'] }}</p>
+                            {% if can_manage_workflows and current_user['role'] == 'admin' and execution['status'] == 'running' and task_run['status'] == 'running' %}
+                            <form method="post" action="{{ url_for('workflow_task_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id'], task_execution_id=task_run['task_execution_id']) }}">
+                                <fieldset>
+                                    <legend>Update outcome: {{ task_run['task_title'] }}</legend>
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                                    <label for="result-{{ task_run['task_execution_id'] }}">Task result summary (required)</label>
+                                    <input id="result-{{ task_run['task_execution_id'] }}" name="result_summary" type="text" required>
+                                    <button class="employee-submit-button" name="status" value="completed" type="submit">Mark task completed</button>
+                                    <button class="employee-submit-button" name="status" value="failed" type="submit">Mark task failed</button>
+                                </fieldset>
+                            </form>
+                            {% endif %}
+                        </li>
+                        {% endfor %}
+                    </ol>
+                    {% else %}
+                    <p class="page-message">No task execution records were stored for this run.</p>
+                    {% endif %}
+                </section>
                 {% if can_manage_workflows and execution['status'] == 'running' %}
                 <form method="post" action="{{ url_for('workflow_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id']) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

@@ -9,6 +9,7 @@ from models import (
     WorkflowExecution,
     WorkflowTaskExecution,
     WorkflowTask,
+    WorkflowSchedule,
 )
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
@@ -144,6 +145,32 @@ def initialize_database(
                 finished_at TEXT,
                 result_summary TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (execution_id) REFERENCES workflow_executions(execution_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS workflow_schedules (
+                schedule_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(schedule_id)) > 0
+                ),
+                workflow_id TEXT NOT NULL,
+                schedule_type TEXT NOT NULL CHECK (
+                    schedule_type IN ('manual', 'daily', 'weekly')
+                ),
+                scheduled_time TEXT,
+                day_of_week TEXT CHECK (
+                    day_of_week IS NULL OR day_of_week IN (
+                        'monday', 'tuesday', 'wednesday', 'thursday',
+                        'friday', 'saturday', 'sunday'
+                    )
+                ),
+                is_enabled INTEGER NOT NULL CHECK (is_enabled IN (0, 1)),
+                created_by_user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id),
+                FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)
             )
             """
         )
@@ -440,6 +467,13 @@ def update_workflow_in_database(
                 workflow["workflow_id"],
             ),
         )
+        if workflow["status"] != "active":
+            connection.execute(
+                """UPDATE workflow_schedules
+                   SET is_enabled = 0, updated_at = ?
+                   WHERE workflow_id = ? AND is_enabled = 1""",
+                (workflow["updated_at"], workflow["workflow_id"]),
+            )
         connection.commit()
         return cursor.rowcount > 0
     except sqlite3.IntegrityError:
@@ -636,6 +670,193 @@ def finish_workflow_execution(
     except sqlite3.IntegrityError:
         connection.rollback()
         return False
+    finally:
+        connection.close()
+
+
+def load_workflow_task_executions(
+    execution_id: str, database_file: Path = DATABASE_FILE,
+) -> list[WorkflowTaskExecution]:
+    """Load historical task snapshots in their original execution order."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT task_execution_id, execution_id, task_id, sequence_number,
+                      task_title, status, started_at, finished_at, result_summary
+               FROM workflow_task_executions WHERE execution_id = ?
+               ORDER BY sequence_number, task_execution_id""",
+            (execution_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def finish_workflow_task_execution(
+    workflow_id: str, execution_id: str, task_execution_id: str,
+    status: str, finished_at: str, result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically finish a running task belonging to a running parent run."""
+    if status not in {"completed", "failed"} or not result_summary.strip():
+        return False
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        cursor = connection.execute(
+            """UPDATE workflow_task_executions
+               SET status = ?, finished_at = ?, result_summary = ?
+               WHERE task_execution_id = ? AND execution_id = ?
+                 AND status = 'running'
+                 AND EXISTS (
+                     SELECT 1 FROM workflow_executions
+                     WHERE execution_id = ? AND workflow_id = ?
+                       AND status = 'running'
+                 )""",
+            (status, finished_at, result_summary, task_execution_id,
+             execution_id, execution_id, workflow_id),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    except sqlite3.Error:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def insert_workflow_schedule(
+    schedule: WorkflowSchedule,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Insert one validated workflow schedule."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute(
+            """INSERT INTO workflow_schedules (
+                   schedule_id, workflow_id, schedule_type, scheduled_time,
+                   day_of_week, is_enabled, created_by_user_id,
+                   created_at, updated_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                schedule["schedule_id"], schedule["workflow_id"],
+                schedule["schedule_type"], schedule["scheduled_time"],
+                schedule["day_of_week"], int(schedule["is_enabled"]),
+                schedule["created_by_user_id"], schedule["created_at"],
+                schedule["updated_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_workflow_schedules(
+    workflow_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowSchedule]:
+    """Load a workflow's stored schedules in stable creation order."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT schedule_id, workflow_id, schedule_type, scheduled_time,
+                      day_of_week, is_enabled, created_by_user_id,
+                      created_at, updated_at
+               FROM workflow_schedules
+               WHERE workflow_id = ?
+               ORDER BY created_at, schedule_id""",
+            (workflow_id,),
+        ).fetchall()
+        return [
+            {
+                "schedule_id": row["schedule_id"],
+                "workflow_id": row["workflow_id"],
+                "schedule_type": row["schedule_type"],
+                "scheduled_time": row["scheduled_time"],
+                "day_of_week": row["day_of_week"],
+                "is_enabled": bool(row["is_enabled"]),
+                "created_by_user_id": row["created_by_user_id"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+            for row in rows
+        ]
+    finally:
+        connection.close()
+
+
+def load_workflow_schedule_by_id(
+    schedule_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> WorkflowSchedule | None:
+    """Load one schedule without broad workflow scanning."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        row = connection.execute(
+            """SELECT schedule_id, workflow_id, schedule_type, scheduled_time,
+                      day_of_week, is_enabled, created_by_user_id,
+                      created_at, updated_at
+               FROM workflow_schedules WHERE schedule_id = ?""",
+            (schedule_id,),
+        ).fetchone()
+        if row is None:
+            return None
+        return {
+            "schedule_id": row["schedule_id"],
+            "workflow_id": row["workflow_id"],
+            "schedule_type": row["schedule_type"],
+            "scheduled_time": row["scheduled_time"],
+            "day_of_week": row["day_of_week"],
+            "is_enabled": bool(row["is_enabled"]),
+            "created_by_user_id": row["created_by_user_id"],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+    finally:
+        connection.close()
+
+
+def update_workflow_schedule_enabled(
+    workflow_id: str,
+    schedule_id: str,
+    is_enabled: bool,
+    updated_at: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Change one schedule state, requiring an active workflow when enabling."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        cursor = connection.execute(
+            """UPDATE workflow_schedules
+               SET is_enabled = ?, updated_at = ?
+               WHERE schedule_id = ? AND workflow_id = ?
+                 AND is_enabled != ?
+                 AND (? = 0 OR EXISTS (
+                     SELECT 1 FROM workflows
+                     WHERE workflow_id = ? AND status = 'active'
+                 ))""",
+            (
+                int(is_enabled), updated_at, schedule_id, workflow_id,
+                int(is_enabled), int(is_enabled), workflow_id,
+            ),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    except sqlite3.Error:
+        connection.rollback()
+        raise
     finally:
         connection.close()
 

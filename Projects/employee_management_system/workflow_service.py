@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+import re
 from uuid import uuid4
 
 from authorization import (
@@ -10,17 +11,21 @@ from database import (
     DATABASE_FILE,
     delete_workflow_task,
     finish_workflow_execution,
+    finish_workflow_task_execution,
     insert_workflow,
     insert_workflow_execution,
     insert_workflow_task_executions,
     insert_workflow_task,
+    insert_workflow_schedule,
     load_user_account_by_username,
     load_workflow_by_id,
     load_workflow_task_by_id,
     load_workflow_tasks,
+    load_workflow_schedule_by_id,
     resequence_workflow_tasks,
     update_workflow_task,
     update_workflow_in_database,
+    update_workflow_schedule_enabled,
 )
 from models import (
     UserAccount,
@@ -29,8 +34,14 @@ from models import (
     WorkflowExecution,
     WorkflowTaskExecution,
     WorkflowTask,
+    WorkflowSchedule,
     VALID_WORKFLOW_TASK_TYPES,
+    VALID_WORKFLOW_SCHEDULE_TYPES,
+    VALID_WORKFLOW_SCHEDULE_WEEKDAYS,
 )
+
+
+SCHEDULE_TIME_PATTERN = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d")
 
 
 def create_workflow(
@@ -153,6 +164,114 @@ def create_workflow_task(
         "updated_at": timestamp,
     }
     return insert_workflow_task(task, database_file)
+
+
+def create_workflow_schedule(
+    current_user: UserAccount,
+    schedule_id: str,
+    workflow_id: str,
+    schedule_type: str,
+    scheduled_time: str,
+    day_of_week: str,
+    is_enabled: bool,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Create a validated stored schedule for an active workflow."""
+    if (
+        not current_user["is_active"]
+        or not all(isinstance(value, str) for value in (
+            schedule_id, workflow_id, schedule_type, scheduled_time, day_of_week,
+        ))
+        or type(is_enabled) is not bool
+    ):
+        return False
+    stored_user = load_user_account_by_username(current_user["username"], database_file)
+    if (
+        stored_user is None or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+        or stored_user["role"] != "admin"
+        or not user_has_permission(stored_user, MANAGE_WORKFLOWS)
+    ):
+        return False
+
+    normalized_schedule_id = schedule_id.strip().upper()
+    normalized_workflow_id = workflow_id.strip().upper()
+    normalized_type = schedule_type.strip().casefold()
+    normalized_time = scheduled_time.strip()
+    normalized_day = day_of_week.strip().casefold()
+    workflow = load_workflow_by_id(normalized_workflow_id, database_file)
+    if (
+        not normalized_schedule_id
+        or normalized_type not in VALID_WORKFLOW_SCHEDULE_TYPES
+        or workflow is None
+        or workflow["status"] != "active"
+    ):
+        return False
+    if normalized_type == "manual":
+        stored_time = None
+        stored_day = None
+    elif normalized_type == "daily":
+        if SCHEDULE_TIME_PATTERN.fullmatch(normalized_time) is None:
+            return False
+        stored_time = normalized_time
+        stored_day = None
+    else:
+        if (
+            SCHEDULE_TIME_PATTERN.fullmatch(normalized_time) is None
+            or normalized_day not in VALID_WORKFLOW_SCHEDULE_WEEKDAYS
+        ):
+            return False
+        stored_time = normalized_time
+        stored_day = normalized_day
+
+    timestamp = datetime.now(timezone.utc).isoformat()
+    schedule: WorkflowSchedule = {
+        "schedule_id": normalized_schedule_id,
+        "workflow_id": normalized_workflow_id,
+        "schedule_type": normalized_type,
+        "scheduled_time": stored_time,
+        "day_of_week": stored_day,
+        "is_enabled": is_enabled,
+        "created_by_user_id": stored_user["user_id"],
+        "created_at": timestamp,
+        "updated_at": timestamp,
+    }
+    return insert_workflow_schedule(schedule, database_file)
+
+
+def set_workflow_schedule_enabled(
+    current_user: UserAccount,
+    workflow_id: str,
+    schedule_id: str,
+    is_enabled: bool,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Enable or disable one schedule after live administrator validation."""
+    if (
+        not current_user["is_active"]
+        or not all(isinstance(value, str) and value.strip() for value in (
+            workflow_id, schedule_id,
+        ))
+        or type(is_enabled) is not bool
+    ):
+        return False
+    stored_user = load_user_account_by_username(current_user["username"], database_file)
+    if (
+        stored_user is None or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+        or stored_user["role"] != "admin"
+        or not user_has_permission(stored_user, MANAGE_WORKFLOWS)
+    ):
+        return False
+    normalized_workflow_id = workflow_id.strip().upper()
+    normalized_schedule_id = schedule_id.strip().upper()
+    schedule = load_workflow_schedule_by_id(normalized_schedule_id, database_file)
+    if schedule is None or schedule["workflow_id"] != normalized_workflow_id:
+        return False
+    return update_workflow_schedule_enabled(
+        normalized_workflow_id, normalized_schedule_id, is_enabled,
+        datetime.now(timezone.utc).isoformat(), database_file,
+    )
 
 
 def update_workflow_task_details(
@@ -348,6 +467,38 @@ def start_workflow_execution(
         for task in load_workflow_tasks(workflow["workflow_id"], database_file)
     ]
     return execution if insert_workflow_task_executions(task_records, database_file) else None
+
+
+def finish_workflow_task_execution_record(
+    current_user: UserAccount,
+    workflow_id: str,
+    execution_id: str,
+    task_execution_id: str,
+    status: str,
+    result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Validate the live administrator and a task's terminal outcome."""
+    values = (workflow_id, execution_id, task_execution_id, status, result_summary)
+    if (
+        not current_user["is_active"]
+        or not all(isinstance(value, str) and value.strip() for value in values)
+        or status.strip().casefold() not in {"completed", "failed"}
+    ):
+        return False
+    stored_user = load_user_account_by_username(current_user["username"], database_file)
+    if (
+        stored_user is None or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+        or stored_user["role"] != "admin"
+        or not user_has_permission(stored_user, MANAGE_WORKFLOWS)
+    ):
+        return False
+    return finish_workflow_task_execution(
+        workflow_id.strip().upper(), execution_id.strip().upper(),
+        task_execution_id.strip().upper(), status.strip().casefold(),
+        datetime.now(timezone.utc).isoformat(), result_summary.strip(), database_file,
+    )
 
 
 def finish_workflow_execution_record(
