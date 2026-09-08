@@ -92,6 +92,18 @@ class WorkflowExecution(TypedDict):
     result_summary: str
 
 
+class WorkflowTaskExecution(TypedDict):
+    task_execution_id: str
+    execution_id: str
+    task_id: str
+    sequence_number: int
+    task_title: str
+    status: str
+    started_at: str
+    finished_at: str | None
+    result_summary: str
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float

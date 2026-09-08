@@ -7,6 +7,7 @@ from models import (
     UserAccountSummary,
     Workflow,
     WorkflowExecution,
+    WorkflowTaskExecution,
     WorkflowTask,
 )
 
@@ -127,6 +128,22 @@ def initialize_database(
                 result_summary TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id),
                 FOREIGN KEY (started_by_user_id) REFERENCES users(user_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS workflow_task_executions (
+                task_execution_id TEXT PRIMARY KEY,
+                execution_id TEXT NOT NULL,
+                task_id TEXT NOT NULL,
+                sequence_number INTEGER NOT NULL,
+                task_title TEXT NOT NULL,
+                status TEXT NOT NULL CHECK (status IN ('running', 'completed', 'failed')),
+                started_at TEXT NOT NULL,
+                finished_at TEXT,
+                result_summary TEXT NOT NULL DEFAULT '',
+                FOREIGN KEY (execution_id) REFERENCES workflow_executions(execution_id)
             )
             """
         )
@@ -617,6 +634,23 @@ def finish_workflow_execution(
         connection.commit()
         return cursor.rowcount == 1
     except sqlite3.IntegrityError:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def insert_workflow_task_executions(records: list[WorkflowTaskExecution], database_file: Path = DATABASE_FILE) -> bool:
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.executemany(
+            "INSERT INTO workflow_task_executions (task_execution_id, execution_id, task_id, sequence_number, task_title, status, started_at, finished_at, result_summary) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+            [(r["task_execution_id"], r["execution_id"], r["task_id"], r["sequence_number"], r["task_title"], r["status"], r["started_at"], r["finished_at"], r["result_summary"]) for r in records],
+        )
+        connection.commit()
+        return True
+    except sqlite3.Error:
         connection.rollback()
         return False
     finally:
