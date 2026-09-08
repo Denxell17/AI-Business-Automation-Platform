@@ -12,6 +12,7 @@ from database import (
     finish_workflow_execution,
     insert_workflow,
     insert_workflow_execution,
+    insert_workflow_task_executions,
     insert_workflow_task,
     load_user_account_by_username,
     load_workflow_by_id,
@@ -26,6 +27,7 @@ from models import (
     VALID_WORKFLOW_STATUSES,
     Workflow,
     WorkflowExecution,
+    WorkflowTaskExecution,
     WorkflowTask,
     VALID_WORKFLOW_TASK_TYPES,
 )
@@ -336,7 +338,16 @@ def start_workflow_execution(
         "finished_at": None,
         "result_summary": "Execution started.",
     }
-    return execution if insert_workflow_execution(execution, database_file) else None
+    if not insert_workflow_execution(execution, database_file):
+        return None
+    task_records: list[WorkflowTaskExecution] = [
+        {"task_execution_id": f"WFTE-{uuid4().hex.upper()}", "execution_id": execution["execution_id"],
+         "task_id": task["task_id"], "sequence_number": task["sequence_number"],
+         "task_title": task["title"], "status": "running", "started_at": started_at,
+         "finished_at": None, "result_summary": "Task execution started."}
+        for task in load_workflow_tasks(workflow["workflow_id"], database_file)
+    ]
+    return execution if insert_workflow_task_executions(task_records, database_file) else None
 
 
 def finish_workflow_execution_record(

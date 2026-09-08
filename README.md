@@ -870,7 +870,7 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 125 Verification
+### Day 130 Verification
 
 - **428 automated tests passed**
 - Workflow execution starts and terminal completion/failure states use
@@ -882,7 +882,7 @@ The FastAPI interface continues to provide:
 
 ### Roadmap Position
 
-Day 125 is complete after the documentation is saved.
+Day 130 is complete after the documentation is saved.
 
 ABAP now supports secure workflow lifecycle management and administrator task
 creation, editing, resequencing, deletion, and execution history. The next
