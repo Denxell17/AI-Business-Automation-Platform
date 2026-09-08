@@ -1427,6 +1427,24 @@ a {
     font-weight: 700;
 }
 
+.form-field .checkbox-label {
+    display: inline-flex;
+    width: fit-content;
+    align-items: center;
+    gap: 0.625rem;
+    cursor: pointer;
+}
+
+.form-field .checkbox-label input[type="checkbox"] {
+    flex: 0 0 auto;
+    width: 1.125rem;
+    height: 1.125rem;
+    min-height: 0;
+    margin: 0;
+    padding: 0;
+    accent-color: var(--color-primary);
+}
+
 .form-field input,
 .form-field select,
 .form-field textarea {

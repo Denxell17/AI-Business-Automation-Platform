@@ -57,11 +57,11 @@
         </div>
         <div class="profile-detail-card">
             <dt>Created</dt>
-            <dd>{{ workflow["created_at"] }}</dd>
+            <dd><time datetime="{{ workflow['created_at'] }}" data-local-datetime>{{ workflow["created_at"] }}</time></dd>
         </div>
         <div class="profile-detail-card">
             <dt>Last updated</dt>
-            <dd>{{ workflow["updated_at"] }}</dd>
+            <dd><time datetime="{{ workflow['updated_at'] }}" data-local-datetime>{{ workflow["updated_at"] }}</time></dd>
         </div>
         <div class="profile-detail-card profile-detail-card-wide">
             <dt>Description</dt>
@@ -89,7 +89,11 @@
 
     <section aria-labelledby="workflow-schedules-heading">
         <h2 id="workflow-schedules-heading" class="section-title">Workflow schedules</h2>
-        <p class="page-message">Schedules store future run-eligibility rules. They do not start background work yet.</p>
+        <p class="page-message">
+            Schedule times use {{ workflow_time_zone }}. ABAP evaluates a due
+            time for {{ schedule_grace_minutes }} minutes and stores claimed
+            occurrences in UTC. Automatic task execution is not active yet.
+        </p>
         {% if workflow_schedules %}
         <ol>
             {% for schedule in workflow_schedules %}
@@ -104,7 +108,20 @@
                 {% else %}
                 <p>Timing: Every {{ schedule['day_of_week'] | title }} at {{ schedule['scheduled_time'] }}</p>
                 {% endif %}
-                <p>Created: {{ schedule['created_at'] }}</p>
+                {% set evaluation = schedule_evaluations[schedule['schedule_id']] %}
+                {% if evaluation['next_eligible_at_utc'] %}
+                <p>
+                    Next eligible time:
+                    <time datetime="{{ evaluation['next_eligible_at_utc'] }}" data-local-datetime>
+                        {{ evaluation['next_eligible_at_utc'] }}
+                    </time>
+                </p>
+                {% elif schedule['schedule_type'] == 'manual' %}
+                <p>Next eligible time: Started manually</p>
+                {% else %}
+                <p>Next eligible time: Disabled</p>
+                {% endif %}
+                <p>Created: <time datetime="{{ schedule['created_at'] }}" data-local-datetime>{{ schedule['created_at'] }}</time></p>
                 {% if can_manage_workflows and current_user['role'] == 'admin' %}
                 <form method="post" action="{{ url_for('workflow_schedule_status_update', workflow_id=workflow['workflow_id'], schedule_id=schedule['schedule_id']) }}">
                     <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
@@ -133,7 +150,7 @@
             <li>
                 <h3>{{ execution['status'] | title }}</h3>
                 <p>Execution ID: {{ execution['execution_id'] }}</p>
-                <p>Started: {{ execution['started_at'] }}</p>
+                <p>Started: <time datetime="{{ execution['started_at'] }}" data-local-datetime>{{ execution['started_at'] }}</time></p>
                 <p>{{ execution['result_summary'] }}</p>
                 <section aria-labelledby="tasks-{{ execution['execution_id'] }}">
                     <h4 id="tasks-{{ execution['execution_id'] }}">Task outcomes</h4>
@@ -144,8 +161,8 @@
                             <h5>{{ task_run['task_title'] }}</h5>
                             <p>Task ID: {{ task_run['task_id'] }}</p>
                             <p>Status: {{ task_run['status'] | title }}</p>
-                            <p>Started: {{ task_run['started_at'] }}</p>
-                            <p>Finished: {{ task_run['finished_at'] or 'Not finished' }}</p>
+                            <p>Started: <time datetime="{{ task_run['started_at'] }}" data-local-datetime>{{ task_run['started_at'] }}</time></p>
+                            <p>Finished: {% if task_run['finished_at'] %}<time datetime="{{ task_run['finished_at'] }}" data-local-datetime>{{ task_run['finished_at'] }}</time>{% else %}Not finished{% endif %}</p>
                             <p>{{ task_run['result_summary'] }}</p>
                             {% if can_manage_workflows and current_user['role'] == 'admin' and execution['status'] == 'running' and task_run['status'] == 'running' %}
                             <form method="post" action="{{ url_for('workflow_task_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id'], task_execution_id=task_run['task_execution_id']) }}">

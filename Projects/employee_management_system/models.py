@@ -131,6 +131,23 @@ class WorkflowSchedule(TypedDict):
     updated_at: str
 
 
+class WorkflowScheduleEvaluation(TypedDict):
+    schedule_id: str
+    workflow_id: str
+    is_due: bool
+    scheduled_for_utc: str | None
+    next_eligible_at_utc: str | None
+    time_zone: str
+
+
+class WorkflowScheduleOccurrence(TypedDict):
+    occurrence_id: str
+    schedule_id: str
+    workflow_id: str
+    scheduled_for_utc: str
+    claimed_at: str
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float

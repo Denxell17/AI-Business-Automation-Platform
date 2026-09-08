@@ -42,7 +42,7 @@
                 <textarea id="instructions" name="instructions" rows="5">{{ form_values.get('instructions', '') }}</textarea>
             </div>
             <div class="form-field">
-                <label for="is_required">
+                <label class="checkbox-label" for="is_required">
                     <input id="is_required" name="is_required" type="checkbox" value="true" {% if form_values.get('is_required', True) %}checked{% endif %}>
                     Required to complete this workflow
                 </label>

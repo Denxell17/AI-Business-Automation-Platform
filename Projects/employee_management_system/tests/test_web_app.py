@@ -3432,6 +3432,14 @@ class TestWebApplication(unittest.TestCase):
             "setNavigationOpen",
             response.text,
         )
+        self.assertIn(
+            "time[data-local-datetime]",
+            response.text,
+        )
+        self.assertIn(
+            "Intl.DateTimeFormat",
+            response.text,
+        )
 
     def test_health_check_returns_healthy_status(self):
         response = self.client.get("/health")

@@ -1,5 +1,6 @@
 import secrets
 import sqlite3
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
@@ -90,6 +91,11 @@ from workflow_service import (
     set_workflow_schedule_enabled,
     update_workflow_task_details,
     update_workflow,
+)
+from schedule_service import (
+    DEFAULT_SCHEDULE_GRACE_MINUTES,
+    DEFAULT_WORKFLOW_TIME_ZONE,
+    evaluate_workflow_schedule_list,
 )
 
 
@@ -1433,6 +1439,9 @@ def create_web_application(
             workflow_schedules = load_workflow_schedules(
                 workflow["workflow_id"], database_file,
             )
+            schedule_evaluations = evaluate_workflow_schedule_list(
+                workflow_schedules, datetime.now(timezone.utc),
+            )
             workflow_executions = load_workflow_executions(
                 workflow["workflow_id"], database_file,
             )
@@ -1458,6 +1467,9 @@ def create_web_application(
                 "workflow": workflow,
                 "workflow_tasks": workflow_tasks,
                 "workflow_schedules": workflow_schedules,
+                "schedule_evaluations": schedule_evaluations,
+                "workflow_time_zone": DEFAULT_WORKFLOW_TIME_ZONE,
+                "schedule_grace_minutes": DEFAULT_SCHEDULE_GRACE_MINUTES,
                 "workflow_executions": workflow_executions,
                 "task_executions_by_run": task_executions_by_run,
                 "csrf_token": get_or_create_csrf_token(request),
