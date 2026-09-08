@@ -10,6 +10,7 @@ from models import (
     WorkflowTaskExecution,
     WorkflowTask,
     WorkflowSchedule,
+    WorkflowScheduleOccurrence,
 )
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
@@ -173,6 +174,31 @@ def initialize_database(
                 FOREIGN KEY (created_by_user_id) REFERENCES users(user_id)
             )
             """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS workflow_schedule_occurrences (
+                occurrence_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(occurrence_id)) > 0
+                ),
+                schedule_id TEXT NOT NULL,
+                workflow_id TEXT NOT NULL,
+                scheduled_for_utc TEXT NOT NULL,
+                claimed_at TEXT NOT NULL,
+                UNIQUE (schedule_id, scheduled_for_utc),
+                FOREIGN KEY (schedule_id)
+                    REFERENCES workflow_schedules(schedule_id),
+                FOREIGN KEY (workflow_id)
+                    REFERENCES workflows(workflow_id)
+            )
+            """
+        )
+        connection.execute(
+            """CREATE INDEX IF NOT EXISTS
+                   idx_workflow_schedule_occurrences_workflow
+               ON workflow_schedule_occurrences (
+                   workflow_id, scheduled_for_utc
+               )"""
         )
         connection.commit()
     finally:
@@ -823,6 +849,105 @@ def load_workflow_schedule_by_id(
             "created_at": row["created_at"],
             "updated_at": row["updated_at"],
         }
+    finally:
+        connection.close()
+
+
+def load_enabled_workflow_schedules(
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowSchedule]:
+    """Load enabled schedules whose parent workflow is still active."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT schedule.schedule_id, schedule.workflow_id,
+                      schedule.schedule_type, schedule.scheduled_time,
+                      schedule.day_of_week, schedule.is_enabled,
+                      schedule.created_by_user_id, schedule.created_at,
+                      schedule.updated_at
+               FROM workflow_schedules AS schedule
+               JOIN workflows AS workflow
+                 ON workflow.workflow_id = schedule.workflow_id
+               WHERE schedule.is_enabled = 1
+                 AND workflow.status = 'active'
+               ORDER BY schedule.schedule_id"""
+        ).fetchall()
+        return [
+            {
+                "schedule_id": row["schedule_id"],
+                "workflow_id": row["workflow_id"],
+                "schedule_type": row["schedule_type"],
+                "scheduled_time": row["scheduled_time"],
+                "day_of_week": row["day_of_week"],
+                "is_enabled": bool(row["is_enabled"]),
+                "created_by_user_id": row["created_by_user_id"],
+                "created_at": row["created_at"],
+                "updated_at": row["updated_at"],
+            }
+            for row in rows
+        ]
+    finally:
+        connection.close()
+
+
+def claim_workflow_schedule_occurrence(
+    occurrence: WorkflowScheduleOccurrence,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically claim one active schedule occurrence exactly once."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        cursor = connection.execute(
+            """INSERT OR IGNORE INTO workflow_schedule_occurrences (
+                   occurrence_id, schedule_id, workflow_id,
+                   scheduled_for_utc, claimed_at
+               )
+               SELECT ?, schedule.schedule_id, schedule.workflow_id, ?, ?
+               FROM workflow_schedules AS schedule
+               JOIN workflows AS workflow
+                 ON workflow.workflow_id = schedule.workflow_id
+               WHERE schedule.schedule_id = ?
+                 AND schedule.workflow_id = ?
+                 AND schedule.is_enabled = 1
+                 AND workflow.status = 'active'""",
+            (
+                occurrence["occurrence_id"],
+                occurrence["scheduled_for_utc"],
+                occurrence["claimed_at"],
+                occurrence["schedule_id"],
+                occurrence["workflow_id"],
+            ),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    except sqlite3.Error:
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def load_workflow_schedule_occurrences(
+    workflow_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowScheduleOccurrence]:
+    """Load claimed occurrences in chronological order for audit and tests."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT occurrence_id, schedule_id, workflow_id,
+                      scheduled_for_utc, claimed_at
+               FROM workflow_schedule_occurrences
+               WHERE workflow_id = ?
+               ORDER BY scheduled_for_utc, occurrence_id""",
+            (workflow_id,),
+        ).fetchall()
+        return [dict(row) for row in rows]
     finally:
         connection.close()
 

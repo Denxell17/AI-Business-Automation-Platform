@@ -224,13 +224,15 @@ AI-Business-Automation-Platform/
 │       ├── reports.py
 │       ├── requirements.txt
 │       ├── run_tests.py
+│       ├── schedule_service.py
 │       ├── storage.py
 │       ├── storage_verification.py
 │       ├── user_account_setup.py
 │       ├── user_service.py
 │       ├── validators.py
 │       ├── web_app.py
-│       └── web_session.py
+│       ├── web_session.py
+│       └── workflow_service.py
 └── README.md
 ```
 
@@ -692,17 +694,20 @@ remain available for migration, verification, and historical compatibility.
 
 ### Phase 2 — Full ABAP Portfolio MVP In Progress
 
-Day 101 created the shared ABAP dashboard. Days 102 through 135 established
+Day 101 created the shared ABAP dashboard. Days 102 through 139 established
 the Workflow Automation domain, tested SQLite persistence, secure creation
 and lifecycle rules, protected browser access, workflow detail pages,
 administrator-only editing, ordered task storage, task creation, task editing,
 task resequencing, activation readiness rules, transaction-safe task deletion,
-execution history, task outcomes, and stored workflow schedules.
+execution history, task outcomes, stored workflow schedules, deterministic
+eligibility rules, business-timezone handling, and duplicate occurrence
+protection.
 
 The dashboard is the authenticated entry point for the growing business
 automation portfolio. Employee Management and Workflow Automation are
-available. Workflow schedules now store manual, daily, and weekly eligibility
-rules; automatic background execution remains planned.
+available. Workflow schedules store manual, daily, and weekly rules. Daily and
+weekly rules can now be evaluated and claimed safely, while automatic task
+execution remains planned for the next milestone.
 
 ### Shared Dashboard Capabilities
 
@@ -749,6 +754,9 @@ The tested SQLite workflow foundation provides:
   sequence snapshots for each workflow run
 - A `workflow_schedules` table with stable IDs, workflow and creator foreign keys,
   allowlisted schedule types, enabled state, creator references, and timestamps
+- A `workflow_schedule_occurrences` ledger with schedule and workflow foreign
+  keys, UTC occurrence times, and uniqueness per schedule occurrence
+- An occurrence-history index for efficient workflow-scoped loading
 - Ordered workflow-scoped schedule loading and exact-ID schedule lookup
 - Atomic workflow lifecycle updates that disable enabled schedules when a
   workflow leaves Active
@@ -780,6 +788,13 @@ The Workflow Automation service layer provides:
   allowlisted weekdays
 - Rejection of schedule creation for Draft, Inactive, or missing workflows
 - Rejection of schedule enabling unless the parent workflow is Active
+- Pure daily and weekly eligibility evaluated from an explicit timezone-aware
+  current time
+- `Asia/Shanghai` business-time interpretation with UTC occurrence storage
+- A five-minute recovery window that avoids unlimited catch-up after downtime
+- Read-only due loading restricted to enabled schedules on Active workflows
+- Atomic occurrence claiming that rechecks lifecycle state and prevents
+  duplicate claims across repeated scheduler checks
 
 The protected workflow browser experience provides:
 
@@ -797,6 +812,8 @@ The protected workflow browser experience provides:
 - Stored schedules displayed on protected workflow detail pages
 - Administrator-only schedule creation forms and enable/disable actions
 - Written schedule state and timing descriptions for viewers and administrators
+- Readable next-eligible-time display using the shared evaluator and
+  browser-local timestamp formatting
 - Deliberate contiguous task resequencing with duplicate and missing-task rejection
 - Required/optional task labels, empty states, and instruction display
 - Signed-session CSRF protection for workflow submissions
@@ -901,9 +918,9 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 135 Verification
+### Day 139 Verification
 
-- **448 automated tests passed**
+- **455 automated tests passed**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display.
@@ -911,13 +928,18 @@ The FastAPI interface continues to provide:
   leaves Active and reject enabling while it is Draft or Inactive.
 - Existing Employee Management and Workflow Automation foundations remained
   covered by the complete regression suite
+- Schedule eligibility covers manual, daily, weekly, disabled, expired, and
+  invalid rules with deterministic clock inputs
+- Duplicate-run preparation uses a persistent unique UTC occurrence and an
+  atomic active/enabled state check
 - No application data was changed during verification
 
 ### Roadmap Position
 
-Day 135 is complete after the documentation is saved.
+Day 139 is complete after the documentation is saved.
 
 ABAP now supports secure workflow lifecycle management and administrator task
 creation, editing, resequencing, deletion, execution history, controlled task
-outcomes, and stored scheduling rules. The next roadmap step is schedule
-eligibility evaluation before any background execution worker is introduced.
+outcomes, stored scheduling rules, deterministic timezone-aware eligibility,
+and duplicate-safe occurrence claims. Day 140 begins the transactional link
+from one claimed occurrence to one scheduled workflow execution.

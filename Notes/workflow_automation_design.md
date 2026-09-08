@@ -114,6 +114,22 @@ Rules:
 - An inactive workflow must not retain enabled schedules.
 - The first release stores schedules but does not yet run a background worker.
 
+### Schedule Eligibility Decisions — Days 136–139
+
+- Schedule clock values are interpreted in the `Asia/Shanghai` business time
+  zone and converted to UTC before occurrence storage.
+- Eligibility accepts an explicit timezone-aware current time and does not
+  change application data.
+- Daily and weekly schedules remain eligible for five minutes after their due
+  minute. Older occurrences are not automatically caught up.
+- Manual schedules never become clock-due.
+- Only enabled schedules belonging to Active workflows are considered due.
+- A persistent occurrence ledger uniquely constrains each `(schedule_id,
+  scheduled_for_utc)` pair.
+- The atomic claim rechecks schedule and workflow state at write time.
+- A claim prepares work for a future runner but does not start tasks during this
+  milestone.
+
 ### Workflow Execution
 
 An execution is one historical attempt to run a workflow.

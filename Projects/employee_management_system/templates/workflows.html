@@ -125,8 +125,8 @@
                             {{ workflow["status"] | title }}
                         </span>
                     </td>
-                    <td>{{ workflow["created_at"] }}</td>
-                    <td>{{ workflow["updated_at"] }}</td>
+                    <td><time datetime="{{ workflow['created_at'] }}" data-local-datetime>{{ workflow["created_at"] }}</time></td>
+                    <td><time datetime="{{ workflow['updated_at'] }}" data-local-datetime>{{ workflow["updated_at"] }}</time></td>
                 </tr>
                 {% endfor %}
             </tbody>
