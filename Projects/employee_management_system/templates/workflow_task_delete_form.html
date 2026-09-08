@@ -1,0 +1,15 @@
+{% extends "application_base.html" %}
+{% block content %}
+<section class="employee-form-section" aria-labelledby="task-delete-heading">
+    <h1 id="task-delete-heading" class="section-title">Delete workflow task</h1>
+    <p>Delete <strong>{{ task['title'] }}</strong> ({{ task['task_id'] }})?</p>
+    <p id="delete-consequences">This cannot be undone. Remaining tasks keep their relative order and are renumbered from 1. An active workflow's last task cannot be deleted; first change the workflow to Draft or Inactive.</p>
+    <form class="employee-form" method="post" aria-describedby="delete-consequences" action="{{ url_for('workflow_task_delete', workflow_id=task['workflow_id'], task_id=task['task_id']) }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <div class="employee-form-actions">
+            <a class="form-cancel-link" href="{{ url_for('workflow_detail', workflow_id=task['workflow_id']) }}">Cancel</a>
+            <button class="employee-submit-button" type="submit">Delete task and renumber remaining tasks</button>
+        </div>
+    </form>
+</section>
+{% endblock %}

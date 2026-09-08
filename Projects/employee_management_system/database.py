@@ -576,6 +576,47 @@ def resequence_workflow_tasks(
         connection.close()
 
 
+def delete_workflow_task(workflow_id: str, task_id: str, updated_at: str,
+                         database_file: Path = DATABASE_FILE) -> bool:
+    """Delete and compact positions under one SQLite write lock."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        workflow = connection.execute(
+            "SELECT status FROM workflows WHERE workflow_id = ?", (workflow_id,),
+        ).fetchone()
+        rows = connection.execute(
+            "SELECT task_id, sequence_number FROM workflow_tasks "
+            "WHERE workflow_id = ? ORDER BY sequence_number", (workflow_id,),
+        ).fetchall()
+        if workflow is None or task_id not in [row[0] for row in rows]:
+            return False
+        if workflow[0] == "active" and len(rows) == 1:
+            return False
+        connection.execute(
+            "DELETE FROM workflow_tasks WHERE workflow_id = ? AND task_id = ?",
+            (workflow_id, task_id),
+        )
+        remaining = [row for row in rows if row[0] != task_id]
+        # Ascending compaction moves left into free positions without temporary
+        # offsets, avoiding unique collisions and integer overflow with gaps.
+        for position, row in enumerate(remaining, start=1):
+            if position != row[1]:
+                connection.execute(
+                    "UPDATE workflow_tasks SET sequence_number = ?, updated_at = ? "
+                    "WHERE workflow_id = ? AND task_id = ?",
+                    (position, updated_at, workflow_id, row[0]),
+                )
+        connection.commit()
+        return True
+    except sqlite3.Error:
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
 def load_employees_from_database(
     database_file: Path = DATABASE_FILE,
 ) -> list[Employee]:

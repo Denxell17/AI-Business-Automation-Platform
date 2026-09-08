@@ -7,6 +7,7 @@ from authorization import (
 )
 from database import (
     DATABASE_FILE,
+    delete_workflow_task,
     insert_workflow,
     insert_workflow_task,
     load_user_account_by_username,
@@ -274,4 +275,22 @@ def update_workflow(
     return update_workflow_in_database(
         updated_workflow,
         database_file,
+    )
+
+
+def remove_workflow_task(current_user: UserAccount, workflow_id: str, task_id: str,
+                         database_file: Path = DATABASE_FILE) -> bool:
+    if not current_user["is_active"]:
+        return False
+    stored_user = load_user_account_by_username(current_user["username"], database_file)
+    if (
+        stored_user is None or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+        or not user_has_permission(stored_user, MANAGE_WORKFLOWS)
+        or not all(isinstance(value, str) and value.strip() for value in (workflow_id, task_id))
+    ):
+        return False
+    return delete_workflow_task(
+        workflow_id.strip().upper(), task_id.strip().upper(),
+        datetime.now(timezone.utc).isoformat(), database_file,
     )
