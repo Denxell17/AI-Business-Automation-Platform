@@ -69,6 +69,29 @@ class WorkflowTask(TypedDict):
     updated_at: str
 
 
+WORKFLOW_EXECUTION_STATUS_RUNNING = "running"
+WORKFLOW_EXECUTION_STATUS_COMPLETED = "completed"
+WORKFLOW_EXECUTION_STATUS_FAILED = "failed"
+VALID_WORKFLOW_EXECUTION_STATUSES = frozenset(
+    {
+        WORKFLOW_EXECUTION_STATUS_RUNNING,
+        WORKFLOW_EXECUTION_STATUS_COMPLETED,
+        WORKFLOW_EXECUTION_STATUS_FAILED,
+    }
+)
+
+
+class WorkflowExecution(TypedDict):
+    execution_id: str
+    workflow_id: str
+    workflow_name: str
+    status: str
+    started_by_user_id: int
+    started_at: str
+    finished_at: str | None
+    result_summary: str
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float

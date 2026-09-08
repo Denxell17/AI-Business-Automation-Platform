@@ -36,6 +36,7 @@ from authorization import (
 )
 from database import (
     DATABASE_FILE,
+    load_workflow_executions,
     load_workflow_by_id,
     load_workflow_task_by_id,
     load_workflow_tasks,
@@ -80,6 +81,8 @@ from workflow_service import (
     create_workflow_task,
     remove_workflow_task,
     resequence_workflow_task_list,
+    start_workflow_execution,
+    finish_workflow_execution_record,
     update_workflow_task_details,
     update_workflow,
 )
@@ -1277,7 +1280,8 @@ def create_web_application(
             return HTMLResponse("Workflow not found.", status_code=404)
 
         try:
-            workflow_tasks = load_workflow_tasks(
+            workflow_tasks = load_workflow_tasks(workflow["workflow_id"], database_file)
+            workflow_executions = load_workflow_executions(
                 workflow["workflow_id"], database_file,
             )
         except sqlite3.Error:
@@ -1295,12 +1299,82 @@ def create_web_application(
                 "current_user": current_user,
                 "workflow": workflow,
                 "workflow_tasks": workflow_tasks,
+                "workflow_executions": workflow_executions,
+                "csrf_token": get_or_create_csrf_token(request),
                 "can_manage_workflows": user_has_permission(
                     current_user,
                     MANAGE_WORKFLOWS,
                 ),
             },
         )
+
+    @application.post("/workflows/{workflow_id}/executions")
+    def workflow_execution_start(
+        request: Request,
+        workflow_id: str,
+        csrf_token: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(
+                f"Web workflow-execution start access denied for user "
+                f"{current_user['username']}."
+            )
+            return HTMLResponse("Access denied.", status_code=403)
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web workflow-execution start CSRF validation failed for user "
+                f"{current_user['username']}."
+            )
+            return HTMLResponse("Your form could not be verified.", status_code=403)
+        normalized_workflow_id = workflow_id.strip().upper()
+        try:
+            execution = start_workflow_execution(
+                current_user, normalized_workflow_id, database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+        if execution is None:
+            return HTMLResponse(
+                "Execution could not be started. Only active workflows can run.",
+                status_code=400,
+            )
+        log_activity(
+            f"Web workflow execution {execution['execution_id']} was started "
+            f"for {normalized_workflow_id} by user {current_user['username']}."
+        )
+        return RedirectResponse(
+            url=request.url_for("workflow_detail", workflow_id=normalized_workflow_id),
+            status_code=303,
+        )
+
+    @application.post("/workflows/{workflow_id}/executions/{execution_id}/finish")
+    def workflow_execution_finish(
+        request: Request, workflow_id: str, execution_id: str,
+        csrf_token: Annotated[str, Form()] = "",
+        status: Annotated[str, Form()] = "",
+        result_summary: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            return HTMLResponse("Access denied.", status_code=403)
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(f"Web workflow-execution finish CSRF validation failed for user {current_user['username']}.")
+            return HTMLResponse("Your form could not be verified.", status_code=403)
+        try:
+            finished = finish_workflow_execution_record(
+                current_user, execution_id, status, result_summary, database_file,
+            )
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+        if not finished:
+            return HTMLResponse("Execution could not be finished.", status_code=400)
+        log_activity(f"Web workflow execution {execution_id.strip().upper()} was {status.strip().casefold()} by user {current_user['username']}.")
+        return RedirectResponse(url=request.url_for("workflow_detail", workflow_id=workflow_id.strip().upper()), status_code=303)
 
     @application.get(
         "/workflows",

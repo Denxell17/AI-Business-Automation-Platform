@@ -1,5 +1,6 @@
 from datetime import datetime, timezone
 from pathlib import Path
+from uuid import uuid4
 
 from authorization import (
     MANAGE_WORKFLOWS,
@@ -8,7 +9,9 @@ from authorization import (
 from database import (
     DATABASE_FILE,
     delete_workflow_task,
+    finish_workflow_execution,
     insert_workflow,
+    insert_workflow_execution,
     insert_workflow_task,
     load_user_account_by_username,
     load_workflow_by_id,
@@ -22,6 +25,7 @@ from models import (
     UserAccount,
     VALID_WORKFLOW_STATUSES,
     Workflow,
+    WorkflowExecution,
     WorkflowTask,
     VALID_WORKFLOW_TASK_TYPES,
 )
@@ -293,4 +297,69 @@ def remove_workflow_task(current_user: UserAccount, workflow_id: str, task_id: s
     return delete_workflow_task(
         workflow_id.strip().upper(), task_id.strip().upper(),
         datetime.now(timezone.utc).isoformat(), database_file,
+    )
+
+
+def start_workflow_execution(
+    current_user: UserAccount,
+    workflow_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> WorkflowExecution | None:
+    """Record an administrator-started run of an active workflow."""
+    if (
+        not current_user["is_active"]
+        or not isinstance(workflow_id, str)
+        or not workflow_id.strip()
+    ):
+        return None
+    stored_user = load_user_account_by_username(
+        current_user["username"], database_file,
+    )
+    if (
+        stored_user is None
+        or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+        or not user_has_permission(stored_user, MANAGE_WORKFLOWS)
+    ):
+        return None
+    workflow = load_workflow_by_id(workflow_id.strip().upper(), database_file)
+    if workflow is None or workflow["status"] != "active":
+        return None
+    started_at = datetime.now(timezone.utc).isoformat()
+    execution: WorkflowExecution = {
+        "execution_id": f"WFE-{uuid4().hex.upper()}",
+        "workflow_id": workflow["workflow_id"],
+        "workflow_name": workflow["name"],
+        "status": "running",
+        "started_by_user_id": stored_user["user_id"],
+        "started_at": started_at,
+        "finished_at": None,
+        "result_summary": "Execution started.",
+    }
+    return execution if insert_workflow_execution(execution, database_file) else None
+
+
+def finish_workflow_execution_record(
+    current_user: UserAccount,
+    execution_id: str,
+    status: str,
+    result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    if (
+        not current_user["is_active"]
+        or not all(isinstance(value, str) for value in (execution_id, status, result_summary))
+        or status.strip().casefold() not in {"completed", "failed"}
+    ):
+        return False
+    stored_user = load_user_account_by_username(current_user["username"], database_file)
+    if (
+        stored_user is None or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+        or not user_has_permission(stored_user, MANAGE_WORKFLOWS)
+    ):
+        return False
+    return finish_workflow_execution(
+        execution_id.strip().upper(), status.strip().casefold(),
+        datetime.now(timezone.utc).isoformat(), result_summary.strip(), database_file,
     )
