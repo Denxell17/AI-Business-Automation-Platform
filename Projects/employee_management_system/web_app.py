@@ -78,6 +78,7 @@ from web_session import (
 from workflow_service import (
     create_workflow,
     create_workflow_task,
+    remove_workflow_task,
     resequence_workflow_task_list,
     update_workflow_task_details,
     update_workflow,
@@ -1006,6 +1007,53 @@ def create_web_application(
             )
         log_activity(f"Web workflow task {task['task_id']} was updated by user {current_user['username']}.")
         return RedirectResponse(url=request.url_for("workflow_detail", workflow_id=normalized_workflow_id), status_code=303)
+
+    @application.get("/workflows/{workflow_id}/tasks/{task_id}/delete", response_class=HTMLResponse)
+    def workflow_task_delete_form(request: Request, workflow_id: str, task_id: str) -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(f"Web workflow-task delete access denied for user {current_user['username']}.")
+            return HTMLResponse("Access denied.", status_code=403)
+        try:
+            task = load_workflow_task_by_id(task_id.strip().upper(), database_file)
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+        if task is None or task["workflow_id"] != workflow_id.strip().upper():
+            return HTMLResponse("Workflow task not found.", status_code=404)
+        return templates.TemplateResponse(
+            request=request, name="workflow_task_delete_form.html",
+            context={"page_title": "Delete workflow task", "active_page": "workflows",
+                     "current_user": current_user, "task": task,
+                     "csrf_token": get_or_create_csrf_token(request)},
+        )
+
+    @application.post("/workflows/{workflow_id}/tasks/{task_id}/delete")
+    def workflow_task_delete(request: Request, workflow_id: str, task_id: str,
+                             csrf_token: Annotated[str, Form()] = "") -> Response:
+        current_user = load_authenticated_session_user(request, database_file)
+        if current_user is None:
+            return RedirectResponse(url=request.url_for("login_page"), status_code=303)
+        if not user_has_permission(current_user, MANAGE_WORKFLOWS):
+            log_activity(f"Web workflow-task delete access denied for user {current_user['username']}.")
+            return HTMLResponse("Access denied.", status_code=403)
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(f"Web workflow-task delete CSRF validation failed for user {current_user['username']}.")
+            return HTMLResponse("Your form could not be verified.", status_code=403)
+        workflow_id = workflow_id.strip().upper()
+        task_id = task_id.strip().upper()
+        try:
+            task = load_workflow_task_by_id(task_id, database_file)
+            if task is None or task["workflow_id"] != workflow_id:
+                return HTMLResponse("Workflow task not found.", status_code=404)
+            deleted = remove_workflow_task(current_user, workflow_id, task_id, database_file)
+        except sqlite3.Error:
+            return HTMLResponse("Workflow records could not be loaded.", status_code=500)
+        if not deleted:
+            return HTMLResponse("Task could not be deleted. An active workflow must retain at least one task.", status_code=400)
+        log_activity(f"Web workflow task {task_id} was deleted and remaining tasks resequenced for workflow {workflow_id} by user {current_user['username']}.")
+        return RedirectResponse(url=request.url_for("workflow_detail", workflow_id=workflow_id), status_code=303)
 
     @application.get("/workflows/{workflow_id}/tasks/resequence", response_class=HTMLResponse)
     def workflow_task_resequence_form(request: Request, workflow_id: str) -> Response:

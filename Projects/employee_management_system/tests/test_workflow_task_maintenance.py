@@ -4,7 +4,8 @@ from tempfile import TemporaryDirectory
 
 from database import insert_user_account, load_user_account_by_username, load_workflow_tasks
 from workflow_service import (
-    create_workflow, create_workflow_task, resequence_workflow_task_list,
+    create_workflow, create_workflow_task, remove_workflow_task,
+    resequence_workflow_task_list,
     update_workflow, update_workflow_task_details,
 )
 
@@ -66,3 +67,51 @@ class TestWorkflowTaskMaintenance(unittest.TestCase):
         self.assertFalse(update_workflow(self.admin, "WF-EMPTY", "Empty", "", "active", self.database_file))
         self.assertTrue(update_workflow(self.admin, "WF-1", "Workflow", "", "active", self.database_file))
         self.assertFalse(create_workflow(self.admin, "WF-ACTIVE", "No task", "", "active", self.database_file))
+
+    def test_admin_deletes_middle_task_and_remaining_tasks_are_contiguous(self):
+        before = load_workflow_tasks("WF-1", self.database_file)
+
+        self.assertTrue(remove_workflow_task(
+            self.admin, " wf-1 ", " task-b ", self.database_file,
+        ))
+
+        after = load_workflow_tasks("WF-1", self.database_file)
+        self.assertEqual([task["task_id"] for task in after], ["TASK-A", "TASK-C"])
+        self.assertEqual([task["sequence_number"] for task in after], [1, 2])
+        self.assertEqual(after[0]["updated_at"], before[0]["updated_at"])
+        self.assertNotEqual(after[1]["updated_at"], before[2]["updated_at"])
+
+    def test_delete_denies_viewer_missing_task_and_stale_admin(self):
+        before = load_workflow_tasks("WF-1", self.database_file)
+        self.assertFalse(remove_workflow_task(
+            self.viewer, "WF-1", "TASK-B", self.database_file,
+        ))
+        self.assertFalse(remove_workflow_task(
+            self.admin, "WF-1", "TASK-MISSING", self.database_file,
+        ))
+        stale_admin = dict(self.admin)
+        stale_admin["user_id"] = self.viewer["user_id"]
+        self.assertFalse(remove_workflow_task(
+            stale_admin, "WF-1", "TASK-B", self.database_file,
+        ))
+        self.assertEqual(load_workflow_tasks("WF-1", self.database_file), before)
+
+    def test_active_workflow_cannot_lose_its_last_task(self):
+        self.assertTrue(create_workflow(
+            self.admin, "WF-ACTIVE", "Active", "", "draft", self.database_file,
+        ))
+        self.assertTrue(create_workflow_task(
+            self.admin, "ONLY-TASK", "WF-ACTIVE", 1, "Only task", "",
+            "manual", True, self.database_file,
+        ))
+        self.assertTrue(update_workflow(
+            self.admin, "WF-ACTIVE", "Active", "", "active", self.database_file,
+        ))
+
+        self.assertFalse(remove_workflow_task(
+            self.admin, "WF-ACTIVE", "ONLY-TASK", self.database_file,
+        ))
+        self.assertEqual(
+            [task["task_id"] for task in load_workflow_tasks("WF-ACTIVE", self.database_file)],
+            ["ONLY-TASK"],
+        )

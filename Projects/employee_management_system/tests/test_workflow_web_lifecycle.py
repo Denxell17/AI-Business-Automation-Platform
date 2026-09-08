@@ -162,6 +162,52 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
         detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
         self.assertLess(detail.text.index("TASK-SECOND"), detail.text.index("TASK-FIRST"))
 
+    def test_administrator_confirms_and_deletes_task(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        self.create_browser_task("TASK-DELETE", 1)
+        self.create_browser_task("TASK-REMAINS", 2)
+        form = self.client.get(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/TASK-DELETE/delete"
+        )
+        self.assertEqual(form.status_code, 200)
+        self.assertIn("This cannot be undone", form.text)
+        token = re.search(r'name="csrf_token" value="([^"]+)"', form.text).group(1)
+
+        with patch("web_app.log_activity") as log_activity_mock:
+            response = self.client.post(
+                "/workflows/WF-WEB-LIFECYCLE/tasks/TASK-DELETE/delete",
+                data={"csrf_token": token}, follow_redirects=False,
+            )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertIn("TASK-DELETE", log_activity_mock.call_args.args[0])
+        self.assertIn("resequence", log_activity_mock.call_args.args[0])
+        detail = self.client.get("/workflows/WF-WEB-LIFECYCLE")
+        self.assertNotIn("TASK-DELETE", detail.text)
+        self.assertIn("TASK-REMAINS", detail.text)
+
+    def test_task_delete_rejects_invalid_csrf_and_viewer(self):
+        self.sign_in(self.admin_username, self.admin_password)
+        self.create_browser_task("TASK-PROTECTED", 1)
+        response = self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/TASK-PROTECTED/delete",
+            data={"csrf_token": "invalid"}, follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertIn("TASK-PROTECTED", self.client.get(
+            "/workflows/WF-WEB-LIFECYCLE"
+        ).text)
+
+        self.client.post("/logout")
+        self.sign_in(self.viewer_username, self.viewer_password)
+        self.assertEqual(self.client.get(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/TASK-PROTECTED/delete"
+        ).status_code, 403)
+        self.assertEqual(self.client.post(
+            "/workflows/WF-WEB-LIFECYCLE/tasks/TASK-PROTECTED/delete",
+            data={"csrf_token": "invalid"}, follow_redirects=False,
+        ).status_code, 403)
+
     def test_viewer_cannot_edit_or_resequence_tasks(self):
         self.sign_in(self.viewer_username, self.viewer_password)
         self.assertEqual(self.client.get("/workflows/WF-WEB-LIFECYCLE/tasks/TASK/edit").status_code, 403)
