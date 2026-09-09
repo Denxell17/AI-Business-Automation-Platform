@@ -50,8 +50,10 @@ class TestPostgresqlRepositoryAdapter(unittest.TestCase):
         connect,
     ):
         raw_connection = MagicMock()
-        raw_connection.executemany.return_value = MagicMock()
+        cursor = MagicMock()
+        raw_connection.cursor.return_value = cursor
         connect.return_value = raw_connection
+
         records = [
             {
                 "task_execution_id": "TASK-RUN-001",
@@ -69,7 +71,9 @@ class TestPostgresqlRepositoryAdapter(unittest.TestCase):
         result = insert_workflow_task_executions(records)
 
         self.assertTrue(result)
-        query = raw_connection.executemany.call_args.args[0]
+
+        query = cursor.executemany.call_args.args[0]
+
         self.assertNotIn("?", query)
         self.assertEqual(query.count("%s"), 9)
         raw_connection.commit.assert_called_once_with()

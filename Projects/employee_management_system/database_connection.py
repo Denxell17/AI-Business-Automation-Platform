@@ -125,8 +125,12 @@ class PostgreSQLConnectionAdapter:
     def executemany(self, query: str, parameters):
         from database_sql import adapt_parameter_placeholders
 
-        cursor = self._connection.executemany(
-            adapt_parameter_placeholders(query, "postgresql"),
+        cursor = self._connection.cursor()
+        cursor.executemany(
+            adapt_parameter_placeholders(
+                query,
+                "postgresql",
+            ),
             parameters,
         )
         return PostgreSQLCursorAdapter(cursor)

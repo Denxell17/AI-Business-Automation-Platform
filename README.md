@@ -551,6 +551,10 @@ responsive interface.
   the application's `0` to `100` validation and prevents duplicate task
   records within one workflow execution
 - Mocked PostgreSQL tests that require no live database server
+- A Docker Compose environment using PostgreSQL 18.6, persistent storage,
+  data checksums, localhost-only port binding, and a readiness health check
+- A gated live integration test covering users, employees, workflows, tasks,
+  executions, schedules, occurrence claims, and cleanup
 
 ### Shared Dashboard Capabilities
 
@@ -763,9 +767,9 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **480 automated tests passed**
-- **25 focused PostgreSQL configuration, connection, migration, SQL
-  compatibility, and repository-adapter tests passed**
+- **481 automated tests passed**
+- **26 focused PostgreSQL configuration, connection, migration, SQL
+  compatibility, repository-adapter, and live-integration tests passed**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -783,8 +787,11 @@ The FastAPI interface continues to provide:
   suite
 - PostgreSQL configuration rejects missing URLs, invalid backends, and
   unsupported URL formats
-- Psycopg connection selection was verified without contacting a live
-  PostgreSQL server
+- PostgreSQL 18.6 migrations, schema constraints, repository round trips,
+  timestamp normalization, and duplicate occurrence protection were verified
+  against a live Docker container
+- Live verification found and corrected Psycopg bulk insertion so the shared
+  adapter now calls `executemany()` through a PostgreSQL cursor
 - Real environment credentials remain excluded from Git
 - No application data was changed during verification
 
@@ -798,6 +805,7 @@ PostgreSQL production-database support now includes backend configuration,
 connection selection, ordered schema migrations, migration history, and the
 application repository paths used by employee management and workflow
 automation. SQLite remains available for local development, backup and
-restoration, and automated regression tests. The next database deployment step
-is to apply and verify the migrations against a live PostgreSQL service when
-the planned Docker environment is available.
+restoration, and automated regression tests. The complete database path is now
+verified against a live PostgreSQL 18.6 container. The next Phase 2 work begins
+the template-based AI-agent foundation while preserving this database
+architecture.
