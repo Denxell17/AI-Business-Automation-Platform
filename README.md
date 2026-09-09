@@ -167,6 +167,8 @@ The current Employee Management System can:
 - Git
 - GitHub
 - SQLite
+- PostgreSQL
+- Psycopg 3
 - FastAPI
 - Jinja2
 - HTML
@@ -190,6 +192,9 @@ AI-Business-Automation-Platform/
 │       ├── data/
 │       ├── exports/
 │       ├── logs/
+│       ├── migrations/
+│       │   └── postgresql/
+│       │       └── 001_initial_schema.sql
 │       ├── static/
 │       │   ├── navigation.js
 │       │   └── styles.css
@@ -221,6 +226,7 @@ AI-Business-Automation-Platform/
 │       ├── exporter.py
 │       ├── main.py
 │       ├── migration.py
+│       ├── postgresql_migrations.py
 │       ├── models.py
 │       ├── payroll.py
 │       ├── performance_boundary_demo.py
@@ -518,14 +524,22 @@ responsive interface.
 ### Database Portability Foundation
 
 - SQLite remains the default local and automated-test database
-- PostgreSQL is the selected production database direction
+- PostgreSQL is the selected production database
 - Environment-based `DATABASE_BACKEND` selection
 - Required and validated `DATABASE_URL` for PostgreSQL
 - Psycopg 3 connection support
 - Safe `.env.example` configuration without real credentials
 - Centralized SQLite and PostgreSQL connection selection
 - SQLite foreign-key enforcement preserved
-- Mocked PostgreSQL connection tests that require no live server
+- Initial PostgreSQL schema for users, employees, workflows, tasks,
+  schedules, occurrences, workflow executions, and task executions
+- PostgreSQL foreign keys, indexes, uniqueness rules, and business
+  validation constraints
+- UTC-aware PostgreSQL timestamps through `TIMESTAMPTZ`
+- Ordered migration files using the `001_description.sql` format
+- A `schema_migrations` table that records completed migrations
+- Repeatable migration execution that skips migrations already applied
+- Mocked PostgreSQL tests that require no live database server
 
 ### Shared Dashboard Capabilities
 
@@ -738,8 +752,9 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **464 automated tests passed**
+- **471 automated tests passed**
 - **9 focused PostgreSQL configuration and connection tests passed**
+- **7 focused PostgreSQL schema-migration tests passed**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -749,6 +764,10 @@ The FastAPI interface continues to provide:
   invalid rules with deterministic clock inputs
 - Duplicate-run preparation uses a persistent unique UTC occurrence and an
   atomic active/enabled state check
+- The initial PostgreSQL migration defines all eight current application tables
+- Migration validation rejects missing, empty, and incorrectly named SQL files
+- Pending migrations are applied and recorded, while completed migrations are
+  skipped
 - SQLite remains the working local database and passed the complete regression
   suite
 - PostgreSQL configuration rejects missing URLs, invalid backends, and
@@ -764,7 +783,9 @@ ABAP supports secure employee management, workflow lifecycle management,
 ordered tasks, execution history, controlled task outcomes, stored scheduling
 rules, timezone-aware eligibility, and duplicate-safe occurrence claims.
 
-The current development focus is PostgreSQL production-database support.
-Configuration and connection selection are complete. The next work adds
-PostgreSQL schema migrations and repository compatibility while preserving
-SQLite for local development and automated tests.
+The current development focus is completing PostgreSQL production-database
+support. Backend configuration, connection selection, the initial PostgreSQL
+schema, migration ordering, and migration-history tracking are complete. The
+next work connects the application repositories and workflow execution
+services to the configured database backend while preserving SQLite for local
+development and automated tests.
