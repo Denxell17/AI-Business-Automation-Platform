@@ -1,6 +1,13 @@
 import sqlite3
 from pathlib import Path
 
+import psycopg
+
+from database_config import (
+    DATABASE_BACKEND_POSTGRESQL,
+    load_database_settings,
+)
+from database_connection import open_configured_database_connection
 from models import (
     Employee,
     UserAccount,
@@ -22,7 +29,17 @@ DATABASE_BACKUP_FILE = (
 
 def get_database_connection(
     database_file: Path = DATABASE_FILE,
+):
+    """Open the database backend selected by environment configuration."""
+    return open_configured_database_connection(
+        sqlite_file=database_file,
+    )
+
+
+def get_sqlite_database_connection(
+    database_file: Path = DATABASE_FILE,
 ) -> sqlite3.Connection:
+    """Open SQLite explicitly for SQLite-only backup operations."""
     connection = sqlite3.connect(database_file)
     connection.execute("PRAGMA foreign_keys = ON")
 
@@ -32,7 +49,15 @@ def get_database_connection(
 def initialize_database(
     database_file: Path = DATABASE_FILE,
 ) -> None:
-    connection = get_database_connection(database_file)
+    settings = load_database_settings()
+
+    if settings["backend"] == DATABASE_BACKEND_POSTGRESQL:
+        return
+
+    connection = open_configured_database_connection(
+        settings=settings,
+        sqlite_file=database_file,
+    )
 
     try:
         connection.execute(
@@ -221,10 +246,10 @@ def backup_database(
             parents=True,
             exist_ok=True,
         )
-        source_connection = get_database_connection(
+        source_connection = get_sqlite_database_connection(
             database_file
         )
-        backup_connection = get_database_connection(
+        backup_connection = get_sqlite_database_connection(
             backup_file
         )
 
@@ -258,7 +283,7 @@ def restore_database_from_backup(
             parents=True,
             exist_ok=True,
         )
-        backup_connection = get_database_connection(
+        backup_connection = get_sqlite_database_connection(
             backup_file,
         )
 
@@ -276,7 +301,7 @@ def restore_database_from_backup(
             )
             return False
 
-        database_connection = get_database_connection(
+        database_connection = get_sqlite_database_connection(
             database_file,
         )
         backup_connection.backup(database_connection)
@@ -335,7 +360,7 @@ def insert_employee(
         )
         connection.commit()
         return True
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         return False
     finally:
         connection.close()
@@ -374,7 +399,7 @@ def insert_workflow(
         )
         connection.commit()
         return True
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -502,7 +527,7 @@ def update_workflow_in_database(
             )
         connection.commit()
         return cursor.rowcount > 0
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -534,7 +559,7 @@ def insert_workflow_task(
         )
         connection.commit()
         return True
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -631,7 +656,7 @@ def insert_workflow_execution(
         )
         connection.commit()
         return True
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -693,7 +718,7 @@ def finish_workflow_execution(
         )
         connection.commit()
         return cursor.rowcount == 1
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -746,7 +771,7 @@ def finish_workflow_task_execution(
         )
         connection.commit()
         return cursor.rowcount == 1
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         raise
     finally:
@@ -770,14 +795,14 @@ def insert_workflow_schedule(
             (
                 schedule["schedule_id"], schedule["workflow_id"],
                 schedule["schedule_type"], schedule["scheduled_time"],
-                schedule["day_of_week"], int(schedule["is_enabled"]),
+                schedule["day_of_week"], schedule["is_enabled"],
                 schedule["created_by_user_id"], schedule["created_at"],
                 schedule["updated_at"],
             ),
         )
         connection.commit()
         return True
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -923,7 +948,7 @@ def claim_workflow_schedule_occurrence(
         )
         connection.commit()
         return cursor.rowcount == 1
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         raise
     finally:
@@ -968,18 +993,18 @@ def update_workflow_schedule_enabled(
                SET is_enabled = ?, updated_at = ?
                WHERE schedule_id = ? AND workflow_id = ?
                  AND is_enabled != ?
-                 AND (? = 0 OR EXISTS (
+                 AND (? = FALSE OR EXISTS (
                      SELECT 1 FROM workflows
                      WHERE workflow_id = ? AND status = 'active'
                  ))""",
             (
-                int(is_enabled), updated_at, schedule_id, workflow_id,
-                int(is_enabled), int(is_enabled), workflow_id,
+                is_enabled, updated_at, schedule_id, workflow_id,
+                is_enabled, is_enabled, workflow_id,
             ),
         )
         connection.commit()
         return cursor.rowcount == 1
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         raise
     finally:
@@ -996,7 +1021,7 @@ def insert_workflow_task_executions(records: list[WorkflowTaskExecution], databa
         )
         connection.commit()
         return True
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         return False
     finally:
@@ -1022,7 +1047,7 @@ def update_workflow_task(
         )
         connection.commit()
         return cursor.rowcount == 1
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -1062,7 +1087,7 @@ def resequence_workflow_tasks(
         )
         connection.commit()
         return True
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         return False
     finally:
@@ -1103,7 +1128,7 @@ def delete_workflow_task(workflow_id: str, task_id: str, updated_at: str,
                 )
         connection.commit()
         return True
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         return False
     finally:
@@ -1301,7 +1326,7 @@ def synchronize_employees_to_database(
 
         connection.commit()
         return True
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         return False
     finally:
@@ -1335,7 +1360,7 @@ def insert_user_account(
         )
         connection.commit()
         return True
-    except sqlite3.IntegrityError:
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
     finally:
@@ -1410,7 +1435,7 @@ def load_user_account_summaries(
             }
             for stored_user in stored_users
         ]
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         return None
     finally:
         if connection is not None:
@@ -1433,13 +1458,13 @@ def update_user_account_active_status(
             WHERE username = ?
             """,
             (
-                int(is_active),
+                is_active,
                 username,
             ),
         )
         connection.commit()
         return update_result.rowcount == 1
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         return False
     finally:
@@ -1468,7 +1493,7 @@ def update_user_account_password_hash(
         )
         connection.commit()
         return update_result.rowcount == 1
-    except sqlite3.Error:
+    except (sqlite3.Error, psycopg.Error):
         connection.rollback()
         return False
     finally:

@@ -149,12 +149,11 @@ It includes:
 - Task ID.
 - Sequence number.
 - Task title.
-- Required-task flag.
 - Task status.
 - Start and finish timestamps.
 - Result message.
 
-Each task can appear only once within an execution. Status and timestamp checks keep pending, running, completed, and failed task records internally consistent.
+Status and timestamp checks keep running, completed, and failed task records internally consistent. Day 142 added a follow-up migration that ensures each task can appear only once within an execution.
 
 ## PostgreSQL Migration Runner
 
@@ -185,7 +184,7 @@ The migration tests are stored in:
 
 `Projects/employee_management_system/tests/test_postgresql_migrations.py`
 
-Seven tests verify that:
+Seven test methods verify that:
 
 - The initial migration file is discovered.
 - All eight required application tables are present.
@@ -210,6 +209,8 @@ The complete application test suite also passed:
 - No existing test failed.
 
 The SQL migration has not yet been executed against a real PostgreSQL server. That integration verification will happen when the PostgreSQL service is available through the planned Docker environment.
+
+The initial employee performance-score constraint used a `1` to `5` range. Day 142 added a follow-up migration that corrects it to the application's established `0` to `100` range.
 
 ## Result
 

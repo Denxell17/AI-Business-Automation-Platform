@@ -521,7 +521,7 @@ The shared authenticated dashboard provides access to the available modules,
 API documentation, and system-health information through a consistent,
 responsive interface.
 
-### Database Portability Foundation
+### Database Portability
 
 - SQLite remains the default local and automated-test database
 - PostgreSQL is the selected production database
@@ -530,7 +530,15 @@ responsive interface.
 - Psycopg 3 connection support
 - Safe `.env.example` configuration without real credentials
 - Centralized SQLite and PostgreSQL connection selection
+- A shared PostgreSQL compatibility adapter for parameter placeholders,
+  SQLite-specific SQL forms, mapping rows, and timestamp normalization
 - SQLite foreign-key enforcement preserved
+- Configured-backend persistence for user accounts, employees, workflows,
+  tasks, executions, schedules, and schedule occurrences
+- Case-insensitive username lookup preserved on both supported backends
+- PostgreSQL row locking for workflow task resequencing and deletion
+- SQLite-only backup and restoration paths kept separate from production
+  PostgreSQL connections
 - Initial PostgreSQL schema for users, employees, workflows, tasks,
   schedules, occurrences, workflow executions, and task executions
 - PostgreSQL foreign keys, indexes, uniqueness rules, and business
@@ -539,6 +547,9 @@ responsive interface.
 - Ordered migration files using the `001_description.sql` format
 - A `schema_migrations` table that records completed migrations
 - Repeatable migration execution that skips migrations already applied
+- A follow-up schema migration that aligns employee performance scores with
+  the application's `0` to `100` validation and prevents duplicate task
+  records within one workflow execution
 - Mocked PostgreSQL tests that require no live database server
 
 ### Shared Dashboard Capabilities
@@ -752,9 +763,9 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **471 automated tests passed**
-- **9 focused PostgreSQL configuration and connection tests passed**
-- **7 focused PostgreSQL schema-migration tests passed**
+- **480 automated tests passed**
+- **25 focused PostgreSQL configuration, connection, migration, SQL
+  compatibility, and repository-adapter tests passed**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -783,9 +794,10 @@ ABAP supports secure employee management, workflow lifecycle management,
 ordered tasks, execution history, controlled task outcomes, stored scheduling
 rules, timezone-aware eligibility, and duplicate-safe occurrence claims.
 
-The current development focus is completing PostgreSQL production-database
-support. Backend configuration, connection selection, the initial PostgreSQL
-schema, migration ordering, and migration-history tracking are complete. The
-next work connects the application repositories and workflow execution
-services to the configured database backend while preserving SQLite for local
-development and automated tests.
+PostgreSQL production-database support now includes backend configuration,
+connection selection, ordered schema migrations, migration history, and the
+application repository paths used by employee management and workflow
+automation. SQLite remains available for local development, backup and
+restoration, and automated regression tests. The next database deployment step
+is to apply and verify the migrations against a live PostgreSQL service when
+the planned Docker environment is available.
