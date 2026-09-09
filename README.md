@@ -179,6 +179,7 @@ The current Employee Management System can:
 
 ```text
 AI-Business-Automation-Platform/
+├── .env.example
 ├── Assets/
 ├── Lessons/
 ├── Notes/
@@ -211,6 +212,8 @@ AI-Business-Automation-Platform/
 │       ├── config.py
 │       ├── data_validation.py
 │       ├── database.py
+│       ├── database_config.py
+│       ├── database_connection.py
 │       ├── database_backup.py
 │       ├── database_restore.py
 │       ├── employee_repository.py
@@ -490,224 +493,39 @@ python Projects\employee_management_system\run_tests.py
   logging, Post/Redirect/Get completion, responsive action-table layouts,
   isolated mutable fixtures, and status-route regression coverage
 
-# Day 105 Summary — Administrator Workflow Creation Form
-
-## Goal
-
-Add a secure browser form that lets authorized administrators create workflow
-definitions through the existing Workflow Automation service layer.
-
-## Completed
-
-- Added the protected `GET /workflows/new` workflow-creation form route.
-- Added the protected `POST /workflows/new` workflow-creation submission
-  route.
-- Required an authenticated session before form access or submission.
-- Required the administrator-only `workflows.manage` permission.
-- Reused signed-session CSRF protection for workflow submissions.
-- Delegated validation and SQLite saving to `create_workflow()`.
-- Added Post/Redirect/Get navigation back to `/workflows` after success.
-- Logged successful web workflow creation.
-- Logged denied workflow-creation access and invalid CSRF attempts.
-- Returned a safe `403` response for unauthorized, viewer, and invalid-CSRF
-  requests.
-- Returned the form with a safe `400` validation message when the service
-  rejects input.
-- Preserved submitted workflow ID, name, description, and status after a
-  validation error.
-- Added the administrator-only Create workflow action to the workflow
-  directory.
-- Kept the action hidden from viewers.
-- Created an accessible workflow form with labels, required fields, a status
-  selector, description textarea, cancel action, and error alert.
-- Extended shared form styling to include textareas.
-
-## Files Changed
-
-- `Projects/employee_management_system/web_app.py`
-- `Projects/employee_management_system/templates/workflows.html`
-- `Projects/employee_management_system/templates/workflow_form.html`
-- `Projects/employee_management_system/static/styles.css`
-- `Projects/employee_management_system/tests/test_web_app.py`
-- `Notes/day105_summary.md`
-
-## Security Decisions
-
-- The form and POST route both require `workflows.manage`.
-- Viewer accounts are denied before CSRF validation or service-layer calls.
-- The route reloads the authenticated account through the existing session
-  helper before authorization.
-- Every successful state-changing request requires a valid signed-session CSRF
-  token.
-- Invalid CSRF submissions never call `create_workflow()`.
-- The browser route delegates validation, account revalidation, status
-  allowlisting, timestamp generation, and SQLite insertion to
-  `create_workflow()`.
-- Validation and storage details are not exposed in browser error messages.
-- Denied access, invalid CSRF submissions, and successful workflow creation
-  are recorded in the activity log.
-
-## User Experience and Accessibility
-
-- Administrators can open Create workflow from the workflow directory.
-- Viewers can browse workflows but cannot see the creation action.
-- The form uses semantic labels for Workflow ID, Workflow name, Status, and
-  Description.
-- Status choices match the server-side `draft`, `active`, and `inactive`
-  allowlist.
-- The default status is Draft.
-- Errors use `role="alert"` so assistive technology announces them.
-- The form preserves entered values after a validation error.
-- The description textarea uses the same dark-surface, hover, and visible
-  keyboard-focus styling as the other form fields.
-- Successful submission returns the user to the workflow directory instead of
-  re-submitting on browser refresh.
-
-## Tests
-
-New Day 105 coverage verifies:
-
-- Unauthenticated visitors are redirected from the workflow-create form.
-- Administrators can view the workflow-create form and its CSRF token.
-- Viewers cannot view the workflow-create form.
-- Administrators can submit a valid CSRF-protected workflow form.
-- Successful submission redirects to the workflow directory.
-- Successful creation is recorded in the activity log.
-- Invalid CSRF tokens return `403`, are logged, and do not call the service.
-- Service-layer validation failures return `400` and preserve entered values.
-- Viewers cannot submit the workflow-create POST route.
-- The workflow-directory Create workflow action is visible only to
-  administrators.
-- The stylesheet remains available after textarea styling is added.
-
-Verification completed successfully:
-
-- **146 focused authorization, workflow-service, and web tests passed**
-- **374 total automated tests passed**
-- No failures or errors remained
-
-## Concepts Practiced
-
-- GET and POST route separation
-- Administrator-only form access
-- Signed-session CSRF protection
-- Default-deny authorization
-- Service-layer reuse
-- Post/Redirect/Get navigation
-- Safe validation-error handling
-- Form-value preservation
-- Activity logging
-- Conditional template actions
-- Accessible labels, alerts, and focus states
-- Full regression testing
-
-## Current ABAP Status
-
-Day 105 is complete.
-
-Workflow Automation now provides a secure browser path for administrators to
-create workflow definitions and a protected directory where administrators and
-viewers can read them.
-
-## Next Step
-
-Day 106 should add a protected workflow detail page and administrator-only
-workflow lifecycle updates.
-
-The feature should load one workflow safely, return a clear missing-record
-page, and allow authorized administrators to update a workflow name,
-description, or status through CSRF-protected service-layer logic.
-
-## Quiz — Questions and Answers
-
-1. Why does the browser POST route call `create_workflow()` instead of writing
-   directly to SQLite?
-
-   The service centralizes authorization, live account revalidation,
-   normalization, status validation, timestamps, and safe repository calls.
-
-2. Why does the create form require `workflows.manage` instead of
-   `workflows.view`?
-
-   Viewing data is less powerful than creating it. Separate permissions follow
-   least privilege and prevent viewers from changing workflow data.
-
-3. What does CSRF protection prevent in this form?
-
-   It prevents a third-party site from causing a signed-in administrator’s
-   browser to submit an unwanted workflow-creation request.
-
-4. Why is a CSRF check performed before `create_workflow()`?
-
-   A forged request should be rejected before validation logic or database work
-   is reached.
-
-5. Why does the form return `400` when `create_workflow()` returns `False`?
-
-   The submitted workflow could not pass the server-side creation rules, so the
-   user receives a safe form error and can correct the values.
-
-6. Why are submitted values returned after a validation error?
-
-   It avoids forcing the administrator to type valid information again after
-   correcting the failed field.
-
-7. Why is the Create workflow action hidden from viewers?
-
-   The interface reflects the viewer’s limited permission, while the POST
-   route still independently enforces the same security boundary.
-
-8. Why use a `303` redirect after successful form submission?
-
-   It implements Post/Redirect/Get, so refreshing the directory page does not
-   repeat the create request.
-After saving, reply done.
-
-
-3:05 PM
-
-
-
-
-
-
-
-
-done
-
-
-
-
-
-
-
 ## Project Status
 
-### Phase 1 — Employee Management System Complete
+### Employee Management System
 
-Day 100 completed the original Employee Management System roadmap milestone.
+The Employee Management System is complete and available through both console
+and authenticated FastAPI interfaces. It provides secure employee records,
+payroll calculations, workforce reporting, account administration, activity
+history, data export, backup, and restoration. SQLite remains the working local
+source of truth, while legacy JSON tools support migration and verification.
 
-The module is a portfolio-ready, security-focused Python application with
-working console and authenticated FastAPI interfaces. SQLite is the live
-source of truth for employee and user-account data. Legacy JSON utilities
-remain available for migration, verification, and historical compatibility.
+### ABAP Platform Development
 
-### Phase 2 — Full ABAP Portfolio MVP In Progress
-
-Day 101 created the shared ABAP dashboard. Days 102 through 139 established
-the Workflow Automation domain, tested SQLite persistence, secure creation
-and lifecycle rules, protected browser access, workflow detail pages,
-administrator-only editing, ordered task storage, task creation, task editing,
-task resequencing, activation readiness rules, transaction-safe task deletion,
-execution history, task outcomes, stored workflow schedules, deterministic
-eligibility rules, business-timezone handling, and duplicate occurrence
+ABAP is developing into a secure business automation portfolio platform. The
+current application combines Employee Management with Workflow Automation,
+including reusable workflows, ordered tasks, execution history, task outcomes,
+stored schedules, timezone-aware eligibility, and duplicate occurrence
 protection.
 
-The dashboard is the authenticated entry point for the growing business
-automation portfolio. Employee Management and Workflow Automation are
-available. Workflow schedules store manual, daily, and weekly rules. Daily and
-weekly rules can now be evaluated and claimed safely, while automatic task
-execution remains planned for the next milestone.
+The shared authenticated dashboard provides access to the available modules,
+API documentation, and system-health information through a consistent,
+responsive interface.
+
+### Database Portability Foundation
+
+- SQLite remains the default local and automated-test database
+- PostgreSQL is the selected production database direction
+- Environment-based `DATABASE_BACKEND` selection
+- Required and validated `DATABASE_URL` for PostgreSQL
+- Psycopg 3 connection support
+- Safe `.env.example` configuration without real credentials
+- Centralized SQLite and PostgreSQL connection selection
+- SQLite foreign-key enforcement preserved
+- Mocked PostgreSQL connection tests that require no live server
 
 ### Shared Dashboard Capabilities
 
@@ -918,28 +736,35 @@ The FastAPI interface continues to provide:
 - `/health` — JSON service-health check
 - `/docs` — interactive API documentation
 
-### Day 139 Verification
+### Verification
 
-- **455 automated tests passed**
+- **464 automated tests passed**
+- **9 focused PostgreSQL configuration and connection tests passed**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
-  session CSRF protection, safe browser errors, and accessible display.
-- Schedule lifecycle controls automatically disable schedules when a workflow
-  leaves Active and reject enabling while it is Draft or Inactive.
-- Existing Employee Management and Workflow Automation foundations remained
-  covered by the complete regression suite
+  session CSRF protection, safe browser errors, and accessible display
+- Schedule lifecycle controls disable schedules when a workflow leaves Active
+  and reject enabling while it is Draft or Inactive
 - Schedule eligibility covers manual, daily, weekly, disabled, expired, and
   invalid rules with deterministic clock inputs
 - Duplicate-run preparation uses a persistent unique UTC occurrence and an
   atomic active/enabled state check
+- SQLite remains the working local database and passed the complete regression
+  suite
+- PostgreSQL configuration rejects missing URLs, invalid backends, and
+  unsupported URL formats
+- Psycopg connection selection was verified without contacting a live
+  PostgreSQL server
+- Real environment credentials remain excluded from Git
 - No application data was changed during verification
 
-### Roadmap Position
+### Current Development Focus
 
-Day 139 is complete after the documentation is saved.
+ABAP supports secure employee management, workflow lifecycle management,
+ordered tasks, execution history, controlled task outcomes, stored scheduling
+rules, timezone-aware eligibility, and duplicate-safe occurrence claims.
 
-ABAP now supports secure workflow lifecycle management and administrator task
-creation, editing, resequencing, deletion, execution history, controlled task
-outcomes, stored scheduling rules, deterministic timezone-aware eligibility,
-and duplicate-safe occurrence claims. Day 140 begins the transactional link
-from one claimed occurrence to one scheduled workflow execution.
+The current development focus is PostgreSQL production-database support.
+Configuration and connection selection are complete. The next work adds
+PostgreSQL schema migrations and repository compatibility while preserving
+SQLite for local development and automated tests.

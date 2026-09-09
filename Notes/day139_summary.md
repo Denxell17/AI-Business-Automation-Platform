@@ -80,6 +80,7 @@ Day 139 is complete. ABAP calculates due and next occurrences using an explicit
 business timezone, stores occurrence timestamps in UTC, tolerates a short
 runner delay, and prevents duplicate claims in SQLite.
 
-Day 140 should extend execution records with explicit trigger context and
-connect one claimed occurrence to one scheduled execution transactionally.
-Automatic task processing should begin only after that relationship is tested.
+Day 140 begins PostgreSQL configuration and connection support while preserving
+SQLite as the working local database. Days 141–142 will add the PostgreSQL
+schema, migrations, repository compatibility, and the transactional connection
+between claimed schedule occurrences and scheduled workflow executions.
