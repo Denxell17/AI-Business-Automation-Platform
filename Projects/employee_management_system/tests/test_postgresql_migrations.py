@@ -18,10 +18,13 @@ class TestPostgresqlMigrations(unittest.TestCase):
 
         self.assertEqual(
             [path.name for path in migration_files],
-            ["001_initial_schema.sql"],
+            [
+                "001_initial_schema.sql",
+                "002_correct_schema_contract.sql",
+            ],
         )
 
-        migration_sql = migration_files[0].read_text(
+        initial_migration_sql = migration_files[0].read_text(
             encoding="utf-8-sig"
         )
 
@@ -39,8 +42,25 @@ class TestPostgresqlMigrations(unittest.TestCase):
         for table_name in expected_tables:
             self.assertIn(
                 f"CREATE TABLE IF NOT EXISTS {table_name}",
-                migration_sql,
+                initial_migration_sql,
             )
+
+    def test_schema_correction_matches_application_rules(self):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        correction_sql = migration_files[1].read_text(
+            encoding="utf-8-sig"
+        )
+
+        self.assertIn(
+            "performance_score BETWEEN 0 AND 100",
+            correction_sql,
+        )
+        self.assertIn(
+            "UNIQUE (execution_id, task_id)",
+            correction_sql,
+        )
 
     def test_missing_migrations_directory_is_rejected(self):
         with TemporaryDirectory() as temporary_directory:

@@ -1,9 +1,15 @@
 import sqlite3
 from pathlib import Path
 
+import psycopg
+
 from config import (
     PRIMARY_STORAGE,
     SUPPORTED_STORAGE_TYPES,
+)
+from database_config import (
+    DATABASE_BACKEND_SQLITE,
+    load_database_settings,
 )
 from database import (
     DATABASE_FILE,
@@ -51,7 +57,12 @@ def load_employee_records(
 
         return employees
 
-    if not database_file.exists():
+    settings = load_database_settings()
+
+    if (
+        settings["backend"] == DATABASE_BACKEND_SQLITE
+        and not database_file.exists()
+    ):
         print("The primary SQLite database was not found.")
         return None
 
@@ -59,8 +70,8 @@ def load_employee_records(
         return load_employees_from_database(
             database_file
         )
-    except sqlite3.Error as error:
-        print("The primary SQLite database could not be read.")
+    except (sqlite3.Error, psycopg.Error) as error:
+        print("The primary database could not be read.")
         print(f"Details: {error}")
         return None
 

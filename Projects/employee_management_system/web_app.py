@@ -1,5 +1,6 @@
 import secrets
 import sqlite3
+import psycopg
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
@@ -840,7 +841,7 @@ def create_web_application(
             workflow = load_workflow_by_id(
                 workflow_id.strip().upper(), database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse(
                 "Workflow records could not be loaded.", status_code=500,
             )
@@ -900,7 +901,7 @@ def create_web_application(
         }
         try:
             workflow = load_workflow_by_id(normalized_workflow_id, database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if workflow is None:
             return HTMLResponse("Workflow not found.", status_code=404)
@@ -923,7 +924,7 @@ def create_web_application(
                 current_user, task_id, normalized_workflow_id, task_sequence,
                 title, instructions, "manual", task_is_required, database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
 
         if not task_created:
@@ -965,7 +966,7 @@ def create_web_application(
             return HTMLResponse("Access denied.", status_code=403)
         try:
             task = load_workflow_task_by_id(task_id.strip().upper(), database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if task is None or task["workflow_id"] != workflow_id.strip().upper():
             return HTMLResponse("Workflow task not found.", status_code=404)
@@ -995,7 +996,7 @@ def create_web_application(
         normalized_workflow_id = workflow_id.strip().upper()
         try:
             task = load_workflow_task_by_id(task_id.strip().upper(), database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if task is None or task["workflow_id"] != normalized_workflow_id:
             return HTMLResponse("Workflow task not found.", status_code=404)
@@ -1007,7 +1008,7 @@ def create_web_application(
                 current_user, normalized_workflow_id, task["task_id"], title, instructions,
                 required, database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if not task_updated:
             return templates.TemplateResponse(
@@ -1032,7 +1033,7 @@ def create_web_application(
             return HTMLResponse("Access denied.", status_code=403)
         try:
             task = load_workflow_task_by_id(task_id.strip().upper(), database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if task is None or task["workflow_id"] != workflow_id.strip().upper():
             return HTMLResponse("Workflow task not found.", status_code=404)
@@ -1062,7 +1063,7 @@ def create_web_application(
             if task is None or task["workflow_id"] != workflow_id:
                 return HTMLResponse("Workflow task not found.", status_code=404)
             deleted = remove_workflow_task(current_user, workflow_id, task_id, database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if not deleted:
             return HTMLResponse("Task could not be deleted. An active workflow must retain at least one task.", status_code=400)
@@ -1079,7 +1080,7 @@ def create_web_application(
         try:
             workflow = load_workflow_by_id(workflow_id.strip().upper(), database_file)
             tasks = load_workflow_tasks(workflow_id.strip().upper(), database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if workflow is None:
             return HTMLResponse("Workflow not found.", status_code=404)
@@ -1105,7 +1106,7 @@ def create_web_application(
         normalized_workflow_id = workflow_id.strip().upper()
         try:
             reordered = resequence_workflow_task_list(current_user, normalized_workflow_id, task_ids, database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if not reordered:
             return HTMLResponse("Workflow tasks could not be resequenced.", status_code=400)
@@ -1143,7 +1144,7 @@ def create_web_application(
                 workflow_id.strip().upper(),
                 database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse(
                 "Workflow records could not be loaded.",
                 status_code=500,
@@ -1265,7 +1266,7 @@ def create_web_application(
             return HTMLResponse("Access denied.", status_code=403)
         try:
             workflow = load_workflow_by_id(workflow_id.strip().upper(), database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if workflow is None:
             return HTMLResponse("Workflow not found.", status_code=404)
@@ -1308,7 +1309,7 @@ def create_web_application(
         normalized_workflow_id = workflow_id.strip().upper()
         try:
             workflow = load_workflow_by_id(normalized_workflow_id, database_file)
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if workflow is None:
             return HTMLResponse("Workflow not found.", status_code=404)
@@ -1324,7 +1325,7 @@ def create_web_application(
                 current_user, schedule_id, normalized_workflow_id, schedule_type,
                 scheduled_time, day_of_week, enabled, database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow schedules could not be saved.", status_code=500)
         if not created:
             return templates.TemplateResponse(
@@ -1380,7 +1381,7 @@ def create_web_application(
                 current_user, normalized_workflow_id, normalized_schedule_id,
                 enabled, database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow schedules could not be saved.", status_code=500)
         if not updated:
             return HTMLResponse("Schedule status could not be updated.", status_code=400)
@@ -1425,7 +1426,7 @@ def create_web_application(
                 workflow_id.strip().upper(),
                 database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse(
                 "Workflow records could not be loaded.",
                 status_code=500,
@@ -1451,7 +1452,7 @@ def create_web_application(
                 )
                 for execution in workflow_executions
             }
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse(
                 "Workflow records could not be loaded.",
                 status_code=500,
@@ -1506,7 +1507,7 @@ def create_web_application(
             execution = start_workflow_execution(
                 current_user, normalized_workflow_id, database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if execution is None:
             return HTMLResponse(
@@ -1549,7 +1550,7 @@ def create_web_application(
                 current_user, workflow_id, execution_id, task_execution_id,
                 status, result_summary, database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Task execution could not be saved.", status_code=500)
         if not finished:
             return HTMLResponse("Task execution could not be finished.", status_code=400)
@@ -1582,7 +1583,7 @@ def create_web_application(
             finished = finish_workflow_execution_record(
                 current_user, execution_id, status, result_summary, database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return HTMLResponse("Workflow records could not be loaded.", status_code=500)
         if not finished:
             return HTMLResponse("Execution could not be finished.", status_code=400)
@@ -1636,7 +1637,7 @@ def create_web_application(
             workflow_list = load_workflows_from_database(
                 database_file,
             )
-        except sqlite3.Error:
+        except (sqlite3.Error, psycopg.Error):
             return templates.TemplateResponse(
                 request=request,
                 name="workflows.html",
