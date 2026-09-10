@@ -30,6 +30,31 @@ class UserAccountSummary(TypedDict):
     role: str
     is_active: bool
 
+
+AGENT_TEMPLATE_STATUS_DRAFT = "draft"
+AGENT_TEMPLATE_STATUS_ACTIVE = "active"
+AGENT_TEMPLATE_STATUS_INACTIVE = "inactive"
+
+VALID_AGENT_TEMPLATE_STATUSES = frozenset(
+    {
+        AGENT_TEMPLATE_STATUS_DRAFT,
+        AGENT_TEMPLATE_STATUS_ACTIVE,
+        AGENT_TEMPLATE_STATUS_INACTIVE,
+    }
+)
+
+
+class AgentTemplate(TypedDict):
+    agent_template_id: str
+    name: str
+    description: str
+    system_prompt: str
+    model_name: str
+    status: str
+    created_by_user_id: int
+    created_at: str
+    updated_at: str
+
 WORKFLOW_STATUS_DRAFT = "draft"
 WORKFLOW_STATUS_ACTIVE = "active"
 WORKFLOW_STATUS_INACTIVE = "inactive"

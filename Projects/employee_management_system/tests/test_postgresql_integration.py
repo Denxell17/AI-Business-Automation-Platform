@@ -7,6 +7,7 @@ import psycopg
 
 from database import (
     claim_workflow_schedule_occurrence,
+    insert_agent_template,
     insert_employee,
     insert_user_account,
     insert_workflow,
@@ -14,6 +15,8 @@ from database import (
     insert_workflow_schedule,
     insert_workflow_task,
     insert_workflow_task_executions,
+    load_agent_template_by_id,
+    load_agent_templates_from_database,
     load_employees_from_database,
     load_user_account_by_username,
     load_workflow_by_id,
@@ -57,6 +60,7 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
         suffix = uuid4().hex[:12]
 
         self.username = f"day143_{suffix}"
+        self.agent_template_id = f"AGENT-{suffix}"
         self.employee_id = f"EMP-{suffix}"
         self.workflow_id = f"WF-{suffix}"
         self.task_id = f"TASK-{suffix}"
@@ -118,6 +122,13 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
             )
             connection.execute(
                 """
+                DELETE FROM agent_templates
+                WHERE agent_template_id = %s
+                """,
+                (self.agent_template_id,),
+            )
+            connection.execute(
+                """
                 DELETE FROM users
                 WHERE username = %s
                 """,
@@ -140,6 +151,41 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
         self.assertIsNotNone(account)
         self.assertEqual(account["username"], self.username)
         self.assertTrue(account["is_active"])
+
+        agent_template = {
+            "agent_template_id": self.agent_template_id,
+            "name": "Day 144 Agent Template",
+            "description": (
+                "Live PostgreSQL agent-template verification."
+            ),
+            "system_prompt": (
+                "Assist the user clearly and protect private data."
+            ),
+            "model_name": "gpt-5.6-terra",
+            "status": "draft",
+            "created_by_user_id": account["user_id"],
+            "created_at": TEST_TIMESTAMP,
+            "updated_at": TEST_TIMESTAMP,
+        }
+
+        self.assertTrue(
+            insert_agent_template(agent_template)
+        )
+        self.assertEqual(
+            load_agent_template_by_id(
+                self.agent_template_id
+            ),
+            agent_template,
+        )
+
+        stored_templates = (
+            load_agent_templates_from_database()
+        )
+
+        self.assertIn(
+            agent_template,
+            stored_templates,
+        )
 
         employee = {
             "employee_id": self.employee_id,

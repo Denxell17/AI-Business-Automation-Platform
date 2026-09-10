@@ -12,6 +12,8 @@ RESTORE_DATABASE = "database.restore"
 MANAGE_USER_ACCOUNTS = "users.manage"
 MANAGE_WORKFLOWS = "workflows.manage"
 VIEW_WORKFLOWS = "workflows.view"
+MANAGE_AGENT_TEMPLATES = "agent_templates.manage"
+VIEW_AGENT_TEMPLATES = "agent_templates.view"
 VIEW_ACTIVITY_LOG = "activity_log.view"
 
 
@@ -28,6 +30,8 @@ ROLE_PERMISSIONS = {
         MANAGE_USER_ACCOUNTS,
         MANAGE_WORKFLOWS,
         VIEW_WORKFLOWS,
+        MANAGE_AGENT_TEMPLATES,
+        VIEW_AGENT_TEMPLATES,
         VIEW_ACTIVITY_LOG,
     },
     "viewer": {
@@ -35,6 +39,7 @@ ROLE_PERMISSIONS = {
         VIEW_PAYROLL,
         EXPORT_REPORT,
         VIEW_WORKFLOWS,
+        VIEW_AGENT_TEMPLATES,
     },
 }
 

@@ -9,6 +9,7 @@ from database_config import (
 )
 from database_connection import open_configured_database_connection
 from models import (
+    AgentTemplate,
     Employee,
     UserAccount,
     UserAccountSummary,
@@ -90,6 +91,43 @@ def initialize_database(
                 is_active INTEGER NOT NULL DEFAULT 1 CHECK (
                     is_active IN (0, 1)
                 )
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS agent_templates (
+                agent_template_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(agent_template_id)) > 0
+                ),
+                name TEXT NOT NULL CHECK (
+                    length(trim(name)) > 0
+                ),
+                description TEXT NOT NULL DEFAULT '',
+                system_prompt TEXT NOT NULL CHECK (
+                    length(trim(system_prompt)) > 0
+                ),
+                model_name TEXT NOT NULL CHECK (
+                    length(trim(model_name)) > 0
+                ),
+                status TEXT NOT NULL DEFAULT 'draft' CHECK (
+                    status IN ('draft', 'active', 'inactive')
+                ),
+                created_by_user_id INTEGER NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                FOREIGN KEY (created_by_user_id)
+                    REFERENCES users(user_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS
+                idx_agent_templates_status_name
+            ON agent_templates (
+                status,
+                name
             )
             """
         )
@@ -364,6 +402,155 @@ def insert_employee(
         return False
     finally:
         connection.close()
+
+
+def insert_agent_template(
+    agent_template: AgentTemplate,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Insert one validated agent template."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        connection.execute(
+            """
+            INSERT INTO agent_templates (
+                agent_template_id,
+                name,
+                description,
+                system_prompt,
+                model_name,
+                status,
+                created_by_user_id,
+                created_at,
+                updated_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                agent_template["agent_template_id"],
+                agent_template["name"],
+                agent_template["description"],
+                agent_template["system_prompt"],
+                agent_template["model_name"],
+                agent_template["status"],
+                agent_template["created_by_user_id"],
+                agent_template["created_at"],
+                agent_template["updated_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except (
+        sqlite3.IntegrityError,
+        psycopg.IntegrityError,
+    ):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_agent_templates_from_database(
+    database_file: Path = DATABASE_FILE,
+) -> list[AgentTemplate]:
+    """Load all agent templates in stable name order."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        rows = connection.execute(
+            """
+            SELECT
+                agent_template_id,
+                name,
+                description,
+                system_prompt,
+                model_name,
+                status,
+                created_by_user_id,
+                created_at,
+                updated_at
+            FROM agent_templates
+            ORDER BY
+                LOWER(name),
+                agent_template_id
+            """
+        ).fetchall()
+    finally:
+        connection.close()
+
+    templates: list[AgentTemplate] = []
+
+    for row in rows:
+        agent_template: AgentTemplate = {
+            "agent_template_id": row[
+                "agent_template_id"
+            ],
+            "name": row["name"],
+            "description": row["description"],
+            "system_prompt": row["system_prompt"],
+            "model_name": row["model_name"],
+            "status": row["status"],
+            "created_by_user_id": row[
+                "created_by_user_id"
+            ],
+            "created_at": row["created_at"],
+            "updated_at": row["updated_at"],
+        }
+        templates.append(agent_template)
+
+    return templates
+
+
+def load_agent_template_by_id(
+    agent_template_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> AgentTemplate | None:
+    """Load one agent template by its stable identifier."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        row = connection.execute(
+            """
+            SELECT
+                agent_template_id,
+                name,
+                description,
+                system_prompt,
+                model_name,
+                status,
+                created_by_user_id,
+                created_at,
+                updated_at
+            FROM agent_templates
+            WHERE agent_template_id = ?
+            """,
+            (agent_template_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+
+    if row is None:
+        return None
+
+    return {
+        "agent_template_id": row["agent_template_id"],
+        "name": row["name"],
+        "description": row["description"],
+        "system_prompt": row["system_prompt"],
+        "model_name": row["model_name"],
+        "status": row["status"],
+        "created_by_user_id": row[
+            "created_by_user_id"
+        ],
+        "created_at": row["created_at"],
+        "updated_at": row["updated_at"],
+    }
 
 
 def insert_workflow(
