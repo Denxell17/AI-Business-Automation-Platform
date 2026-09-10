@@ -21,6 +21,7 @@ class TestPostgresqlMigrations(unittest.TestCase):
             [
                 "001_initial_schema.sql",
                 "002_correct_schema_contract.sql",
+                "003_create_agent_templates.sql",
             ],
         )
 
@@ -60,6 +61,41 @@ class TestPostgresqlMigrations(unittest.TestCase):
         self.assertIn(
             "UNIQUE (execution_id, task_id)",
             correction_sql,
+        )
+
+    def test_agent_template_migration_contains_expected_contract(
+        self,
+    ):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        agent_template_sql = migration_files[2].read_text(
+            encoding="utf-8-sig"
+        )
+
+        self.assertIn(
+            "CREATE TABLE IF NOT EXISTS agent_templates",
+            agent_template_sql,
+        )
+        self.assertIn(
+            "status IN ('draft', 'active', 'inactive')",
+            agent_template_sql,
+        )
+        self.assertIn(
+            "created_by_user_id BIGINT NOT NULL",
+            agent_template_sql,
+        )
+        self.assertIn(
+            "REFERENCES users(user_id)",
+            agent_template_sql,
+        )
+        self.assertIn(
+            "created_at TIMESTAMPTZ NOT NULL",
+            agent_template_sql,
+        )
+        self.assertIn(
+            "agent_templates_status_name_index",
+            agent_template_sql,
         )
 
     def test_missing_migrations_directory_is_rejected(self):

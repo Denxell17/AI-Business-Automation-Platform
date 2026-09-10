@@ -512,10 +512,11 @@ source of truth, while legacy JSON tools support migration and verification.
 ### ABAP Platform Development
 
 ABAP is developing into a secure business automation portfolio platform. The
-current application combines Employee Management with Workflow Automation,
-including reusable workflows, ordered tasks, execution history, task outcomes,
-stored schedules, timezone-aware eligibility, and duplicate occurrence
-protection.
+current application combines Employee Management, Workflow Automation, and
+the first template-based AI-agent foundation. It includes reusable workflows,
+ordered tasks, execution history, task outcomes, stored schedules,
+timezone-aware eligibility, duplicate occurrence protection, and protected
+agent-template configuration.
 
 The shared authenticated dashboard provides access to the available modules,
 API documentation, and system-health information through a consistent,
@@ -555,6 +556,21 @@ responsive interface.
   data checksums, localhost-only port binding, and a readiness health check
 - A gated live integration test covering users, employees, workflows, tasks,
   executions, schedules, occurrence claims, and cleanup
+
+### AI Agent Template Foundation
+
+- Typed agent-template records with stable IDs, names, descriptions, system
+  prompts, model names, creator references, and UTC timestamps
+- Draft, active, and inactive lifecycle states
+- Administrator-only `agent_templates.manage` authorization
+- Read-only `agent_templates.view` authorization for administrators and viewers
+- Matching SQLite and PostgreSQL persistence contracts
+- Ordered PostgreSQL migration `003_create_agent_templates.sql`
+- Parameterized insert, ordered-list, and exact-ID repository operations
+- Live account revalidation before template creation
+- Required-field and maximum-length validation
+- Draft-only creation so unreviewed prompts cannot become active immediately
+- Live PostgreSQL insertion, loading, timestamp, and cleanup verification
 
 ### Shared Dashboard Capabilities
 
@@ -767,9 +783,10 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **481 automated tests passed**
-- **26 focused PostgreSQL configuration, connection, migration, SQL
-  compatibility, repository-adapter, and live-integration tests passed**
+- **497 automated tests passed**
+- **16 dedicated agent-template authorization, schema, migration, repository,
+  and service tests passed**
+- **1 live PostgreSQL integration test passed with agent-template coverage**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -806,6 +823,7 @@ connection selection, ordered schema migrations, migration history, and the
 application repository paths used by employee management and workflow
 automation. SQLite remains available for local development, backup and
 restoration, and automated regression tests. The complete database path is now
-verified against a live PostgreSQL 18.6 container. The next Phase 2 work begins
-the template-based AI-agent foundation while preserving this database
-architecture.
+verified against a live PostgreSQL 18.6 container. The template-based AI-agent
+foundation now includes its domain model, permissions, database schema,
+repository, and secure draft-creation service. The next Phase 2 work adds the
+protected agent-template browser directory and administrator creation form.
