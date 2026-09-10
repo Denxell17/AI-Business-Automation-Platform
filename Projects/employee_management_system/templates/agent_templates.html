@@ -1,0 +1,190 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="directory-section"
+    aria-labelledby="agent-template-directory-heading"
+>
+    <div class="directory-heading">
+        <div>
+            <p class="section-eyebrow">AI agent configuration</p>
+
+            <h1
+                id="agent-template-directory-heading"
+                class="section-title"
+            >
+                Agent template directory
+            </h1>
+
+            <p class="page-message">
+                View reusable AI agent definitions stored in the
+                configured database.
+            </p>
+        </div>
+
+        <div class="directory-actions">
+            {% if can_manage_agent_templates %}
+            <a
+                class="add-employee-link"
+                href="{{ url_for('agent_template_create_form') }}"
+            >
+                <span aria-hidden="true">+</span>
+                Create agent template
+            </a>
+            {% endif %}
+
+            {% if not error_message %}
+            <p class="directory-count">
+                <strong>{{ agent_template_list | length }}</strong>
+                {% if agent_template_list | length == 1 %}
+                    agent template
+                {% else %}
+                    agent templates
+                {% endif %}
+            </p>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not error_message %}
+    <form
+        class="directory-filter-form"
+        method="get"
+        action="{{ url_for('agent_template_directory') }}"
+        aria-label="Filter agent templates by status"
+    >
+        <div class="directory-filter-fields">
+            <div class="form-field">
+                <label for="status">Filter by status</label>
+
+                <select id="status" name="status">
+                    <option value="">All statuses</option>
+
+                    {% for option in ('draft', 'active', 'inactive') %}
+                    <option
+                        value="{{ option }}"
+                        {% if selected_status == option %}selected{% endif %}
+                    >
+                        {{ option | title }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+
+        <div class="directory-filter-actions">
+            <button
+                class="employee-submit-button"
+                type="submit"
+            >
+                Apply filter
+            </button>
+        </div>
+    </form>
+    {% endif %}
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+
+    {% elif agent_template_list %}
+    <div
+        class="employee-table-wrapper"
+        tabindex="0"
+        aria-label="Scrollable agent template directory"
+    >
+        <table class="employee-table">
+            <caption>
+                Current agent template records
+            </caption>
+
+            <thead>
+                <tr>
+                    <th scope="col">Template ID</th>
+                    <th scope="col">Name</th>
+                    <th scope="col">Description</th>
+                    <th scope="col">Model</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Created</th>
+                    <th scope="col">Updated</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for agent_template in agent_template_list %}
+                <tr>
+                    <th scope="row">
+                        {{ agent_template["agent_template_id"] }}
+                    </th>
+
+                    <td>{{ agent_template["name"] }}</td>
+
+                    <td>
+                        {% if agent_template["description"] %}
+                            {{ agent_template["description"] }}
+                        {% else %}
+                            <span aria-label="No description">—</span>
+                        {% endif %}
+                    </td>
+
+                    <td>{{ agent_template["model_name"] }}</td>
+
+                    <td>
+                        <span class="employee-status">
+                            <span
+                                class="status-dot"
+                                aria-hidden="true"
+                            ></span>
+                            {{ agent_template["status"] | title }}
+                        </span>
+                    </td>
+
+                    <td>
+                        <time
+                            datetime="{{ agent_template['created_at'] }}"
+                            data-local-datetime
+                        >
+                            {{ agent_template["created_at"] }}
+                        </time>
+                    </td>
+
+                    <td>
+                        <time
+                            datetime="{{ agent_template['updated_at'] }}"
+                            data-local-datetime
+                        >
+                            {{ agent_template["updated_at"] }}
+                        </time>
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="directory-empty-state">
+        <span
+            class="directory-empty-icon"
+            aria-hidden="true"
+        >
+            ◇
+        </span>
+
+        <div>
+            <h2>No agent templates found</h2>
+
+            <p>
+                Agent templates will appear here after an
+                administrator creates them.
+            </p>
+        </div>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}

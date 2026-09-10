@@ -23,21 +23,25 @@ from activity_logger import (
     load_recent_activity_entries,
     log_activity,
 )
+from agent_template_service import create_agent_template
 from authorization import (
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
+    MANAGE_AGENT_TEMPLATES,
     MANAGE_WORKFLOWS,
     MANAGE_USER_ACCOUNTS,
     REGISTER_EMPLOYEE,
     UPDATE_EMPLOYEE,
     VIEW_EMPLOYEE,
     VIEW_ACTIVITY_LOG,
+    VIEW_AGENT_TEMPLATES,
     VIEW_PAYROLL,
     VIEW_WORKFLOWS,
     user_has_permission,
 )
 from database import (
     DATABASE_FILE,
+    load_agent_templates_from_database,
     load_workflow_executions,
     load_workflow_task_executions,
     load_workflow_by_id,
@@ -67,6 +71,7 @@ from exporter import build_employee_csv_content
 from payroll import calculate_payroll
 from models import (
     Employee,
+    VALID_AGENT_TEMPLATE_STATUSES,
     VALID_WORKFLOW_STATUSES,
 )
 from reports import calculate_workforce_summary
@@ -220,6 +225,9 @@ templates.env.globals["user_has_permission"] = (
     user_has_permission
 )
 templates.env.globals["VIEW_ACTIVITY_LOG"] = VIEW_ACTIVITY_LOG
+templates.env.globals["VIEW_AGENT_TEMPLATES"] = (
+    VIEW_AGENT_TEMPLATES
+)
 templates.env.globals["MANAGE_USER_ACCOUNTS"] = (
     MANAGE_USER_ACCOUNTS
 )
@@ -679,6 +687,276 @@ def create_web_application(
                 "active_page": "home",
                 "current_user": current_user,
             },
+        )
+
+    @application.get(
+        "/agent-templates",
+        response_class=HTMLResponse,
+    )
+    def agent_template_directory(
+        request: Request,
+        status: str = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web agent-template directory access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        selected_status = status.strip().casefold()
+
+        if (
+            selected_status
+            and selected_status
+            not in VALID_AGENT_TEMPLATE_STATUSES
+        ):
+            return HTMLResponse(
+                content="Agent-template status filter is invalid.",
+                status_code=400,
+            )
+
+        try:
+            agent_template_list = (
+                load_agent_templates_from_database(
+                    database_file,
+                )
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_templates.html",
+                context={
+                    "page_title": "Agent template directory",
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "can_manage_agent_templates": (
+                        user_has_permission(
+                            current_user,
+                            MANAGE_AGENT_TEMPLATES,
+                        )
+                    ),
+                    "agent_template_list": [],
+                    "selected_status": selected_status,
+                    "error_message": (
+                        "Agent template records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        if selected_status:
+            agent_template_list = [
+                agent_template
+                for agent_template in agent_template_list
+                if agent_template["status"] == selected_status
+            ]
+
+        return templates.TemplateResponse(
+            request=request,
+            name="agent_templates.html",
+            context={
+                "page_title": "Agent template directory",
+                "active_page": "agent_templates",
+                "current_user": current_user,
+                "can_manage_agent_templates": (
+                    user_has_permission(
+                        current_user,
+                        MANAGE_AGENT_TEMPLATES,
+                    )
+                ),
+                "agent_template_list": agent_template_list,
+                "selected_status": selected_status,
+                "error_message": None,
+            },
+        )
+
+    @application.get(
+        "/agent-templates/new",
+        response_class=HTMLResponse,
+    )
+    def agent_template_create_form(
+        request: Request,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web agent-template creation access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="agent_template_form.html",
+            context={
+                "page_title": "Create agent template",
+                "active_page": "agent_templates",
+                "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "form_values": {
+                    "status": "draft",
+                },
+                "error_message": None,
+            },
+        )
+
+    @application.post("/agent-templates/new")
+    def agent_template_create(
+        request: Request,
+        csrf_token: Annotated[str, Form()],
+        agent_template_id: Annotated[str, Form()] = "",
+        name: Annotated[str, Form()] = "",
+        description: Annotated[str, Form()] = "",
+        system_prompt: Annotated[str, Form()] = "",
+        model_name: Annotated[str, Form()] = "",
+        status: Annotated[str, Form()] = "draft",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web agent-template creation access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web agent-template creation CSRF validation "
+                f"failed for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        form_values = {
+            "agent_template_id": agent_template_id,
+            "name": name,
+            "description": description,
+            "system_prompt": system_prompt,
+            "model_name": model_name,
+            "status": status,
+        }
+
+        try:
+            agent_template_created = create_agent_template(
+                current_user,
+                agent_template_id,
+                name,
+                description,
+                system_prompt,
+                model_name,
+                status,
+                database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_template_form.html",
+                context={
+                    "page_title": "Create agent template",
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "form_values": form_values,
+                    "error_message": (
+                        "The agent template could not be saved "
+                        "because the database is unavailable."
+                    ),
+                },
+                status_code=500,
+            )
+
+        if not agent_template_created:
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_template_form.html",
+                context={
+                    "page_title": "Create agent template",
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "form_values": form_values,
+                    "error_message": (
+                        "Agent template could not be created. "
+                        "Verify the template ID, name, system "
+                        "prompt, model name, and draft status."
+                    ),
+                },
+                status_code=400,
+            )
+
+        normalized_template_id = (
+            agent_template_id.strip().upper()
+        )
+
+        log_activity(
+            f"Web agent template {normalized_template_id} "
+            f"was created by user "
+            f"{current_user['username']}."
+        )
+
+        return RedirectResponse(
+            url=request.url_for(
+                "agent_template_directory"
+            ),
+            status_code=303,
         )
 
     @application.get(

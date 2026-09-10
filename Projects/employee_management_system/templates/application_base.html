@@ -62,6 +62,24 @@
                         Workflows
                     </a>
                 </li>
+                {% if user_has_permission(
+                    current_user,
+                    VIEW_AGENT_TEMPLATES
+                ) %}
+                <li>
+                    <a
+                        class="navigation-link{% if active_page == 'agent_templates' %} is-active{% endif %}"
+                        href="{{ url_for('agent_template_directory') }}"
+                        {% if active_page == 'agent_templates' %}aria-current="page"{% endif %}
+                    >
+                        <span
+                            class="navigation-icon"
+                            aria-hidden="true"
+                        >◇</span>
+                        Agent templates
+                    </a>
+                </li>
+                {% endif %}
 
                 <li>
                     <a

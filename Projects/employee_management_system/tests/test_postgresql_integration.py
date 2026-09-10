@@ -1,9 +1,11 @@
 import os
+import re
 import unittest
 from unittest.mock import patch
 from uuid import uuid4
 
 import psycopg
+from fastapi.testclient import TestClient
 
 from database import (
     claim_workflow_schedule_occurrence,
@@ -26,6 +28,8 @@ from database import (
     load_workflow_task_executions,
     load_workflow_tasks,
 )
+from user_service import register_user_account
+from web_app import create_web_application
 
 
 TEST_DATABASE_URL = os.environ.get(
@@ -123,7 +127,7 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
             connection.execute(
                 """
                 DELETE FROM agent_templates
-                WHERE agent_template_id = %s
+                WHERE UPPER(agent_template_id) = UPPER(%s)
                 """,
                 (self.agent_template_id,),
             )
@@ -133,6 +137,127 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
                 WHERE username = %s
                 """,
                 (self.username,),
+            )
+
+    def test_agent_template_browser_round_trip_uses_live_postgresql(
+        self,
+    ):
+        password = "Day145PostgresqlPassword123!"
+        template_name = (
+            f"Day 145 Browser Agent {self.agent_template_id}"
+        )
+
+        self.assertTrue(
+            register_user_account(
+                self.username,
+                password,
+                "admin",
+            )
+        )
+
+        application = create_web_application(
+            session_secret=(
+                "day-145-live-postgresql-browser-test"
+            ),
+        )
+
+        with TestClient(application) as client:
+            login_response = client.post(
+                "/login",
+                data={
+                    "username": self.username,
+                    "password": password,
+                },
+                follow_redirects=False,
+            )
+
+            self.assertEqual(
+                login_response.status_code,
+                303,
+            )
+
+            form_response = client.get(
+                "/agent-templates/new"
+            )
+
+            self.assertEqual(
+                form_response.status_code,
+                200,
+            )
+
+            token_match = re.search(
+                r'name="csrf_token"\s+value="([^"]+)"',
+                form_response.text,
+            )
+            self.assertIsNotNone(token_match)
+
+            if token_match is None:
+                self.fail(
+                    "Live PostgreSQL form did not contain "
+                    "a CSRF token."
+                )
+
+            csrf_token = token_match.group(1)
+
+            create_response = client.post(
+                "/agent-templates/new",
+                data={
+                    "csrf_token": csrf_token,
+                    "agent_template_id": (
+                        self.agent_template_id
+                    ),
+                    "name": template_name,
+                    "description": (
+                        "Created through the live PostgreSQL "
+                        "browser integration test."
+                    ),
+                    "system_prompt": (
+                        "Assist the user clearly and protect "
+                        "private business information."
+                    ),
+                    "model_name": "gpt-5.6-terra",
+                    "status": "draft",
+                },
+                follow_redirects=False,
+            )
+
+            self.assertEqual(
+                create_response.status_code,
+                303,
+            )
+            self.assertEqual(
+                create_response.headers["location"],
+                "http://testserver/agent-templates",
+            )
+
+            directory_response = client.get(
+                "/agent-templates"
+            )
+
+            self.assertEqual(
+                directory_response.status_code,
+                200,
+            )
+            self.assertIn(
+                self.agent_template_id.upper(),
+                directory_response.text,
+            )
+            self.assertIn(
+                template_name,
+                directory_response.text,
+            )
+            self.assertIn(
+                "gpt-5.6-terra",
+                directory_response.text,
+            )
+            self.assertIn(
+                "Draft",
+                directory_response.text,
+            )
+            self.assertNotIn(
+                "Assist the user clearly and protect "
+                "private business information.",
+                directory_response.text,
             )
 
     def test_repository_round_trip_uses_live_postgresql(self):

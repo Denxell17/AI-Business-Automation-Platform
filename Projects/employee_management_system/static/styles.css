@@ -1427,6 +1427,13 @@ a {
     font-weight: 700;
 }
 
+.form-help {
+    margin: 0;
+    color: var(--color-muted);
+    font-size: 0.8125rem;
+    line-height: 1.5;
+}
+
 .form-field .checkbox-label {
     display: inline-flex;
     width: fit-content;
