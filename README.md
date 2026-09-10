@@ -513,7 +513,7 @@ source of truth, while legacy JSON tools support migration and verification.
 
 ABAP is developing into a secure business automation portfolio platform. The
 current application combines Employee Management, Workflow Automation, and
-the first template-based AI-agent foundation. It includes reusable workflows,
+the template-based AI-agent management foundation. It includes reusable workflows,
 ordered tasks, execution history, task outcomes, stored schedules,
 timezone-aware eligibility, duplicate occurrence protection, and protected
 agent-template configuration.
@@ -554,10 +554,11 @@ responsive interface.
 - Mocked PostgreSQL tests that require no live database server
 - A Docker Compose environment using PostgreSQL 18.6, persistent storage,
   data checksums, localhost-only port binding, and a readiness health check
-- A gated live integration test covering users, employees, workflows, tasks,
-  executions, schedules, occurrence claims, and cleanup
+- A gated live integration suite covering users, employees, workflows, tasks,
+  executions, schedules, occurrence claims, agent-template browser operations,
+  and cleanup
 
-### AI Agent Template Foundation
+### AI Agent Template Capabilities
 
 - Typed agent-template records with stable IDs, names, descriptions, system
   prompts, model names, creator references, and UTC timestamps
@@ -571,6 +572,14 @@ responsive interface.
 - Required-field and maximum-length validation
 - Draft-only creation so unreviewed prompts cannot become active immediately
 - Live PostgreSQL insertion, loading, timestamp, and cleanup verification
+- Protected browser directory for administrators and viewers
+- Allowlisted Draft, Active, and Inactive directory filtering
+- Administrator-only browser creation with signed-session CSRF protection
+- Draft-only creation enforced again by the service layer
+- Safe validation and database-error responses with submitted-value preservation
+- System prompts excluded from general directory listings
+- Permission-controlled sidebar navigation and activity logging
+- Live PostgreSQL browser creation and directory verification
 
 ### Shared Dashboard Capabilities
 
@@ -726,13 +735,13 @@ The FastAPI interface continues to provide:
 
 - Accessible browser login at `/login` and POST-only logout at `/logout`
 - Signed eight-hour `abap_session` cookies with `HttpOnly` and `SameSite=Lax`
-- Live SQLite account revalidation before protected access
+- Live configured-database account revalidation before protected access
 - Default-deny permission enforcement
 - Signed-session CSRF protection for state-changing browser workflows
 - POST-only employee deletion and viewer-account mutations
 - Server-side input validation and allowlisted values
-- Repository-backed and service-backed SQLite operations
-- SQLite foreign-key enforcement for relational integrity
+- Repository-backed and service-backed configured-database operations
+- SQLite and PostgreSQL foreign-key enforcement for relational integrity
 - Safe missing-record, validation, and storage-failure responses
 - Generic error messages for sensitive account-management failures
 - Success-only activity logging for completed sensitive actions
@@ -742,6 +751,10 @@ The FastAPI interface continues to provide:
 ### Important Browser Routes
 
 - `/` — protected shared ABAP dashboard
+- `/agent-templates` — protected Agent Template directory for administrators
+  and viewers
+- `/agent-templates/new` — administrator-only Agent Template creation form
+  and POST submission
 - `/workflows` — protected workflow directory
 - `/workflows/new` — administrator-only workflow creation form and POST
   submission
@@ -783,10 +796,11 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **497 automated tests passed**
-- **16 dedicated agent-template authorization, schema, migration, repository,
-  and service tests passed**
-- **1 live PostgreSQL integration test passed with agent-template coverage**
+- **510 automated tests passed**
+- **28 dedicated agent-template authorization, schema, migration, repository,
+  service, and browser tests passed**
+- **2 live PostgreSQL integration tests passed, including a complete
+  agent-template browser round trip**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -824,6 +838,8 @@ application repository paths used by employee management and workflow
 automation. SQLite remains available for local development, backup and
 restoration, and automated regression tests. The complete database path is now
 verified against a live PostgreSQL 18.6 container. The template-based AI-agent
-foundation now includes its domain model, permissions, database schema,
-repository, and secure draft-creation service. The next Phase 2 work adds the
-protected agent-template browser directory and administrator creation form.
+module now includes its domain model, permissions, database schema, repository,
+secure draft-creation service, protected browser directory, status filtering,
+and administrator creation form. The next Phase 2 work can add protected
+template details, editing, and controlled Draft, Active, and Inactive lifecycle
+transitions.

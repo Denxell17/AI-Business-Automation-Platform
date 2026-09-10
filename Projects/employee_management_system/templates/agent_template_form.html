@@ -1,0 +1,217 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section"
+    aria-labelledby="agent-template-form-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('agent_template_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to agent template directory
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">AI agent configuration</p>
+
+            <h1
+                id="agent-template-form-heading"
+                class="section-title"
+            >
+                Create agent template
+            </h1>
+
+            <p class="page-message">
+                Define the identity, model, and system instructions
+                for a reusable AI agent.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            Agent template management authorized
+        </span>
+    </div>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="/agent-templates/new"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <input
+            type="hidden"
+            name="status"
+            value="draft"
+        >
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="agent-template-identity-heading"
+        >
+            <h2 id="agent-template-identity-heading">
+                Template identity
+            </h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="agent_template_id">
+                        Template ID
+                    </label>
+
+                    <input
+                        id="agent_template_id"
+                        name="agent_template_id"
+                        type="text"
+                        value="{{ form_values.get(
+                            'agent_template_id',
+                            ''
+                        ) }}"
+                        maxlength="100"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <p class="form-help">
+                        Enter a stable identifier such as
+                        AGENT-CUSTOMER-SUPPORT.
+                    </p>
+                </div>
+
+                <div class="form-field">
+                    <label for="name">Template name</label>
+
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        value="{{ form_values.get('name', '') }}"
+                        maxlength="120"
+                        required
+                    >
+
+                    <p class="form-help">
+                        Use a short name that explains the agent’s role.
+                    </p>
+                </div>
+
+                <div class="form-field">
+                    <label for="model_name">Model name</label>
+
+                    <input
+                        id="model_name"
+                        name="model_name"
+                        type="text"
+                        value="{{ form_values.get(
+                            'model_name',
+                            ''
+                        ) }}"
+                        maxlength="100"
+                        autocomplete="off"
+                        required
+                    >
+
+                    <p class="form-help">
+                        Enter the model identifier this template
+                        should use.
+                    </p>
+                </div>
+
+                <div class="form-field">
+                    <label for="template_status">
+                        Initial status
+                    </label>
+
+                    <input
+                        id="template_status"
+                        type="text"
+                        value="Draft"
+                        readonly
+                    >
+
+                    <p class="form-help">
+                        New templates remain drafts until a later
+                        review and activation step.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="agent-template-instructions-heading"
+        >
+            <h2 id="agent-template-instructions-heading">
+                Agent instructions
+            </h2>
+
+            <div class="form-field">
+                <label for="description">Description</label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="4"
+                    maxlength="1000"
+                >{{ form_values.get('description', '') }}</textarea>
+
+                <p class="form-help">
+                    Explain what the template is intended to do.
+                </p>
+            </div>
+
+            <div class="form-field">
+                <label for="system_prompt">System prompt</label>
+
+                <textarea
+                    id="system_prompt"
+                    name="system_prompt"
+                    rows="12"
+                    maxlength="10000"
+                    required
+                >{{ form_values.get('system_prompt', '') }}</textarea>
+
+                <p class="form-help">
+                    Define the agent’s responsibilities, boundaries,
+                    expected behavior, and output requirements.
+                </p>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for('agent_template_directory') }}"
+            >
+                Cancel
+            </a>
+
+            <button
+                class="employee-submit-button"
+                type="submit"
+            >
+                <span aria-hidden="true">+</span>
+                Create agent template
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}
