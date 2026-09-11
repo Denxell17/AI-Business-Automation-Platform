@@ -1,0 +1,222 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section"
+    aria-labelledby="agent-template-edit-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for(
+            'agent_template_detail',
+            agent_template_id=agent_template_id
+        ) }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to agent template details
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">
+                AI agent configuration
+            </p>
+
+            <h1
+                id="agent-template-edit-heading"
+                class="section-title"
+            >
+                Edit agent template
+            </h1>
+
+            <p class="page-message">
+                Update this template and select an allowed
+                lifecycle status.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            Agent template management authorized
+        </span>
+    </div>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="{{ url_for(
+            'agent_template_edit',
+            agent_template_id=agent_template_id
+        ) }}"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <input
+            type="hidden"
+            name="expected_status"
+            value="{{ expected_status }}"
+        >
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="agent-template-edit-identity-heading"
+        >
+            <h2 id="agent-template-edit-identity-heading">
+                Template identity
+            </h2>
+
+            <div class="employee-form-grid">
+                <div class="form-field">
+                    <label for="agent_template_id">
+                        Template ID
+                    </label>
+
+                    <input
+                        id="agent_template_id"
+                        type="text"
+                        value="{{ agent_template_id }}"
+                        readonly
+                    >
+
+                    <p class="form-help">
+                        Template IDs remain fixed after creation.
+                    </p>
+                </div>
+
+                <div class="form-field">
+                    <label for="name">Template name</label>
+
+                    <input
+                        id="name"
+                        name="name"
+                        type="text"
+                        value="{{ form_values.get('name', '') }}"
+                        maxlength="120"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="model_name">Model name</label>
+
+                    <input
+                        id="model_name"
+                        name="model_name"
+                        type="text"
+                        value="{{ form_values.get(
+                            'model_name',
+                            ''
+                        ) }}"
+                        maxlength="100"
+                        autocomplete="off"
+                        required
+                    >
+                </div>
+
+                <div class="form-field">
+                    <label for="status">Lifecycle status</label>
+
+                    <select id="status" name="status" required>
+                        {% for status_option in allowed_statuses %}
+                        <option
+                            value="{{ status_option }}"
+                            {% if form_values.get(
+                                'status'
+                            ) == status_option %}selected{% endif %}
+                        >
+                            {{ status_option | title }}
+                        </option>
+                        {% endfor %}
+                    </select>
+
+                    <p class="form-help">
+                        {% if expected_status == "draft" %}
+                            A Draft template can remain Draft or
+                            become Active.
+                        {% elif expected_status == "active" %}
+                            An Active template can remain Active or
+                            become Inactive.
+                        {% elif expected_status == "inactive" %}
+                            An Inactive template can remain Inactive
+                            or become Active.
+                        {% else %}
+                            Refresh the page before selecting a
+                            lifecycle status.
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="agent-template-edit-instructions-heading"
+        >
+            <h2 id="agent-template-edit-instructions-heading">
+                Agent instructions
+            </h2>
+
+            <div class="form-field">
+                <label for="description">Description</label>
+
+                <textarea
+                    id="description"
+                    name="description"
+                    rows="4"
+                    maxlength="1000"
+                >{{ form_values.get('description', '') }}</textarea>
+            </div>
+
+            <div class="form-field">
+                <label for="system_prompt">System prompt</label>
+
+                <textarea
+                    id="system_prompt"
+                    name="system_prompt"
+                    rows="12"
+                    maxlength="10000"
+                    required
+                >{{ form_values.get('system_prompt', '') }}</textarea>
+
+                <p class="form-help">
+                    Review these instructions carefully before
+                    activating the template.
+                </p>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <a
+                class="form-cancel-link"
+                href="{{ url_for(
+                    'agent_template_detail',
+                    agent_template_id=agent_template_id
+                ) }}"
+            >
+                Cancel
+            </a>
+
+            <button
+                class="employee-submit-button"
+                type="submit"
+            >
+                Save agent template
+            </button>
+        </div>
+    </form>
+</section>
+{% endblock %}

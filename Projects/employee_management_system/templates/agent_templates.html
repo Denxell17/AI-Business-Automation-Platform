@@ -119,7 +119,17 @@
                 {% for agent_template in agent_template_list %}
                 <tr>
                     <th scope="row">
-                        {{ agent_template["agent_template_id"] }}
+                        <a
+                            class="employee-profile-link"
+                            href="{{ url_for(
+                                'agent_template_detail',
+                                agent_template_id=agent_template[
+                                    'agent_template_id'
+                                ]
+                            ) }}"
+                        >
+                            {{ agent_template["agent_template_id"] }}
+                        </a>
                     </th>
 
                     <td>{{ agent_template["name"] }}</td>

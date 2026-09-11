@@ -259,6 +259,127 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
                 "private business information.",
                 directory_response.text,
             )
+            edit_form_response = client.get(
+                (
+                    "/agent-templates/"
+                    f"{self.agent_template_id}/edit"
+                )
+            )
+
+            self.assertEqual(
+                edit_form_response.status_code,
+                200,
+            )
+
+            edit_token_match = re.search(
+                r'name="csrf_token"\s+value="([^"]+)"',
+                edit_form_response.text,
+            )
+            self.assertIsNotNone(edit_token_match)
+
+            if edit_token_match is None:
+                self.fail(
+                    "Live PostgreSQL edit form did not "
+                    "contain a CSRF token."
+                )
+
+            edit_csrf_token = edit_token_match.group(1)
+            updated_name = (
+                "Day 146 Active Agent "
+                f"{self.agent_template_id.upper()}"
+            )
+            updated_system_prompt = (
+                "Use the reviewed Day 146 instructions."
+            )
+
+            edit_response = client.post(
+                (
+                    "/agent-templates/"
+                    f"{self.agent_template_id}/edit"
+                ),
+                data={
+                    "csrf_token": edit_csrf_token,
+                    "expected_status": "draft",
+                    "name": updated_name,
+                    "description": (
+                        "Updated through the live PostgreSQL "
+                        "browser lifecycle test."
+                    ),
+                    "system_prompt": updated_system_prompt,
+                    "model_name": "gpt-6-astra",
+                    "status": "active",
+                },
+                follow_redirects=False,
+            )
+
+            self.assertEqual(
+                edit_response.status_code,
+                303,
+            )
+            self.assertEqual(
+                edit_response.headers["location"],
+                (
+                    "http://testserver/agent-templates/"
+                    f"{self.agent_template_id.upper()}"
+                ),
+            )
+
+            stored_template = load_agent_template_by_id(
+                self.agent_template_id.upper()
+            )
+
+            self.assertIsNotNone(stored_template)
+
+            if stored_template is None:
+                self.fail(
+                    "The live PostgreSQL browser update "
+                    "was not stored."
+                )
+
+            self.assertEqual(
+                stored_template["name"],
+                updated_name,
+            )
+            self.assertEqual(
+                stored_template["system_prompt"],
+                updated_system_prompt,
+            )
+            self.assertEqual(
+                stored_template["model_name"],
+                "gpt-6-astra",
+            )
+            self.assertEqual(
+                stored_template["status"],
+                "active",
+            )
+
+            detail_response = client.get(
+                (
+                    "/agent-templates/"
+                    f"{self.agent_template_id}"
+                )
+            )
+
+            self.assertEqual(
+                detail_response.status_code,
+                200,
+            )
+            self.assertIn(
+                updated_name,
+                detail_response.text,
+            )
+            self.assertIn(
+                updated_system_prompt,
+                detail_response.text,
+            )
+            self.assertIn(
+                "gpt-6-astra",
+                detail_response.text,
+            )
+            self.assertIn(
+                "Active",
+                detail_response.text,
+            )
 
     def test_repository_round_trip_uses_live_postgresql(self):
         self.assertTrue(

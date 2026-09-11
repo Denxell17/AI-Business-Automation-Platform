@@ -553,6 +553,53 @@ def load_agent_template_by_id(
     }
 
 
+def update_agent_template_in_database(
+    agent_template: AgentTemplate,
+    expected_status: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Update a template only if its stored status is unchanged."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        cursor = connection.execute(
+            """
+            UPDATE agent_templates
+            SET
+                name = ?,
+                description = ?,
+                system_prompt = ?,
+                model_name = ?,
+                status = ?,
+                updated_at = ?
+            WHERE
+                agent_template_id = ?
+                AND status = ?
+            """,
+            (
+                agent_template["name"],
+                agent_template["description"],
+                agent_template["system_prompt"],
+                agent_template["model_name"],
+                agent_template["status"],
+                agent_template["updated_at"],
+                agent_template["agent_template_id"],
+                expected_status,
+            ),
+        )
+        connection.commit()
+        return cursor.rowcount > 0
+    except (
+        sqlite3.IntegrityError,
+        psycopg.IntegrityError,
+    ):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
 def insert_workflow(
     workflow: Workflow,
     database_file: Path = DATABASE_FILE,
