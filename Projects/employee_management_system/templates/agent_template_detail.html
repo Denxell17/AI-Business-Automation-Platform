@@ -95,6 +95,80 @@
         </div>
     </div>
 
+    {% if execution_error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ execution_error_message }}</span>
+    </p>
+    {% endif %}
+
+    {% if can_execute_agent_templates
+        and agent_template["status"] == "active" %}
+    <section
+        class="employee-form-card"
+        aria-labelledby="agent-template-execution-heading"
+    >
+        <h2 id="agent-template-execution-heading">
+            Run Agent Template
+        </h2>
+
+        <p class="form-help">
+            Submit business input to this Active Agent Template.
+            The complete input and generated result will be stored
+            in the protected execution record.
+        </p>
+
+        <form
+            class="employee-form"
+            method="post"
+            action="{{ url_for(
+                'agent_template_execute',
+                agent_template_id=agent_template[
+                    'agent_template_id'
+                ]
+            ) }}"
+        >
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token }}"
+            >
+
+            <div class="form-field">
+                <label for="input_text">Execution input</label>
+
+                <textarea
+                    id="input_text"
+                    name="input_text"
+                    rows="10"
+                    maxlength="{{ max_agent_execution_input_length }}"
+                    required
+                >{{ execution_input }}</textarea>
+
+                <p class="form-help">
+                    Enter no more than
+                    {{ max_agent_execution_input_length }}
+                    characters. Review sensitive business data
+                    before submitting it to the configured provider.
+                </p>
+            </div>
+
+            <div class="employee-form-actions">
+                <button
+                    class="employee-submit-button"
+                    type="submit"
+                >
+                    <span aria-hidden="true">▶</span>
+                    Run Agent Template
+                </button>
+            </div>
+        </form>
+    </section>
+    {% endif %}
+
     <section
         class="employee-form-card"
         aria-labelledby="agent-template-configuration-heading"

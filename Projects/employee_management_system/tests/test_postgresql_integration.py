@@ -543,8 +543,9 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
 
         application = create_web_application(
             session_secret=(
-                "day-148-live-agent-execution-browser"
+                "day-150-live-agent-execution-browser"
             ),
+            agent_provider_factory=lambda: provider,
         )
 
         with TestClient(application) as client:
@@ -560,6 +561,94 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
             self.assertEqual(
                 login_response.status_code,
                 303,
+            )
+
+            template_url = (
+                f"/agent-templates/"
+                f"{self.agent_template_id.upper()}"
+            )
+            template_response = client.get(template_url)
+
+            self.assertEqual(
+                template_response.status_code,
+                200,
+            )
+
+            csrf_match = re.search(
+                r'name="csrf_token"\s+value="([^"]+)"',
+                template_response.text,
+            )
+            self.assertIsNotNone(csrf_match)
+
+            if csrf_match is None:
+                self.fail(
+                    "The live Agent Execution CSRF token "
+                    "was not rendered."
+                )
+
+            browser_input = (
+                "Run this request through the live browser route."
+            )
+            execution_response = client.post(
+                f"{template_url}/executions",
+                data={
+                    "csrf_token": csrf_match.group(1),
+                    "input_text": browser_input,
+                },
+                follow_redirects=False,
+            )
+
+            self.assertEqual(
+                execution_response.status_code,
+                303,
+            )
+            self.assertTrue(
+                execution_response.headers["location"].startswith(
+                    (
+                        "http://testserver"
+                        f"{template_url}/executions/"
+                    )
+                )
+            )
+
+            browser_execution_id = (
+                execution_response.headers["location"]
+                .rsplit("/", 1)[-1]
+            )
+            browser_execution = load_agent_execution_by_id(
+                browser_execution_id
+            )
+
+            self.assertIsNotNone(browser_execution)
+
+            if browser_execution is None:
+                self.fail(
+                    "The browser-created live Agent Execution "
+                    "was not stored."
+                )
+
+            self.assertEqual(
+                browser_execution["status"],
+                "completed",
+            )
+            self.assertEqual(
+                browser_execution["input_text"],
+                browser_input,
+            )
+            self.assertEqual(
+                browser_execution["output_text"],
+                (
+                    "Live PostgreSQL deterministic response "
+                    f"for: {browser_input}"
+                ),
+            )
+            self.assertEqual(
+                provider.calls[-1],
+                {
+                    "model_name": "deterministic-live-model",
+                    "system_prompt": system_prompt,
+                    "input_text": browser_input,
+                },
             )
 
             history_response = client.get(
