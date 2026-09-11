@@ -575,9 +575,14 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
 
         application = create_web_application(
             session_secret=(
-                "day-150-live-agent-execution-browser"
+                "day-152-live-ai-assistant-browser"
             ),
             agent_provider_factory=lambda: provider,
+            ai_assistant_settings_loader=lambda: {
+                "model_name": (
+                    "deterministic-assistant-model"
+                ),
+            },
         )
 
         with TestClient(application) as client:
@@ -593,6 +598,72 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
             self.assertEqual(
                 login_response.status_code,
                 303,
+            )
+
+
+            assistant_form_response = client.get(
+                "/ai-assistant"
+            )
+
+            self.assertEqual(
+                assistant_form_response.status_code,
+                200,
+            )
+
+            assistant_csrf_match = re.search(
+                r'name="csrf_token"\s+value="([^"]+)"',
+                assistant_form_response.text,
+            )
+            self.assertIsNotNone(assistant_csrf_match)
+
+            if assistant_csrf_match is None:
+                self.fail(
+                    "The live AI Assistant CSRF token "
+                    "was not rendered."
+                )
+
+            browser_assistant_question = (
+                "Review this request through the live "
+                "AI Assistant browser route."
+            )
+            assistant_response = client.post(
+                "/ai-assistant",
+                data={
+                    "csrf_token": (
+                        assistant_csrf_match.group(1)
+                    ),
+                    "question": browser_assistant_question,
+                },
+            )
+
+            self.assertEqual(
+                assistant_response.status_code,
+                200,
+            )
+            self.assertIn(
+                browser_assistant_question,
+                assistant_response.text,
+            )
+            self.assertIn(
+                (
+                    "Live PostgreSQL deterministic response "
+                    f"for: {browser_assistant_question}"
+                ),
+                assistant_response.text,
+            )
+            self.assertEqual(
+                provider.calls[-1],
+                {
+                    "model_name": (
+                        "deterministic-assistant-model"
+                    ),
+                    "system_prompt": (
+                        AI_ASSISTANT_SYSTEM_PROMPT
+                    ),
+                    "input_text": (
+                        browser_assistant_question
+                    ),
+                },
             )
 
             template_url = (
