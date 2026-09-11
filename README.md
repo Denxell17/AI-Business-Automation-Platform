@@ -602,6 +602,17 @@ responsive interface.
 - Active-template enforcement before any provider call
 - Provider-independent `AgentProvider` protocol with keyword-only model, system
   prompt, and input arguments
+- OpenAI adapter implemented behind the provider-independent protocol
+- Environment-only `OPENAI_API_KEY` loading without a source-code fallback
+- Validated `OPENAI_TIMEOUT_SECONDS` configuration restricted to 1 through 120
+  seconds
+- OpenAI Responses API mapping for template model, system instructions, and
+  submitted input with provider response storage disabled
+- Predictable single-attempt requests with SDK retries disabled
+- Safe `AgentProviderError` translation for SDK failures and unusable provider
+  output without exposing provider details
+- Deterministic OpenAI adapter tests with an injected in-memory client and no
+  network requests or API cost
 - Normalized input and output with explicit maximum lengths
 - Safe Failed records for provider exceptions and invalid provider responses
   without storing private exception details
@@ -881,12 +892,19 @@ connection selection, ordered schema migrations, migration history, and the
 application repository paths used by employee management and workflow
 automation. SQLite remains available for local development, backup and
 restoration, and automated regression tests. The complete database path is now
-verified against a live PostgreSQL 18.6 container. The template-based AI-agent
-module now includes template creation and lifecycle management plus a tested
-Agent Execution foundation. Active templates can run through a provider-neutral
-interface, with administrator authorization, live account revalidation,
-Running-to-Completed-or-Failed persistence, safe provider failures, and SQLite
-plus live PostgreSQL verification. Administrators can now inspect newest-first
-execution history and protected execution details without exposing payloads in
-the history listing. Day 149 can introduce a configured external provider
-adapter while keeping secrets outside source control and tests deterministic.
+verified against a live PostgreSQL 18.6 container.
+
+The template-based AI-agent module now includes template creation, lifecycle
+management, durable execution records, protected execution history, and
+protected execution details. Active templates can run through a
+provider-independent interface with administrator authorization, live account
+revalidation, and safe Running-to-Completed-or-Failed persistence.
+
+ABAP now also includes its first external AI-provider adapter. OpenAI
+credentials are loaded from the environment, request timeouts are validated,
+automatic SDK retries are disabled, Responses API storage is disabled, and
+provider failures are translated into safe application errors. Deterministic
+tests inject an in-memory client, so automated verification never sends a paid
+provider request. The next slice can connect provider construction to a
+protected Agent Template execution route while preserving the existing
+authorization and safe persistence boundaries.

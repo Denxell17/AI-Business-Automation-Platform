@@ -1,4 +1,5 @@
 ﻿fastapi[standard]
 httpx2>=2,<3
 itsdangerous>=2,<3
+openai>=2,<3
 psycopg[binary]>=3.2,<4
