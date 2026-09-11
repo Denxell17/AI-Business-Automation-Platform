@@ -9,6 +9,7 @@ from database_config import (
 )
 from database_connection import open_configured_database_connection
 from models import (
+    AgentExecution,
     AgentTemplate,
     Employee,
     UserAccount,
@@ -128,6 +129,83 @@ def initialize_database(
             ON agent_templates (
                 status,
                 name
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS agent_executions (
+                agent_execution_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(agent_execution_id)) > 0
+                ),
+                agent_template_id TEXT NOT NULL,
+                agent_template_name TEXT NOT NULL CHECK (
+                    length(trim(agent_template_name)) > 0
+                ),
+                model_name TEXT NOT NULL CHECK (
+                    length(trim(model_name)) > 0
+                ),
+                status TEXT NOT NULL CHECK (
+                    status IN (
+                        'running',
+                        'completed',
+                        'failed'
+                    )
+                ),
+                input_text TEXT NOT NULL CHECK (
+                    length(trim(input_text)) > 0
+                ),
+                output_text TEXT,
+                error_message TEXT,
+                requested_by_user_id INTEGER NOT NULL,
+                started_at TEXT NOT NULL,
+                finished_at TEXT,
+                CHECK (
+                    (
+                        status = 'running'
+                        AND output_text IS NULL
+                        AND error_message IS NULL
+                        AND finished_at IS NULL
+                    )
+                    OR (
+                        status = 'completed'
+                        AND output_text IS NOT NULL
+                        AND length(trim(output_text)) > 0
+                        AND error_message IS NULL
+                        AND finished_at IS NOT NULL
+                    )
+                    OR (
+                        status = 'failed'
+                        AND output_text IS NULL
+                        AND error_message IS NOT NULL
+                        AND length(trim(error_message)) > 0
+                        AND finished_at IS NOT NULL
+                    )
+                ),
+                FOREIGN KEY (agent_template_id)
+                    REFERENCES agent_templates(agent_template_id),
+                FOREIGN KEY (requested_by_user_id)
+                    REFERENCES users(user_id)
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS
+                idx_agent_executions_template_started
+            ON agent_executions (
+                agent_template_id,
+                started_at DESC
+            )
+            """
+        )
+        connection.execute(
+            """
+            CREATE INDEX IF NOT EXISTS
+                idx_agent_executions_user_started
+            ON agent_executions (
+                requested_by_user_id,
+                started_at DESC
             )
             """
         )
@@ -590,6 +668,246 @@ def update_agent_template_in_database(
         )
         connection.commit()
         return cursor.rowcount > 0
+    except (
+        sqlite3.IntegrityError,
+        psycopg.IntegrityError,
+    ):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def _agent_execution_from_row(
+    row,
+) -> AgentExecution:
+    """Convert one database row into an AgentExecution record."""
+    return {
+        "agent_execution_id": row[
+            "agent_execution_id"
+        ],
+        "agent_template_id": row[
+            "agent_template_id"
+        ],
+        "agent_template_name": row[
+            "agent_template_name"
+        ],
+        "model_name": row["model_name"],
+        "status": row["status"],
+        "input_text": row["input_text"],
+        "output_text": row["output_text"],
+        "error_message": row["error_message"],
+        "requested_by_user_id": row[
+            "requested_by_user_id"
+        ],
+        "started_at": row["started_at"],
+        "finished_at": row["finished_at"],
+    }
+
+
+def insert_agent_execution(
+    agent_execution: AgentExecution,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Insert one Running Agent Execution record."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        connection.execute(
+            """
+            INSERT INTO agent_executions (
+                agent_execution_id,
+                agent_template_id,
+                agent_template_name,
+                model_name,
+                status,
+                input_text,
+                output_text,
+                error_message,
+                requested_by_user_id,
+                started_at,
+                finished_at
+            )
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """,
+            (
+                agent_execution["agent_execution_id"],
+                agent_execution["agent_template_id"],
+                agent_execution["agent_template_name"],
+                agent_execution["model_name"],
+                agent_execution["status"],
+                agent_execution["input_text"],
+                agent_execution["output_text"],
+                agent_execution["error_message"],
+                agent_execution["requested_by_user_id"],
+                agent_execution["started_at"],
+                agent_execution["finished_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except (
+        sqlite3.IntegrityError,
+        psycopg.IntegrityError,
+    ):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_agent_execution_by_id(
+    agent_execution_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> AgentExecution | None:
+    """Load one Agent Execution by its stable identifier."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        row = connection.execute(
+            """
+            SELECT
+                agent_execution_id,
+                agent_template_id,
+                agent_template_name,
+                model_name,
+                status,
+                input_text,
+                output_text,
+                error_message,
+                requested_by_user_id,
+                started_at,
+                finished_at
+            FROM agent_executions
+            WHERE agent_execution_id = ?
+            """,
+            (agent_execution_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+
+    if row is None:
+        return None
+
+    return _agent_execution_from_row(row)
+
+
+def load_agent_executions_for_template(
+    agent_template_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> list[AgentExecution]:
+    """Load one template's execution history, newest first."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+
+    try:
+        rows = connection.execute(
+            """
+            SELECT
+                agent_execution_id,
+                agent_template_id,
+                agent_template_name,
+                model_name,
+                status,
+                input_text,
+                output_text,
+                error_message,
+                requested_by_user_id,
+                started_at,
+                finished_at
+            FROM agent_executions
+            WHERE agent_template_id = ?
+            ORDER BY
+                started_at DESC,
+                agent_execution_id DESC
+            """,
+            (agent_template_id,),
+        ).fetchall()
+    finally:
+        connection.close()
+
+    return [
+        _agent_execution_from_row(row)
+        for row in rows
+    ]
+
+
+def complete_agent_execution(
+    agent_execution_id: str,
+    output_text: str,
+    finished_at: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Complete an Agent Execution only while it is Running."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        cursor = connection.execute(
+            """
+            UPDATE agent_executions
+            SET
+                status = 'completed',
+                output_text = ?,
+                error_message = NULL,
+                finished_at = ?
+            WHERE
+                agent_execution_id = ?
+                AND status = 'running'
+            """,
+            (
+                output_text,
+                finished_at,
+                agent_execution_id,
+            ),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
+    except (
+        sqlite3.IntegrityError,
+        psycopg.IntegrityError,
+    ):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def fail_agent_execution(
+    agent_execution_id: str,
+    error_message: str,
+    finished_at: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Fail an Agent Execution only while it is Running."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        cursor = connection.execute(
+            """
+            UPDATE agent_executions
+            SET
+                status = 'failed',
+                output_text = NULL,
+                error_message = ?,
+                finished_at = ?
+            WHERE
+                agent_execution_id = ?
+                AND status = 'running'
+            """,
+            (
+                error_message,
+                finished_at,
+                agent_execution_id,
+            ),
+        )
+        connection.commit()
+        return cursor.rowcount == 1
     except (
         sqlite3.IntegrityError,
         psycopg.IntegrityError,

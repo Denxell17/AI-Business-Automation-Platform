@@ -556,7 +556,7 @@ responsive interface.
   data checksums, localhost-only port binding, and a readiness health check
 - A gated live integration suite covering users, employees, workflows, tasks,
   executions, schedules, occurrence claims, agent-template browser operations,
-  and cleanup
+  Agent Execution service operations, and cleanup
 
 ### AI Agent Template Capabilities
 
@@ -584,6 +584,29 @@ responsive interface.
 - Safe validation and database-error responses with submitted-value preservation
 - Permission-controlled actions, sidebar navigation, and activity logging
 - Live PostgreSQL browser creation, editing, activation, detail, and cleanup
+  verification
+
+### AI Agent Execution Capabilities
+
+- Typed execution records with stable IDs, template and model snapshots, input,
+  output, safe errors, requesting users, lifecycle status, and UTC timestamps
+- Running, Completed, and Failed states with database-enforced field consistency
+- Matching SQLite schema and ordered PostgreSQL migration
+  `004_create_agent_executions.sql`
+- Foreign keys to Agent Templates and users, plus indexed template and user
+  history queries
+- Parameterized insertion, exact loading, newest-first template history, and
+  one-way completion or failure repository operations
+- Administrator-only `agent_templates.execute` authorization
+- Live account, identity, activity, and permission revalidation before execution
+- Active-template enforcement before any provider call
+- Provider-independent `AgentProvider` protocol with keyword-only model, system
+  prompt, and input arguments
+- Normalized input and output with explicit maximum lengths
+- Safe Failed records for provider exceptions and invalid provider responses
+  without storing private exception details
+- Deterministic service tests that make no network requests and incur no API cost
+- Live PostgreSQL execution, finalization, loading, history, and cleanup
   verification
 
 ### Shared Dashboard Capabilities
@@ -805,11 +828,13 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **532 automated tests passed**
+- **556 automated tests passed**
 - **50 dedicated agent-template authorization, schema, migration, repository,
   service, and browser lifecycle tests passed**
-- **2 live PostgreSQL integration tests passed, including a complete
-  agent-template browser round trip**
+- **23 dedicated Agent Execution authorization, schema, migration, repository,
+  and service tests passed**
+- **3 live PostgreSQL integration tests passed, including Agent Template browser
+  and Agent Execution service round trips**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -847,10 +872,9 @@ application repository paths used by employee management and workflow
 automation. SQLite remains available for local development, backup and
 restoration, and automated regression tests. The complete database path is now
 verified against a live PostgreSQL 18.6 container. The template-based AI-agent
-module now includes its domain model, permissions, database schema, repository,
-secure draft creation, protected directory and detail pages, administrator
-editing,
-status filtering, guarded updates, and controlled Draft, Active, and Inactive
-lifecycle transitions. The next Phase 2 work can begin an AI-agent execution
-foundation that selects only Active templates and keeps provider calls behind a
-testable adapter.
+module now includes template creation and lifecycle management plus a tested
+Agent Execution foundation. Active templates can run through a provider-neutral
+interface, with administrator authorization, live account revalidation,
+Running-to-Completed-or-Failed persistence, safe provider failures, and SQLite
+plus live PostgreSQL verification. Day 148 can add protected execution history
+and detail pages before a configured external provider adapter is introduced.
