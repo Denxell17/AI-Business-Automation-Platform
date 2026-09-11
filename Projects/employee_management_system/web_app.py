@@ -13,9 +13,11 @@ from fastapi import (
 )
 from fastapi.responses import (
     HTMLResponse,
+    JSONResponse,
     RedirectResponse,
     Response,
 )
+from system_status_service import database_is_ready
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -271,6 +273,9 @@ def create_web_application(
     ai_assistant_settings_loader: (
         Callable[[], AiAssistantSettings] | None
     ) = None,
+    database_readiness_checker: (
+        Callable[[Path], bool] | None
+    ) = None,
 ) -> FastAPI:
     selected_agent_provider_factory = (
         agent_provider_factory
@@ -281,6 +286,11 @@ def create_web_application(
         ai_assistant_settings_loader
         if ai_assistant_settings_loader is not None
         else load_ai_assistant_settings
+    )
+    selected_database_readiness_checker = (
+        database_readiness_checker
+        if database_readiness_checker is not None
+        else database_is_ready
     )
 
     application = FastAPI(
@@ -4295,6 +4305,25 @@ def create_web_application(
         return {
             "status": "healthy",
         }
+
+    @application.get("/ready")
+    def readiness_check() -> Response:
+        if not selected_database_readiness_checker(
+            database_file
+        ):
+            return JSONResponse(
+                content={
+                    "status": "unavailable",
+                },
+                status_code=503,
+            )
+
+        return JSONResponse(
+            content={
+                "status": "ready",
+            },
+            status_code=200,
+        )
 
     return application
 

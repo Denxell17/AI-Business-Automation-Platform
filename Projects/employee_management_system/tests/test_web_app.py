@@ -381,7 +381,15 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
         self.assertIn(
-            "System health",
+            'href="/health"',
+            response.text,
+        )
+        self.assertIn(
+            "System readiness",
+            response.text,
+        )
+        self.assertIn(
+            'href="/ready"',
             response.text,
         )
 
@@ -3463,6 +3471,78 @@ class TestWebApplication(unittest.TestCase):
             {
                 "status": "healthy",
             },
+        )
+
+    def test_readiness_check_returns_ready_for_usable_database(
+        self,
+    ):
+        checked_database_files = []
+
+        def ready_database_checker(database_file):
+            checked_database_files.append(database_file)
+            return True
+
+        application = create_web_application(
+            database_file=self.database_file,
+            session_secret=(
+                "day-153-ready-readiness-test"
+            ),
+            database_readiness_checker=(
+                ready_database_checker
+            ),
+        )
+
+        with TestClient(application) as client:
+            response = client.get("/ready")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "ready",
+            },
+        )
+        self.assertEqual(
+            checked_database_files,
+            [self.database_file],
+        )
+
+    def test_readiness_check_returns_safe_service_unavailable(
+        self,
+    ):
+        checked_database_files = []
+
+        def unavailable_database_checker(database_file):
+            checked_database_files.append(database_file)
+            return False
+
+        application = create_web_application(
+            database_file=self.database_file,
+            session_secret=(
+                "day-153-unavailable-readiness-test"
+            ),
+            database_readiness_checker=(
+                unavailable_database_checker
+            ),
+        )
+
+        with TestClient(application) as client:
+            response = client.get("/ready")
+
+        self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            response.json(),
+            {
+                "status": "unavailable",
+            },
+        )
+        self.assertEqual(
+            checked_database_files,
+            [self.database_file],
+        )
+        self.assertNotIn(
+            "private",
+            response.text.lower(),
         )
 
     def test_api_documentation_is_available(self):

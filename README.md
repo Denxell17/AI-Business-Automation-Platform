@@ -519,8 +519,8 @@ occurrence protection, protected Agent Template configuration, and
 administrator-only Agent Execution history and detail views.
 
 The shared authenticated dashboard provides access to the available modules,
-API documentation, and system-health information through a consistent,
-responsive interface.
+API documentation, process-liveness information, and database-readiness
+information through a consistent, responsive interface.
 
 ### Database Portability
 
@@ -678,12 +678,29 @@ responsive interface.
 - Available Employee Management module with a working directory link
 - Available Workflow Automation module with a working directory link
 - Written `Available` and `Planned` module statuses
-- API documentation and system-health resources
+- API documentation, process-liveness, and database-readiness resources
 - Semantic dashboard sections and headings
 - Responsive module cards for desktop and mobile layouts
 - Visible keyboard focus and reduced-motion support
 - Warm Charcoal styling consistent with the official ABAP visual direction
 - Status information communicated with written labels rather than color alone
+
+### Operational Status Capabilities
+
+- Public `/health` liveness endpoint that confirms the FastAPI process is
+  running without depending on the database
+- Public `/ready` readiness endpoint that checks the configured database
+- Core-schema verification through a portable `employees` table query
+- `200` ready response when the database is usable
+- `503 Service Unavailable` response when configuration, connectivity, or core
+  schema checks fail
+- Stable JSON responses without database URLs, SQL details, backend exceptions,
+  or credentials
+- Connection cleanup after successful and failed readiness checks
+- Injectable readiness checker for deterministic route testing
+- SQLite service verification and live PostgreSQL route verification
+- Separate dashboard resource cards explaining health and readiness
+
 
 ### Workflow Automation Capabilities
 
@@ -889,18 +906,22 @@ The FastAPI interface continues to provide:
 - `/users/new` — administrator-only viewer-account creation
 - `/users/{username}/status` — administrator-only viewer activation or
   deactivation
-- `/health` — JSON service-health check
+- `/health` — JSON process-liveness check
+- `/ready` — JSON database-readiness check with `200` or `503` status
 - `/docs` — interactive API documentation
 
 ### Verification
 
-- **566 automated tests passed**
+- **615 automated tests passed**
 - **50 dedicated agent-template authorization, schema, migration, repository,
   service, and browser lifecycle tests passed**
 - **33 dedicated Agent Execution authorization, schema, migration, repository,
   service, and browser tests passed**
-- **3 live PostgreSQL integration tests passed, including Agent Template browser
-  plus Agent Execution service and protected browser round trips**
+- **3 live PostgreSQL integration tests passed, including Agent Template,
+  Agent Execution, AI Assistant, and database-readiness browser paths**
+- **4 dedicated operational status service tests passed**, covering usable and
+  missing SQLite schemas, configuration failure, database failure, and
+  connection cleanup
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -952,6 +973,11 @@ environment-backed model configuration, CSRF protection, delayed provider
 construction, protected system instructions, account and permission
 revalidation, bounded input and output, escaped rendering, and fixed safe
 failure messages. The shared dashboard and navigation expose the Assistant only
-to authorized users. Assistant conversations are not persisted. The next
-roadmap slice can build on this completed interaction boundary without changing
-the provider adapter or weakening its security controls.
+to authorized users. Assistant conversations are not persisted.
+
+Operational readiness now distinguishes a running FastAPI process from an
+instance that can use its configured database. The public `/health` endpoint
+remains database-independent, while `/ready` checks connectivity and the shared
+core schema and returns a safe `503` when unavailable. Both SQLite and live
+PostgreSQL paths are verified. Day 154 can add reproducible application
+deployment packaging that uses these operational endpoints.
