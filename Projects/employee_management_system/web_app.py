@@ -24,11 +24,20 @@ from activity_logger import (
     load_recent_activity_entries,
     log_activity,
 )
+from ai_assistant_config import (
+    AiAssistantSettings,
+    load_ai_assistant_settings,
+)
+from ai_assistant_service import (
+    MAX_AI_ASSISTANT_QUESTION_LENGTH,
+    SAFE_AI_ASSISTANT_ERROR_MESSAGE,
+    ask_ai_assistant,
+)
 from agent_execution_service import (
     MAX_AGENT_EXECUTION_INPUT_LENGTH,
     execute_agent_template,
 )
-from agent_provider import AgentProvider
+from agent_provider import AgentProvider, AgentProviderError
 from agent_template_service import (
     ALLOWED_AGENT_TEMPLATE_STATUS_TRANSITIONS,
     create_agent_template,
@@ -244,6 +253,9 @@ templates.env.globals["VIEW_ACTIVITY_LOG"] = VIEW_ACTIVITY_LOG
 templates.env.globals["VIEW_AGENT_TEMPLATES"] = (
     VIEW_AGENT_TEMPLATES
 )
+templates.env.globals["EXECUTE_AGENT_TEMPLATES"] = (
+    EXECUTE_AGENT_TEMPLATES
+)
 templates.env.globals["MANAGE_USER_ACCOUNTS"] = (
     MANAGE_USER_ACCOUNTS
 )
@@ -256,11 +268,19 @@ def create_web_application(
     agent_provider_factory: (
         Callable[[], AgentProvider] | None
     ) = None,
+    ai_assistant_settings_loader: (
+        Callable[[], AiAssistantSettings] | None
+    ) = None,
 ) -> FastAPI:
     selected_agent_provider_factory = (
         agent_provider_factory
         if agent_provider_factory is not None
         else OpenAIAgentProvider
+    )
+    selected_ai_assistant_settings_loader = (
+        ai_assistant_settings_loader
+        if ai_assistant_settings_loader is not None
+        else load_ai_assistant_settings
     )
 
     application = FastAPI(
@@ -713,6 +733,208 @@ def create_web_application(
                 "current_user": current_user,
             },
         )
+
+    @application.get(
+        "/ai-assistant",
+        response_class=HTMLResponse,
+    )
+    def ai_assistant_page(
+        request: Request,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            EXECUTE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web AI Assistant access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="ai_assistant.html",
+            context={
+                "page_title": "AI Assistant",
+                "active_page": "ai_assistant",
+                "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "question": "",
+                "assistant_response": None,
+                "model_name": None,
+                "max_question_length": (
+                    MAX_AI_ASSISTANT_QUESTION_LENGTH
+                ),
+                "error_message": None,
+            },
+        )
+
+    @application.post(
+        "/ai-assistant",
+        response_class=HTMLResponse,
+    )
+    def ai_assistant_ask(
+        request: Request,
+        csrf_token: Annotated[str, Form()],
+        question: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            EXECUTE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web AI Assistant access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web AI Assistant CSRF validation failed "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        normalized_question = question.strip()
+
+        def render_ai_assistant(
+            *,
+            error_message: str | None,
+            assistant_response: str | None = None,
+            model_name: str | None = None,
+            status_code: int = 200,
+        ) -> Response:
+            return templates.TemplateResponse(
+                request=request,
+                name="ai_assistant.html",
+                context={
+                    "page_title": "AI Assistant",
+                    "active_page": "ai_assistant",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "question": question,
+                    "assistant_response": assistant_response,
+                    "model_name": model_name,
+                    "max_question_length": (
+                        MAX_AI_ASSISTANT_QUESTION_LENGTH
+                    ),
+                    "error_message": error_message,
+                },
+                status_code=status_code,
+            )
+
+        if (
+            not normalized_question
+            or len(normalized_question)
+            > MAX_AI_ASSISTANT_QUESTION_LENGTH
+        ):
+            return render_ai_assistant(
+                error_message=(
+                    "Enter a question between 1 and "
+                    f"{MAX_AI_ASSISTANT_QUESTION_LENGTH} "
+                    "characters."
+                ),
+                status_code=400,
+            )
+
+        try:
+            assistant_settings = (
+                selected_ai_assistant_settings_loader()
+            )
+            provider = selected_agent_provider_factory()
+        except Exception:
+            log_activity(
+                f"Web AI Assistant configuration was unavailable "
+                f"for user {current_user['username']}."
+            )
+            return render_ai_assistant(
+                error_message=(
+                    "The AI Assistant is not configured."
+                ),
+                status_code=503,
+            )
+
+        model_name = assistant_settings["model_name"]
+
+        try:
+            assistant_response = ask_ai_assistant(
+                current_user,
+                normalized_question,
+                model_name,
+                provider,
+                database_file,
+            )
+        except AgentProviderError:
+            return render_ai_assistant(
+                error_message=SAFE_AI_ASSISTANT_ERROR_MESSAGE,
+                model_name=model_name,
+                status_code=502,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return render_ai_assistant(
+                error_message=(
+                    "The AI Assistant could not verify "
+                    "your account."
+                ),
+                status_code=500,
+            )
+
+        if assistant_response is None:
+            log_activity(
+                f"Web AI Assistant authorization or validation "
+                f"failed for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        log_activity(
+            f"Web AI Assistant request completed for user "
+            f"{current_user['username']}."
+        )
+
+        return render_ai_assistant(
+            error_message=None,
+            assistant_response=assistant_response,
+            model_name=model_name,
+        )
+
 
     @application.get(
         "/agent-templates",

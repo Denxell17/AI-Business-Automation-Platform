@@ -175,6 +175,20 @@
                 Open Agent Template directory
                 <span aria-hidden="true">→</span>
             </a>
+
+            {% if user_has_permission(
+                current_user,
+                EXECUTE_AGENT_TEMPLATES
+            ) %}
+            <a
+                class="module-action"
+                href="{{ url_for('ai_assistant_page') }}"
+            >
+                Open AI Assistant
+                <span aria-hidden="true">→</span>
+            </a>
+            {% endif %}
+
         </article>
     </div>
 </section>

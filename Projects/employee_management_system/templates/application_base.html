@@ -81,6 +81,25 @@
                 </li>
                 {% endif %}
 
+                {% if user_has_permission(
+                    current_user,
+                    EXECUTE_AGENT_TEMPLATES
+                ) %}
+                <li>
+                    <a
+                        class="navigation-link{% if active_page == 'ai_assistant' %} is-active{% endif %}"
+                        href="{{ url_for('ai_assistant_page') }}"
+                        {% if active_page == 'ai_assistant' %}aria-current="page"{% endif %}
+                    >
+                        <span
+                            class="navigation-icon"
+                            aria-hidden="true"
+                        >✦</span>
+                        AI Assistant
+                    </a>
+                </li>
+                {% endif %}
+
                 <li>
                     <a
                         class="navigation-link{% if active_page == 'reports' %} is-active{% endif %}"

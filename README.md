@@ -650,16 +650,26 @@ responsive interface.
   `agent_templates.execute` permission
 - Live account, active-status, identity, and permission revalidation before
   provider use
+- Required `AI_ASSISTANT_MODEL` environment configuration with whitespace,
+  blank-value, and maximum-length validation
 - Required question and model-name validation with explicit maximum lengths
 - Normalized questions and responses
 - Safe `AgentProviderError` handling for provider exceptions, non-text output,
   blank output, and oversized output
 - Suppressed provider exception chaining to reduce accidental disclosure of raw
   provider details
-- Deterministic service tests with no API key, network request, or provider cost
-- Live PostgreSQL verification of authorization and provider mapping
-- Shared dashboard now identifies the completed AI Agents module as Available
-  and links to the Agent Template directory
+- Protected `/ai-assistant` GET and POST browser routes
+- CSRF validation before configuration loading or provider construction
+- Configuration and provider construction only after authentication,
+  authorization, CSRF, and question validation
+- Escaped question and response output
+- Fixed safe browser messages for configuration, provider, and database failures
+- Permission-aware dashboard and sidebar links
+- One-off interaction behavior without persistent conversation history
+- Deterministic configuration, service, and browser tests with no API key,
+  network request, or provider cost
+- Live PostgreSQL verification of authorization, CSRF handling, provider
+  mapping, and browser rendering
 
 ### Shared Dashboard Capabilities
 
@@ -936,10 +946,12 @@ ABAP's OpenAI adapter remains behind the provider-independent execution
 boundary with environment-based credentials, validated timeouts, disabled
 automatic retries, disabled response storage, and safe failures.
 
-ABAP now also has a provider-independent AI Assistant service foundation for
-one-off business questions. It uses protected system instructions, validates
-question, model, and response lengths, revalidates the current account and
-permission, and suppresses raw provider failure details. The shared dashboard
-now identifies the completed AI Agents workspace as Available. The next slice
-can add protected AI Assistant configuration and a browser interaction page
-using the existing provider factory.
+ABAP now also has a protected, provider-independent AI Assistant for one-off
+business questions. Its administrator-only browser page uses explicit
+environment-backed model configuration, CSRF protection, delayed provider
+construction, protected system instructions, account and permission
+revalidation, bounded input and output, escaped rendering, and fixed safe
+failure messages. The shared dashboard and navigation expose the Assistant only
+to authorized users. Assistant conversations are not persisted. The next
+roadmap slice can build on this completed interaction boundary without changing
+the provider adapter or weakening its security controls.

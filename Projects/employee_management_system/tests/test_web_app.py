@@ -341,6 +341,11 @@ class TestWebApplication(unittest.TestCase):
             'href="/agent-templates"',
             response.text,
         )
+        self.assertIn("Open AI Assistant", response.text)
+        self.assertIn(
+            'href="http://testserver/ai-assistant"',
+            response.text,
+        )
 
     def test_home_page_uses_reusable_navigation_layout(self):
         self.sign_in()

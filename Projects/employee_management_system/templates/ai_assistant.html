@@ -1,0 +1,122 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-form-section"
+    aria-labelledby="ai-assistant-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('home_page') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to ABAP Dashboard
+    </a>
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">
+                One-off business assistance
+            </p>
+
+            <h1
+                id="ai-assistant-heading"
+                class="section-title"
+            >
+                AI Assistant
+            </h1>
+
+            <p class="page-message">
+                Ask one business question using ABAP's protected
+                provider boundary. Review sensitive information
+                before submitting it externally.
+            </p>
+        </div>
+
+        <span class="form-access-badge">
+            <span aria-hidden="true">✓</span>
+            AI Assistant access authorized
+        </span>
+    </div>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+    {% endif %}
+
+    <form
+        class="employee-form"
+        method="post"
+        action="{{ url_for('ai_assistant_ask') }}"
+    >
+        <input
+            type="hidden"
+            name="csrf_token"
+            value="{{ csrf_token }}"
+        >
+
+        <section
+            class="employee-form-card"
+            aria-labelledby="ai-assistant-question-heading"
+        >
+            <h2 id="ai-assistant-question-heading">
+                Business question
+            </h2>
+
+            <div class="form-field">
+                <label for="question">
+                    What would you like help with?
+                </label>
+
+                <textarea
+                    id="question"
+                    name="question"
+                    rows="10"
+                    maxlength="{{ max_question_length }}"
+                    required
+                >{{ question }}</textarea>
+
+                <p class="form-help">
+                    Enter no more than {{ max_question_length }}
+                    characters. This one-off interaction is not
+                    stored as Assistant conversation history.
+                </p>
+            </div>
+        </section>
+
+        <div class="employee-form-actions">
+            <button
+                class="employee-submit-button"
+                type="submit"
+            >
+                <span aria-hidden="true">✦</span>
+                Ask AI Assistant
+            </button>
+        </div>
+    </form>
+
+    {% if assistant_response %}
+    <section
+        class="employee-form-card"
+        aria-labelledby="ai-assistant-response-heading"
+        aria-live="polite"
+    >
+        <h2 id="ai-assistant-response-heading">
+            Assistant response
+        </h2>
+
+        <p class="form-help">
+            Generated with the configured model:
+            {{ model_name }}
+        </p>
+
+        <pre class="agent-template-prompt">{{ assistant_response }}</pre>
+    </section>
+    {% endif %}
+</section>
+{% endblock %}
