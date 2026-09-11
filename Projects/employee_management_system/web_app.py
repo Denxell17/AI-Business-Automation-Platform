@@ -1,10 +1,11 @@
 import secrets
 import sqlite3
-import psycopg
+from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
 
+import psycopg
 from fastapi import (
     FastAPI,
     Form,
@@ -23,6 +24,11 @@ from activity_logger import (
     load_recent_activity_entries,
     log_activity,
 )
+from agent_execution_service import (
+    MAX_AGENT_EXECUTION_INPUT_LENGTH,
+    execute_agent_template,
+)
+from agent_provider import AgentProvider
 from agent_template_service import (
     ALLOWED_AGENT_TEMPLATE_STATUS_TRANSITIONS,
     create_agent_template,
@@ -78,10 +84,12 @@ from employee_service import (
 from exporter import build_employee_csv_content
 from payroll import calculate_payroll
 from models import (
+    AGENT_TEMPLATE_STATUS_ACTIVE,
     Employee,
     VALID_AGENT_TEMPLATE_STATUSES,
     VALID_WORKFLOW_STATUSES,
 )
+from openai_agent_provider import OpenAIAgentProvider
 from reports import calculate_workforce_summary
 from user_service import (
     authenticate_user_account,
@@ -245,7 +253,16 @@ def create_web_application(
     database_file: Path = DATABASE_FILE,
     session_secret: str | None = None,
     secure_cookies: bool = False,
+    agent_provider_factory: (
+        Callable[[], AgentProvider] | None
+    ) = None,
 ) -> FastAPI:
+    selected_agent_provider_factory = (
+        agent_provider_factory
+        if agent_provider_factory is not None
+        else OpenAIAgentProvider
+    )
+
     application = FastAPI(
         title="Employee Management System",
         description=(
@@ -1230,6 +1247,194 @@ def create_web_application(
             status_code=303,
         )
 
+    @application.post(
+        "/agent-templates/{agent_template_id}/executions"
+    )
+    def agent_template_execute(
+        request: Request,
+        agent_template_id: str,
+        csrf_token: Annotated[str, Form()],
+        input_text: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            EXECUTE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web Agent Execution access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web Agent Execution CSRF validation failed "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        normalized_template_id = (
+            agent_template_id.strip().upper()
+        )
+        normalized_input = input_text.strip()
+
+        try:
+            agent_template = load_agent_template_by_id(
+                normalized_template_id,
+                database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return HTMLResponse(
+                content=(
+                    "The Agent Template could not be loaded."
+                ),
+                status_code=500,
+            )
+
+        if agent_template is None:
+            return HTMLResponse(
+                content=(
+                    "The requested Agent Template was not found."
+                ),
+                status_code=404,
+            )
+
+        if (
+            agent_template["status"]
+            != AGENT_TEMPLATE_STATUS_ACTIVE
+        ):
+            return HTMLResponse(
+                content=(
+                    "Only an Active Agent Template can be executed."
+                ),
+                status_code=400,
+            )
+
+        def render_execution_error(
+            message: str,
+            status_code: int,
+        ) -> Response:
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_template_detail.html",
+                context={
+                    "page_title": agent_template["name"],
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "can_manage_agent_templates": (
+                        user_has_permission(
+                            current_user,
+                            MANAGE_AGENT_TEMPLATES,
+                        )
+                    ),
+                    "can_execute_agent_templates": True,
+                    "agent_template": agent_template,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "execution_input": input_text,
+                    "execution_error_message": message,
+                    "max_agent_execution_input_length": (
+                        MAX_AGENT_EXECUTION_INPUT_LENGTH
+                    ),
+                    "error_message": None,
+                },
+                status_code=status_code,
+            )
+
+        if (
+            not normalized_input
+            or len(normalized_input)
+            > MAX_AGENT_EXECUTION_INPUT_LENGTH
+        ):
+            return render_execution_error(
+                (
+                    "Enter execution input between 1 and "
+                    f"{MAX_AGENT_EXECUTION_INPUT_LENGTH} "
+                    "characters."
+                ),
+                400,
+            )
+
+        try:
+            provider = selected_agent_provider_factory()
+        except Exception:
+            log_activity(
+                f"Web Agent Execution provider configuration "
+                f"was unavailable for user "
+                f"{current_user['username']}."
+            )
+            return render_execution_error(
+                (
+                    "The AI provider is not configured "
+                    "for execution."
+                ),
+                503,
+            )
+
+        try:
+            agent_execution = execute_agent_template(
+                current_user,
+                normalized_template_id,
+                normalized_input,
+                provider,
+                database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return render_execution_error(
+                (
+                    "The Agent Execution could not be saved "
+                    "because the database is unavailable."
+                ),
+                500,
+            )
+
+        if agent_execution is None:
+            return render_execution_error(
+                (
+                    "The Agent Template could not be executed. "
+                    "Refresh the page and verify that the "
+                    "template remains Active."
+                ),
+                400,
+            )
+
+        log_activity(
+            f"Web Agent Execution "
+            f"{agent_execution['agent_execution_id']} "
+            f"finished with status "
+            f"{agent_execution['status']} for user "
+            f"{current_user['username']}."
+        )
+
+        return RedirectResponse(
+            url=request.url_for(
+                "agent_execution_detail",
+                agent_template_id=normalized_template_id,
+                agent_execution_id=agent_execution[
+                    "agent_execution_id"
+                ],
+            ),
+            status_code=303,
+        )
+
     @application.get(
         "/agent-templates/{agent_template_id}/executions",
         response_class=HTMLResponse,
@@ -1546,6 +1751,14 @@ def create_web_application(
                     )
                 ),
                 "agent_template": agent_template,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "execution_input": "",
+                "execution_error_message": None,
+                "max_agent_execution_input_length": (
+                    MAX_AGENT_EXECUTION_INPUT_LENGTH
+                ),
                 "error_message": None,
             },
         )

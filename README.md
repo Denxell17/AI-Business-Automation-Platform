@@ -613,6 +613,20 @@ responsive interface.
   output without exposing provider details
 - Deterministic OpenAI adapter tests with an injected in-memory client and no
   network requests or API cost
+- Application-factory injection for constructing a fresh provider only after
+  authentication, authorization, CSRF, template, and input validation succeed
+- Administrator-only execution form displayed for Active Agent Templates
+- Server-side enforcement that rejects unauthenticated users, viewers, invalid
+  CSRF tokens, missing templates, inactive templates, and invalid input before
+  provider creation
+- Safe provider-configuration and database-error responses with escaped
+  submitted-input preservation
+- Completed and safely Failed browser executions redirected to their protected
+  execution-detail records
+- Deterministic browser execution tests with no OpenAI network requests or API
+  cost
+- Live PostgreSQL verification of authenticated browser execution, persistence,
+  history, detail display, and cleanup
 - Normalized input and output with explicit maximum lengths
 - Safe Failed records for provider exceptions and invalid provider responses
   without storing private exception details
@@ -887,24 +901,26 @@ ABAP supports secure employee management, workflow lifecycle management,
 ordered tasks, execution history, controlled task outcomes, stored scheduling
 rules, timezone-aware eligibility, and duplicate-safe occurrence claims.
 
-PostgreSQL production-database support now includes backend configuration,
+PostgreSQL production-database support includes backend configuration,
 connection selection, ordered schema migrations, migration history, and the
 application repository paths used by employee management and workflow
 automation. SQLite remains available for local development, backup and
-restoration, and automated regression tests. The complete database path is now
+restoration, and automated regression tests. The complete database path is
 verified against a live PostgreSQL 18.6 container.
 
 The template-based AI-agent module now includes template creation, lifecycle
-management, durable execution records, protected execution history, and
-protected execution details. Active templates can run through a
-provider-independent interface with administrator authorization, live account
-revalidation, and safe Running-to-Completed-or-Failed persistence.
+management, durable execution records, protected execution history, protected
+execution details, and an administrator-only execution form for Active
+templates. Browser submissions enforce authentication, authorization, CSRF,
+current template status, and input limits before provider construction.
+Completed and safely Failed executions redirect to their protected detail
+records.
 
-ABAP now also includes its first external AI-provider adapter. OpenAI
-credentials are loaded from the environment, request timeouts are validated,
-automatic SDK retries are disabled, Responses API storage is disabled, and
-provider failures are translated into safe application errors. Deterministic
-tests inject an in-memory client, so automated verification never sends a paid
-provider request. The next slice can connect provider construction to a
-protected Agent Template execution route while preserving the existing
-authorization and safe persistence boundaries.
+ABAP's OpenAI adapter remains behind the provider-independent execution
+boundary. Credentials are loaded from the environment, request timeouts are
+validated, automatic SDK retries and Responses API storage are disabled, and
+provider failures become safe application errors. Application-factory
+injection keeps browser and live PostgreSQL tests deterministic, so automated
+verification never sends a paid provider request. The next AI-agent slice
+should be selected from the remaining Phase 2 roadmap after reviewing the
+current execution workflow and production-readiness needs.
