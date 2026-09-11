@@ -333,6 +333,14 @@ class TestWebApplication(unittest.TestCase):
         self.assertIn("Customer Management", response.text)
         self.assertIn("Invoice Management", response.text)
         self.assertIn("AI Agents", response.text)
+        self.assertIn(
+            "Open Agent Template directory",
+            response.text,
+        )
+        self.assertIn(
+            'href="/agent-templates"',
+            response.text,
+        )
 
     def test_home_page_uses_reusable_navigation_layout(self):
         self.sign_in()

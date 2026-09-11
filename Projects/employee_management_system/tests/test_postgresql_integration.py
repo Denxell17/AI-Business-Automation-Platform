@@ -8,6 +8,10 @@ import psycopg
 from fastapi.testclient import TestClient
 
 from agent_execution_service import execute_agent_template
+from ai_assistant_service import (
+    AI_ASSISTANT_SYSTEM_PROMPT,
+    ask_ai_assistant,
+)
 from database import (
     claim_workflow_schedule_occurrence,
     insert_agent_template,
@@ -539,6 +543,34 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
                     "input_text": input_text,
                 }
             ],
+        )
+
+        assistant_question = (
+            "Review this live PostgreSQL workflow."
+        )
+        assistant_response = ask_ai_assistant(
+            administrator,
+            assistant_question,
+            "deterministic-assistant-model",
+            provider,
+        )
+
+        self.assertEqual(
+            assistant_response,
+            (
+                "Live PostgreSQL deterministic response "
+                f"for: {assistant_question}"
+            ),
+        )
+        self.assertEqual(
+            provider.calls[-1],
+            {
+                "model_name": (
+                    "deterministic-assistant-model"
+                ),
+                "system_prompt": AI_ASSISTANT_SYSTEM_PROMPT,
+                "input_text": assistant_question,
+            },
         )
 
         application = create_web_application(

@@ -640,6 +640,27 @@ responsive interface.
 - Template-scoped execution lookup that rejects mismatched execution IDs
 - Safe browser handling for missing records and database failures
 
+### AI Assistant Capabilities
+
+- Provider-independent one-off business-assistance service
+- Fixed protected system instructions for practical business operations,
+  workflows, employee administration, customer communication, documents, and
+  reporting
+- Administrator-only access through the existing
+  `agent_templates.execute` permission
+- Live account, active-status, identity, and permission revalidation before
+  provider use
+- Required question and model-name validation with explicit maximum lengths
+- Normalized questions and responses
+- Safe `AgentProviderError` handling for provider exceptions, non-text output,
+  blank output, and oversized output
+- Suppressed provider exception chaining to reduce accidental disclosure of raw
+  provider details
+- Deterministic service tests with no API key, network request, or provider cost
+- Live PostgreSQL verification of authorization and provider mapping
+- Shared dashboard now identifies the completed AI Agents module as Available
+  and links to the Agent Template directory
+
 ### Shared Dashboard Capabilities
 
 - Protected dashboard access through the existing signed session
@@ -903,24 +924,22 @@ rules, timezone-aware eligibility, and duplicate-safe occurrence claims.
 
 PostgreSQL production-database support includes backend configuration,
 connection selection, ordered schema migrations, migration history, and the
-application repository paths used by employee management and workflow
-automation. SQLite remains available for local development, backup and
-restoration, and automated regression tests. The complete database path is
-verified against a live PostgreSQL 18.6 container.
+application repository paths used by employee management, workflow automation,
+Agent Execution, and AI Assistant authorization. SQLite remains available for
+local development, backup and restoration, and automated regression tests. The
+complete database path is verified against a live PostgreSQL 18.6 container.
 
-The template-based AI-agent module now includes template creation, lifecycle
+The template-based AI-agent module includes template creation, lifecycle
 management, durable execution records, protected execution history, protected
-execution details, and an administrator-only execution form for Active
-templates. Browser submissions enforce authentication, authorization, CSRF,
-current template status, and input limits before provider construction.
-Completed and safely Failed executions redirect to their protected detail
-records.
-
+execution details, and administrator-only execution for Active templates.
 ABAP's OpenAI adapter remains behind the provider-independent execution
-boundary. Credentials are loaded from the environment, request timeouts are
-validated, automatic SDK retries and Responses API storage are disabled, and
-provider failures become safe application errors. Application-factory
-injection keeps browser and live PostgreSQL tests deterministic, so automated
-verification never sends a paid provider request. The next AI-agent slice
-should be selected from the remaining Phase 2 roadmap after reviewing the
-current execution workflow and production-readiness needs.
+boundary with environment-based credentials, validated timeouts, disabled
+automatic retries, disabled response storage, and safe failures.
+
+ABAP now also has a provider-independent AI Assistant service foundation for
+one-off business questions. It uses protected system instructions, validates
+question, model, and response lengths, revalidates the current account and
+permission, and suppresses raw provider failure details. The shared dashboard
+now identifies the completed AI Agents workspace as Available. The next slice
+can add protected AI Assistant configuration and a browser interaction page
+using the existing provider factory.
