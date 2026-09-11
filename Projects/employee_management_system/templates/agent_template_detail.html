@@ -65,6 +65,20 @@
                 {{ agent_template["status"] | title }}
             </span>
 
+            {% if can_execute_agent_templates %}
+            <a
+                class="add-employee-link"
+                href="{{ url_for(
+                    'agent_execution_history',
+                    agent_template_id=agent_template[
+                        'agent_template_id'
+                    ]
+                ) }}"
+            >
+                View execution history
+            </a>
+            {% endif %}
+
             {% if can_manage_agent_templates %}
             <a
                 class="add-employee-link"

@@ -541,6 +541,90 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
             ],
         )
 
+        application = create_web_application(
+            session_secret=(
+                "day-148-live-agent-execution-browser"
+            ),
+        )
+
+        with TestClient(application) as client:
+            login_response = client.post(
+                "/login",
+                data={
+                    "username": self.username,
+                    "password": password,
+                },
+                follow_redirects=False,
+            )
+
+            self.assertEqual(
+                login_response.status_code,
+                303,
+            )
+
+            history_response = client.get(
+                (
+                    f"/agent-templates/"
+                    f"{self.agent_template_id.upper()}"
+                    f"/executions"
+                )
+            )
+
+            self.assertEqual(
+                history_response.status_code,
+                200,
+            )
+            self.assertIn(
+                execution["agent_execution_id"],
+                history_response.text,
+            )
+            self.assertIn(
+                "Completed",
+                history_response.text,
+            )
+            self.assertIn(
+                "deterministic-live-model",
+                history_response.text,
+            )
+            self.assertNotIn(
+                input_text,
+                history_response.text,
+            )
+            self.assertNotIn(
+                execution["output_text"],
+                history_response.text,
+            )
+
+            detail_response = client.get(
+                (
+                    f"/agent-templates/"
+                    f"{self.agent_template_id.upper()}"
+                    f"/executions/"
+                    f"{execution['agent_execution_id']}"
+                )
+            )
+
+            self.assertEqual(
+                detail_response.status_code,
+                200,
+            )
+            self.assertIn(
+                execution["agent_execution_id"],
+                detail_response.text,
+            )
+            self.assertIn(
+                input_text,
+                detail_response.text,
+            )
+            self.assertIn(
+                execution["output_text"],
+                detail_response.text,
+            )
+            self.assertIn(
+                "deterministic-live-model",
+                detail_response.text,
+            )
+
     def test_repository_round_trip_uses_live_postgresql(self):
         self.assertTrue(
             insert_user_account(

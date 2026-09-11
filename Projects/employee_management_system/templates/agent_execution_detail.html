@@ -1,0 +1,210 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-profile-section"
+    aria-labelledby="agent-execution-detail-heading"
+>
+    {% if agent_template %}
+    <a
+        class="back-link"
+        href="{{ url_for(
+            'agent_execution_history',
+            agent_template_id=agent_template[
+                'agent_template_id'
+            ]
+        ) }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to Agent Execution history
+    </a>
+    {% else %}
+    <a
+        class="back-link"
+        href="{{ url_for('agent_template_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to Agent Template directory
+    </a>
+    {% endif %}
+
+    {% if error_message %}
+    <div>
+        <p class="section-eyebrow">
+            AI agent operations
+        </p>
+
+        <h1
+            id="agent-execution-detail-heading"
+            class="section-title"
+        >
+            {{ page_title }}
+        </h1>
+    </div>
+
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+
+    {% elif agent_execution %}
+    <div class="employee-profile-heading">
+        <div>
+            <p class="section-eyebrow">
+                AI agent operations
+            </p>
+
+            <h1
+                id="agent-execution-detail-heading"
+                class="section-title"
+            >
+                Agent Execution
+            </h1>
+
+            <p class="page-message">
+                {{ agent_execution["agent_execution_id"] }}
+            </p>
+        </div>
+
+        <span class="employee-status">
+            <span
+                class="status-dot"
+                aria-hidden="true"
+            ></span>
+            {{ agent_execution["status"] | title }}
+        </span>
+    </div>
+
+    <section
+        class="employee-form-card"
+        aria-labelledby="agent-execution-summary-heading"
+    >
+        <h2 id="agent-execution-summary-heading">
+            Execution summary
+        </h2>
+
+        <dl class="profile-details">
+            <div>
+                <dt>Agent Template</dt>
+                <dd>
+                    <a
+                        href="{{ url_for(
+                            'agent_template_detail',
+                            agent_template_id=agent_execution[
+                                'agent_template_id'
+                            ]
+                        ) }}"
+                    >
+                        {{ agent_execution[
+                            "agent_template_name"
+                        ] }}
+                    </a>
+                </dd>
+            </div>
+
+            <div>
+                <dt>Template ID</dt>
+                <dd>
+                    {{ agent_execution["agent_template_id"] }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Model</dt>
+                <dd>{{ agent_execution["model_name"] }}</dd>
+            </div>
+
+            <div>
+                <dt>Status</dt>
+                <dd>
+                    {{ agent_execution["status"] | title }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Requested by user ID</dt>
+                <dd>
+                    {{ agent_execution[
+                        "requested_by_user_id"
+                    ] }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Started</dt>
+                <dd>
+                    <time
+                        datetime="{{ agent_execution['started_at'] }}"
+                        data-local-datetime
+                    >
+                        {{ agent_execution["started_at"] }}
+                    </time>
+                </dd>
+            </div>
+
+            <div>
+                <dt>Finished</dt>
+                <dd>
+                    {% if agent_execution["finished_at"] %}
+                    <time
+                        datetime="{{ agent_execution[
+                            'finished_at'
+                        ] }}"
+                        data-local-datetime
+                    >
+                        {{ agent_execution["finished_at"] }}
+                    </time>
+                    {% else %}
+                    Still running
+                    {% endif %}
+                </dd>
+            </div>
+        </dl>
+    </section>
+
+    <section
+        class="employee-form-card"
+        aria-labelledby="agent-execution-input-heading"
+    >
+        <h2 id="agent-execution-input-heading">
+            Submitted input
+        </h2>
+
+        <pre class="agent-template-prompt">{{ agent_execution["input_text"] }}</pre>
+    </section>
+
+    <section
+        class="employee-form-card"
+        aria-labelledby="agent-execution-result-heading"
+    >
+        <h2 id="agent-execution-result-heading">
+            Execution result
+        </h2>
+
+        {% if agent_execution["status"] == "completed" %}
+        <pre class="agent-template-prompt">{{ agent_execution["output_text"] }}</pre>
+
+        {% elif agent_execution["status"] == "failed" %}
+        <p
+            class="directory-message directory-message-error"
+            role="alert"
+        >
+            <span aria-hidden="true">!</span>
+            <span>
+                {{ agent_execution["error_message"] }}
+            </span>
+        </p>
+
+        {% else %}
+        <p class="page-message">
+            This execution is still running and does not have a
+            final result yet.
+        </p>
+        {% endif %}
+    </section>
+    {% endif %}
+</section>
+{% endblock %}

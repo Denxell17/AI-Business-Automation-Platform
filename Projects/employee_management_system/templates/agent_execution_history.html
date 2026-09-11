@@ -1,0 +1,174 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="directory-section"
+    aria-labelledby="agent-execution-history-heading"
+>
+    {% if agent_template %}
+    <a
+        class="back-link"
+        href="{{ url_for(
+            'agent_template_detail',
+            agent_template_id=agent_template[
+                'agent_template_id'
+            ]
+        ) }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to Agent Template details
+    </a>
+    {% else %}
+    <a
+        class="back-link"
+        href="{{ url_for('agent_template_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to Agent Template directory
+    </a>
+    {% endif %}
+
+    <div class="employee-form-heading">
+        <div>
+            <p class="section-eyebrow">
+                AI agent operations
+            </p>
+
+            <h1
+                id="agent-execution-history-heading"
+                class="section-title"
+            >
+                {{ page_title }}
+            </h1>
+
+            {% if agent_template %}
+            <p class="page-message">
+                Review the stored execution history for
+                {{ agent_template["agent_template_id"] }}.
+            </p>
+            {% endif %}
+        </div>
+
+        {% if agent_template %}
+        <span class="employee-status">
+            <span
+                class="status-dot"
+                aria-hidden="true"
+            ></span>
+            {{ agent_template["status"] | title }}
+        </span>
+        {% endif %}
+    </div>
+
+    {% if error_message %}
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+
+    {% elif execution_list %}
+    <div
+        class="employee-table-wrapper"
+        role="region"
+        aria-label="Agent Execution history"
+        tabindex="0"
+    >
+        <table class="employee-table">
+            <caption class="visually-hidden">
+                Agent Execution history for
+                {{ agent_template["name"] }}
+            </caption>
+
+            <thead>
+                <tr>
+                    <th scope="col">Execution ID</th>
+                    <th scope="col">Status</th>
+                    <th scope="col">Model</th>
+                    <th scope="col">Requested by</th>
+                    <th scope="col">Started</th>
+                    <th scope="col">Finished</th>
+                </tr>
+            </thead>
+
+            <tbody>
+                {% for execution in execution_list %}
+                <tr>
+                    <th scope="row">
+                        <a
+                            class="employee-profile-link"
+                            href="{{ url_for(
+                                'agent_execution_detail',
+                                agent_template_id=execution[
+                                    'agent_template_id'
+                                ],
+                                agent_execution_id=execution[
+                                    'agent_execution_id'
+                                ]
+                            ) }}"
+                        >
+                            {{ execution["agent_execution_id"] }}
+                        </a>
+                    </th>
+
+                    <td>
+                        <span class="employee-status">
+                            <span
+                                class="status-dot"
+                                aria-hidden="true"
+                            ></span>
+                            {{ execution["status"] | title }}
+                        </span>
+                    </td>
+
+                    <td>{{ execution["model_name"] }}</td>
+
+                    <td>
+                        User
+                        {{ execution["requested_by_user_id"] }}
+                    </td>
+
+                    <td>
+                        <time
+                            datetime="{{ execution['started_at'] }}"
+                            data-local-datetime
+                        >
+                            {{ execution["started_at"] }}
+                        </time>
+                    </td>
+
+                    <td>
+                        {% if execution["finished_at"] %}
+                        <time
+                            datetime="{{ execution['finished_at'] }}"
+                            data-local-datetime
+                        >
+                            {{ execution["finished_at"] }}
+                        </time>
+                        {% else %}
+                        Running
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+    {% else %}
+    <div class="empty-state">
+        <p class="empty-state-icon" aria-hidden="true">
+            ◎
+        </p>
+
+        <h2>No Agent Executions yet</h2>
+
+        <p>
+            This Agent Template has no stored execution history.
+        </p>
+    </div>
+    {% endif %}
+</section>
+{% endblock %}
