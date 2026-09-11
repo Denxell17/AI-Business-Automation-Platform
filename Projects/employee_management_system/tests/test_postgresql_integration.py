@@ -7,6 +7,7 @@ from uuid import uuid4
 import psycopg
 from fastapi.testclient import TestClient
 
+from agent_execution_service import execute_agent_template
 from database import (
     claim_workflow_schedule_occurrence,
     insert_agent_template,
@@ -17,6 +18,8 @@ from database import (
     insert_workflow_schedule,
     insert_workflow_task,
     insert_workflow_task_executions,
+    load_agent_execution_by_id,
+    load_agent_executions_for_template,
     load_agent_template_by_id,
     load_agent_templates_from_database,
     load_employees_from_database,
@@ -38,6 +41,31 @@ TEST_DATABASE_URL = os.environ.get(
 ).strip()
 
 TEST_TIMESTAMP = "2026-09-10T00:00:00+00:00"
+
+
+class LiveDeterministicAgentProvider:
+    def __init__(self):
+        self.calls = []
+
+    def generate_response(
+        self,
+        *,
+        model_name,
+        system_prompt,
+        input_text,
+    ):
+        self.calls.append(
+            {
+                "model_name": model_name,
+                "system_prompt": system_prompt,
+                "input_text": input_text,
+            }
+        )
+
+        return (
+            "Live PostgreSQL deterministic response "
+            f"for: {input_text}"
+        )
 
 
 @unittest.skipUnless(
@@ -123,6 +151,13 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
                 WHERE employee_id = %s
                 """,
                 (self.employee_id,),
+            )
+            connection.execute(
+                """
+                DELETE FROM agent_executions
+                WHERE UPPER(agent_template_id) = UPPER(%s)
+                """,
+                (self.agent_template_id,),
             )
             connection.execute(
                 """
@@ -380,6 +415,131 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
                 "Active",
                 detail_response.text,
             )
+
+    def test_agent_execution_service_uses_live_postgresql(
+        self,
+    ):
+        password = "Day147PostgresqlPassword123!"
+        system_prompt = (
+            "Use the protected live PostgreSQL instructions."
+        )
+        input_text = (
+            "Summarize this live PostgreSQL request."
+        )
+
+        self.assertTrue(
+            register_user_account(
+                self.username,
+                password,
+                "admin",
+            )
+        )
+
+        administrator = load_user_account_by_username(
+            self.username
+        )
+        self.assertIsNotNone(administrator)
+
+        if administrator is None:
+            self.fail(
+                "The live execution administrator was not found."
+            )
+
+        active_template = {
+            "agent_template_id": self.agent_template_id.upper(),
+            "name": "Day 147 Live Execution Agent",
+            "description": (
+                "Verifies Agent Execution against PostgreSQL."
+            ),
+            "system_prompt": system_prompt,
+            "model_name": "deterministic-live-model",
+            "status": "active",
+            "created_by_user_id": administrator["user_id"],
+            "created_at": TEST_TIMESTAMP,
+            "updated_at": TEST_TIMESTAMP,
+        }
+
+        self.assertTrue(
+            insert_agent_template(active_template)
+        )
+
+        provider = LiveDeterministicAgentProvider()
+
+        execution = execute_agent_template(
+            administrator,
+            self.agent_template_id.lower(),
+            f"  {input_text}  ",
+            provider,
+        )
+
+        self.assertIsNotNone(execution)
+
+        if execution is None:
+            self.fail(
+                "The live PostgreSQL Agent Execution "
+                "was not returned."
+            )
+
+        self.assertEqual(
+            execution["agent_template_id"],
+            self.agent_template_id.upper(),
+        )
+        self.assertEqual(
+            execution["agent_template_name"],
+            active_template["name"],
+        )
+        self.assertEqual(
+            execution["model_name"],
+            "deterministic-live-model",
+        )
+        self.assertEqual(
+            execution["status"],
+            "completed",
+        )
+        self.assertEqual(
+            execution["input_text"],
+            input_text,
+        )
+        self.assertEqual(
+            execution["output_text"],
+            (
+                "Live PostgreSQL deterministic response "
+                f"for: {input_text}"
+            ),
+        )
+        self.assertIsNone(execution["error_message"])
+        self.assertIsNotNone(execution["finished_at"])
+
+        stored_execution = load_agent_execution_by_id(
+            execution["agent_execution_id"]
+        )
+        self.assertEqual(
+            stored_execution,
+            execution,
+        )
+
+        execution_history = (
+            load_agent_executions_for_template(
+                self.agent_template_id.upper()
+            )
+        )
+        self.assertEqual(
+            execution_history,
+            [execution],
+        )
+
+        self.assertEqual(
+            provider.calls,
+            [
+                {
+                    "model_name": (
+                        "deterministic-live-model"
+                    ),
+                    "system_prompt": system_prompt,
+                    "input_text": input_text,
+                }
+            ],
+        )
 
     def test_repository_round_trip_uses_live_postgresql(self):
         self.assertTrue(

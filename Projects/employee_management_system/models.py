@@ -55,6 +55,32 @@ class AgentTemplate(TypedDict):
     created_at: str
     updated_at: str
 
+AGENT_EXECUTION_STATUS_RUNNING = "running"
+AGENT_EXECUTION_STATUS_COMPLETED = "completed"
+AGENT_EXECUTION_STATUS_FAILED = "failed"
+
+VALID_AGENT_EXECUTION_STATUSES = frozenset(
+    {
+        AGENT_EXECUTION_STATUS_RUNNING,
+        AGENT_EXECUTION_STATUS_COMPLETED,
+        AGENT_EXECUTION_STATUS_FAILED,
+    }
+)
+
+
+class AgentExecution(TypedDict):
+    agent_execution_id: str
+    agent_template_id: str
+    agent_template_name: str
+    model_name: str
+    status: str
+    input_text: str
+    output_text: str | None
+    error_message: str | None
+    requested_by_user_id: int
+    started_at: str
+    finished_at: str | None
+
 WORKFLOW_STATUS_DRAFT = "draft"
 WORKFLOW_STATUS_ACTIVE = "active"
 WORKFLOW_STATUS_INACTIVE = "inactive"

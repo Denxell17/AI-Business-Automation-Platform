@@ -22,6 +22,7 @@ class TestPostgresqlMigrations(unittest.TestCase):
                 "001_initial_schema.sql",
                 "002_correct_schema_contract.sql",
                 "003_create_agent_templates.sql",
+                "004_create_agent_executions.sql",
             ],
         )
 
@@ -96,6 +97,65 @@ class TestPostgresqlMigrations(unittest.TestCase):
         self.assertIn(
             "agent_templates_status_name_index",
             agent_template_sql,
+        )
+
+    def test_agent_execution_migration_contains_expected_contract(
+        self,
+    ):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        agent_execution_sql = migration_files[3].read_text(
+            encoding="utf-8-sig"
+        )
+
+        self.assertIn(
+            "CREATE TABLE IF NOT EXISTS agent_executions",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "'running'",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "'completed'",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "'failed'",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "REFERENCES agent_templates(agent_template_id)",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "REFERENCES users(user_id)",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "started_at TIMESTAMPTZ NOT NULL",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "finished_at TIMESTAMPTZ",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "output_text IS NOT NULL",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "error_message IS NOT NULL",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "agent_executions_template_started_index",
+            agent_execution_sql,
+        )
+        self.assertIn(
+            "agent_executions_user_started_index",
+            agent_execution_sql,
         )
 
     def test_missing_migrations_directory_is_rejected(self):
