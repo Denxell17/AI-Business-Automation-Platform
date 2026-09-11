@@ -513,10 +513,10 @@ source of truth, while legacy JSON tools support migration and verification.
 
 ABAP is developing into a secure business automation portfolio platform. The
 current application combines Employee Management, Workflow Automation, and
-the template-based AI-agent management foundation. It includes reusable workflows,
-ordered tasks, execution history, task outcomes, stored schedules,
-timezone-aware eligibility, duplicate occurrence protection, and protected
-agent-template configuration.
+template-based AI-agent management. It includes reusable workflows, ordered
+tasks, task outcomes, stored schedules, timezone-aware eligibility, duplicate
+occurrence protection, protected Agent Template configuration, and
+administrator-only Agent Execution history and detail views.
 
 The shared authenticated dashboard provides access to the available modules,
 API documentation, and system-health information through a consistent,
@@ -556,7 +556,7 @@ responsive interface.
   data checksums, localhost-only port binding, and a readiness health check
 - A gated live integration suite covering users, employees, workflows, tasks,
   executions, schedules, occurrence claims, agent-template browser operations,
-  Agent Execution service operations, and cleanup
+  Agent Execution service and browser operations, and cleanup
 
 ### AI Agent Template Capabilities
 
@@ -608,6 +608,12 @@ responsive interface.
 - Deterministic service tests that make no network requests and incur no API cost
 - Live PostgreSQL execution, finalization, loading, history, and cleanup
   verification
+- Administrator-only browser history ordered newest first without exposing
+  submitted input, generated output, or error details in the listing
+- Protected execution detail pages for Running, Completed, and Failed records
+  with escaped input, output, and safe error content
+- Template-scoped execution lookup that rejects mismatched execution IDs
+- Safe browser handling for missing records and database failures
 
 ### Shared Dashboard Capabilities
 
@@ -787,6 +793,10 @@ The FastAPI interface continues to provide:
   for administrators and viewers
 - `/agent-templates/{agent_template_id}/edit` — administrator-only Agent Template
   edit form and POST submission
+- `/agent-templates/{agent_template_id}/executions` — administrator-only Agent
+  Execution history
+- `/agent-templates/{agent_template_id}/executions/{agent_execution_id}` —
+  administrator-only Agent Execution detail page
 - `/workflows` — protected workflow directory
 - `/workflows/new` — administrator-only workflow creation form and POST
   submission
@@ -828,13 +838,13 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **556 automated tests passed**
+- **566 automated tests passed**
 - **50 dedicated agent-template authorization, schema, migration, repository,
   service, and browser lifecycle tests passed**
-- **23 dedicated Agent Execution authorization, schema, migration, repository,
-  and service tests passed**
+- **33 dedicated Agent Execution authorization, schema, migration, repository,
+  service, and browser tests passed**
 - **3 live PostgreSQL integration tests passed, including Agent Template browser
-  and Agent Execution service round trips**
+  plus Agent Execution service and protected browser round trips**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
   administrator-only service operations, live account revalidation, signed
   session CSRF protection, safe browser errors, and accessible display
@@ -876,5 +886,7 @@ module now includes template creation and lifecycle management plus a tested
 Agent Execution foundation. Active templates can run through a provider-neutral
 interface, with administrator authorization, live account revalidation,
 Running-to-Completed-or-Failed persistence, safe provider failures, and SQLite
-plus live PostgreSQL verification. Day 148 can add protected execution history
-and detail pages before a configured external provider adapter is introduced.
+plus live PostgreSQL verification. Administrators can now inspect newest-first
+execution history and protected execution details without exposing payloads in
+the history listing. Day 149 can introduce a configured external provider
+adapter while keeping secrets outside source control and tests deterministic.

@@ -30,6 +30,7 @@ from agent_template_service import (
 )
 from authorization import (
     DELETE_EMPLOYEE,
+    EXECUTE_AGENT_TEMPLATES,
     EXPORT_REPORT,
     MANAGE_AGENT_TEMPLATES,
     MANAGE_WORKFLOWS,
@@ -45,6 +46,8 @@ from authorization import (
 )
 from database import (
     DATABASE_FILE,
+    load_agent_execution_by_id,
+    load_agent_executions_for_template,
     load_agent_template_by_id,
     load_agent_templates_from_database,
     load_workflow_executions,
@@ -1228,6 +1231,217 @@ def create_web_application(
         )
 
     @application.get(
+        "/agent-templates/{agent_template_id}/executions",
+        response_class=HTMLResponse,
+    )
+    def agent_execution_history(
+        request: Request,
+        agent_template_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            EXECUTE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web Agent Execution history access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        normalized_template_id = (
+            agent_template_id.strip().upper()
+        )
+
+        try:
+            agent_template = load_agent_template_by_id(
+                normalized_template_id,
+                database_file,
+            )
+
+            execution_list = (
+                load_agent_executions_for_template(
+                    normalized_template_id,
+                    database_file,
+                )
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_execution_history.html",
+                context={
+                    "page_title": (
+                        "Agent Execution history unavailable"
+                    ),
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "agent_template": None,
+                    "execution_list": [],
+                    "error_message": (
+                        "Agent Execution history could not "
+                        "be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        if agent_template is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_execution_history.html",
+                context={
+                    "page_title": "Agent Template not found",
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "agent_template": None,
+                    "execution_list": [],
+                    "error_message": (
+                        "The requested Agent Template "
+                        "was not found."
+                    ),
+                },
+                status_code=404,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="agent_execution_history.html",
+            context={
+                "page_title": (
+                    f"{agent_template['name']} executions"
+                ),
+                "active_page": "agent_templates",
+                "current_user": current_user,
+                "agent_template": agent_template,
+                "execution_list": execution_list,
+                "error_message": None,
+            },
+        )
+
+    @application.get(
+        (
+            "/agent-templates/{agent_template_id}"
+            "/executions/{agent_execution_id}"
+        ),
+        response_class=HTMLResponse,
+    )
+    def agent_execution_detail(
+        request: Request,
+        agent_template_id: str,
+        agent_execution_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            EXECUTE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web Agent Execution detail access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        normalized_template_id = (
+            agent_template_id.strip().upper()
+        )
+        normalized_execution_id = (
+            agent_execution_id.strip().upper()
+        )
+
+        try:
+            agent_template = load_agent_template_by_id(
+                normalized_template_id,
+                database_file,
+            )
+            agent_execution = load_agent_execution_by_id(
+                normalized_execution_id,
+                database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_execution_detail.html",
+                context={
+                    "page_title": (
+                        "Agent Execution unavailable"
+                    ),
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "agent_template": None,
+                    "agent_execution": None,
+                    "error_message": (
+                        "The Agent Execution could not "
+                        "be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        if (
+            agent_template is None
+            or agent_execution is None
+            or agent_execution["agent_template_id"]
+            != normalized_template_id
+        ):
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_execution_detail.html",
+                context={
+                    "page_title": "Agent Execution not found",
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "agent_template": agent_template,
+                    "agent_execution": None,
+                    "error_message": (
+                        "The requested Agent Execution "
+                        "was not found."
+                    ),
+                },
+                status_code=404,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="agent_execution_detail.html",
+            context={
+                "page_title": (
+                    f"{agent_template['name']} execution"
+                ),
+                "active_page": "agent_templates",
+                "current_user": current_user,
+                "agent_template": agent_template,
+                "agent_execution": agent_execution,
+                "error_message": None,
+            },
+        )
+
+    @application.get(
         "/agent-templates/{agent_template_id}",
         response_class=HTMLResponse,
     )
@@ -1323,6 +1537,12 @@ def create_web_application(
                     user_has_permission(
                         current_user,
                         MANAGE_AGENT_TEMPLATES,
+                    )
+                ),
+                "can_execute_agent_templates": (
+                    user_has_permission(
+                        current_user,
+                        EXECUTE_AGENT_TEMPLATES,
                     )
                 ),
                 "agent_template": agent_template,
