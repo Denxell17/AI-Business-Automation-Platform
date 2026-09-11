@@ -23,7 +23,11 @@ from activity_logger import (
     load_recent_activity_entries,
     log_activity,
 )
-from agent_template_service import create_agent_template
+from agent_template_service import (
+    ALLOWED_AGENT_TEMPLATE_STATUS_TRANSITIONS,
+    create_agent_template,
+    update_agent_template,
+)
 from authorization import (
     DELETE_EMPLOYEE,
     EXPORT_REPORT,
@@ -41,6 +45,7 @@ from authorization import (
 )
 from database import (
     DATABASE_FILE,
+    load_agent_template_by_id,
     load_agent_templates_from_database,
     load_workflow_executions,
     load_workflow_task_executions,
@@ -957,6 +962,372 @@ def create_web_application(
                 "agent_template_directory"
             ),
             status_code=303,
+        )
+
+    @application.get(
+        "/agent-templates/{agent_template_id}/edit",
+        response_class=HTMLResponse,
+    )
+    def agent_template_edit_form(
+        request: Request,
+        agent_template_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web agent-template edit access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        normalized_template_id = (
+            agent_template_id.strip().upper()
+        )
+
+        try:
+            agent_template = load_agent_template_by_id(
+                normalized_template_id,
+                database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return HTMLResponse(
+                content=(
+                    "The agent template could not be loaded."
+                ),
+                status_code=500,
+            )
+
+        if agent_template is None:
+            return HTMLResponse(
+                content=(
+                    "The requested agent template was not found."
+                ),
+                status_code=404,
+            )
+
+        allowed_transition_set = (
+            ALLOWED_AGENT_TEMPLATE_STATUS_TRANSITIONS[
+                agent_template["status"]
+            ]
+        )
+        allowed_statuses = [
+            status_option
+            for status_option in (
+                "draft",
+                "active",
+                "inactive",
+            )
+            if status_option in allowed_transition_set
+        ]
+
+        return templates.TemplateResponse(
+            request=request,
+            name="agent_template_edit_form.html",
+            context={
+                "page_title": (
+                    f"Edit {agent_template['name']}"
+                ),
+                "active_page": "agent_templates",
+                "current_user": current_user,
+                "csrf_token": get_or_create_csrf_token(
+                    request
+                ),
+                "agent_template_id": (
+                    agent_template["agent_template_id"]
+                ),
+                "form_values": agent_template,
+                "expected_status": (
+                    agent_template["status"]
+                ),
+                "allowed_statuses": allowed_statuses,
+                "error_message": None,
+            },
+        )
+
+    @application.post(
+        "/agent-templates/{agent_template_id}/edit"
+    )
+    def agent_template_edit(
+        request: Request,
+        agent_template_id: str,
+        csrf_token: Annotated[str, Form()],
+        expected_status: Annotated[str, Form()] = "",
+        name: Annotated[str, Form()] = "",
+        description: Annotated[str, Form()] = "",
+        system_prompt: Annotated[str, Form()] = "",
+        model_name: Annotated[str, Form()] = "",
+        status: Annotated[str, Form()] = "",
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            MANAGE_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web agent-template edit access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity(
+                f"Web agent-template edit CSRF validation "
+                f"failed for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        normalized_template_id = (
+            agent_template_id.strip().upper()
+        )
+        normalized_expected_status = (
+            expected_status.strip().casefold()
+        )
+
+        allowed_transition_set = (
+            ALLOWED_AGENT_TEMPLATE_STATUS_TRANSITIONS.get(
+                normalized_expected_status,
+                frozenset(),
+            )
+        )
+        allowed_statuses = [
+            status_option
+            for status_option in (
+                "draft",
+                "active",
+                "inactive",
+            )
+            if status_option in allowed_transition_set
+        ]
+
+        form_values = {
+            "agent_template_id": normalized_template_id,
+            "name": name,
+            "description": description,
+            "system_prompt": system_prompt,
+            "model_name": model_name,
+            "status": status,
+        }
+
+        try:
+            agent_template_updated = update_agent_template(
+                current_user,
+                normalized_template_id,
+                name,
+                description,
+                system_prompt,
+                model_name,
+                status,
+                expected_status,
+                database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_template_edit_form.html",
+                context={
+                    "page_title": (
+                        f"Edit {normalized_template_id}"
+                    ),
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "agent_template_id": (
+                        normalized_template_id
+                    ),
+                    "form_values": form_values,
+                    "expected_status": (
+                        normalized_expected_status
+                    ),
+                    "allowed_statuses": allowed_statuses,
+                    "error_message": (
+                        "The agent template could not be saved "
+                        "because the database is unavailable."
+                    ),
+                },
+                status_code=500,
+            )
+
+        if not agent_template_updated:
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_template_edit_form.html",
+                context={
+                    "page_title": (
+                        f"Edit {normalized_template_id}"
+                    ),
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "csrf_token": get_or_create_csrf_token(
+                        request
+                    ),
+                    "agent_template_id": (
+                        normalized_template_id
+                    ),
+                    "form_values": form_values,
+                    "expected_status": (
+                        normalized_expected_status
+                    ),
+                    "allowed_statuses": allowed_statuses,
+                    "error_message": (
+                        "Agent template could not be updated. "
+                        "Verify the submitted fields and lifecycle "
+                        "transition, or refresh the page if another "
+                        "update was completed first."
+                    ),
+                },
+                status_code=400,
+            )
+
+        log_activity(
+            f"Web agent template {normalized_template_id} "
+            f"was updated to "
+            f"{status.strip().casefold()} by user "
+            f"{current_user['username']}."
+        )
+
+        return RedirectResponse(
+            url=request.url_for(
+                "agent_template_detail",
+                agent_template_id=normalized_template_id,
+            ),
+            status_code=303,
+        )
+
+    @application.get(
+        "/agent-templates/{agent_template_id}",
+        response_class=HTMLResponse,
+    )
+    def agent_template_detail(
+        request: Request,
+        agent_template_id: str,
+    ) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_AGENT_TEMPLATES,
+        ):
+            log_activity(
+                f"Web agent-template detail access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        normalized_template_id = (
+            agent_template_id.strip().upper()
+        )
+
+        try:
+            agent_template = load_agent_template_by_id(
+                normalized_template_id,
+                database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_template_detail.html",
+                context={
+                    "page_title": "Agent template unavailable",
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "can_manage_agent_templates": (
+                        user_has_permission(
+                            current_user,
+                            MANAGE_AGENT_TEMPLATES,
+                        )
+                    ),
+                    "agent_template": None,
+                    "error_message": (
+                        "The agent template could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        if agent_template is None:
+            return templates.TemplateResponse(
+                request=request,
+                name="agent_template_detail.html",
+                context={
+                    "page_title": "Agent template not found",
+                    "active_page": "agent_templates",
+                    "current_user": current_user,
+                    "can_manage_agent_templates": (
+                        user_has_permission(
+                            current_user,
+                            MANAGE_AGENT_TEMPLATES,
+                        )
+                    ),
+                    "agent_template": None,
+                    "error_message": (
+                        "The requested agent template was not found."
+                    ),
+                },
+                status_code=404,
+            )
+
+        return templates.TemplateResponse(
+            request=request,
+            name="agent_template_detail.html",
+            context={
+                "page_title": agent_template["name"],
+                "active_page": "agent_templates",
+                "current_user": current_user,
+                "can_manage_agent_templates": (
+                    user_has_permission(
+                        current_user,
+                        MANAGE_AGENT_TEMPLATES,
+                    )
+                ),
+                "agent_template": agent_template,
+                "error_message": None,
+            },
         )
 
     @application.get(

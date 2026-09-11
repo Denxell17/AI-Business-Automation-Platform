@@ -567,19 +567,24 @@ responsive interface.
 - Read-only `agent_templates.view` authorization for administrators and viewers
 - Matching SQLite and PostgreSQL persistence contracts
 - Ordered PostgreSQL migration `003_create_agent_templates.sql`
-- Parameterized insert, ordered-list, and exact-ID repository operations
-- Live account revalidation before template creation
+- Parameterized insert, ordered-list, exact-ID, and guarded update repository
+  operations
+- Live account revalidation before template creation and editing
 - Required-field and maximum-length validation
 - Draft-only creation so unreviewed prompts cannot become active immediately
-- Live PostgreSQL insertion, loading, timestamp, and cleanup verification
-- Protected browser directory for administrators and viewers
+- Controlled Draft-to-Active, Active-to-Inactive, and Inactive-to-Active
+  lifecycle transitions
+- Stored-status checks that reject stale lifecycle submissions
+- Protected browser directory and detail pages for administrators and viewers
+- Complete system prompts restricted to protected detail pages and excluded from
+  general listings
 - Allowlisted Draft, Active, and Inactive directory filtering
-- Administrator-only browser creation with signed-session CSRF protection
-- Draft-only creation enforced again by the service layer
+- Administrator-only browser creation and editing with signed-session CSRF
+  protection
 - Safe validation and database-error responses with submitted-value preservation
-- System prompts excluded from general directory listings
-- Permission-controlled sidebar navigation and activity logging
-- Live PostgreSQL browser creation and directory verification
+- Permission-controlled actions, sidebar navigation, and activity logging
+- Live PostgreSQL browser creation, editing, activation, detail, and cleanup
+  verification
 
 ### Shared Dashboard Capabilities
 
@@ -755,6 +760,10 @@ The FastAPI interface continues to provide:
   and viewers
 - `/agent-templates/new` — administrator-only Agent Template creation form
   and POST submission
+- `/agent-templates/{agent_template_id}` — protected Agent Template detail page
+  for administrators and viewers
+- `/agent-templates/{agent_template_id}/edit` — administrator-only Agent Template
+  edit form and POST submission
 - `/workflows` — protected workflow directory
 - `/workflows/new` — administrator-only workflow creation form and POST
   submission
@@ -796,9 +805,9 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **510 automated tests passed**
-- **28 dedicated agent-template authorization, schema, migration, repository,
-  service, and browser tests passed**
+- **532 automated tests passed**
+- **50 dedicated agent-template authorization, schema, migration, repository,
+  service, and browser lifecycle tests passed**
 - **2 live PostgreSQL integration tests passed, including a complete
   agent-template browser round trip**
 - Stored workflow schedules use typed models, constrained SQLite persistence,
@@ -839,7 +848,9 @@ automation. SQLite remains available for local development, backup and
 restoration, and automated regression tests. The complete database path is now
 verified against a live PostgreSQL 18.6 container. The template-based AI-agent
 module now includes its domain model, permissions, database schema, repository,
-secure draft-creation service, protected browser directory, status filtering,
-and administrator creation form. The next Phase 2 work can add protected
-template details, editing, and controlled Draft, Active, and Inactive lifecycle
-transitions.
+secure draft creation, protected directory and detail pages, administrator
+editing,
+status filtering, guarded updates, and controlled Draft, Active, and Inactive
+lifecycle transitions. The next Phase 2 work can begin an AI-agent execution
+foundation that selects only Active templates and keeps provider calls behind a
+testable adapter.

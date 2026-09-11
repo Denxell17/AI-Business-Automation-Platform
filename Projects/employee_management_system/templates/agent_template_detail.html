@@ -1,0 +1,162 @@
+{% extends "application_base.html" %}
+
+{% block content %}
+<section
+    class="employee-profile-section"
+    aria-labelledby="agent-template-detail-heading"
+>
+    <a
+        class="back-link"
+        href="{{ url_for('agent_template_directory') }}"
+    >
+        <span aria-hidden="true">←</span>
+        Back to agent template directory
+    </a>
+
+    {% if error_message %}
+    <div>
+        <p class="section-eyebrow">
+            AI agent configuration
+        </p>
+
+        <h1
+            id="agent-template-detail-heading"
+            class="section-title"
+        >
+            {{ page_title }}
+        </h1>
+    </div>
+
+    <p
+        class="directory-message directory-message-error"
+        role="alert"
+    >
+        <span aria-hidden="true">!</span>
+        <span>{{ error_message }}</span>
+    </p>
+
+    {% elif agent_template %}
+    <div class="employee-profile-heading">
+        <div>
+            <p class="section-eyebrow">
+                AI agent configuration
+            </p>
+
+            <h1
+                id="agent-template-detail-heading"
+                class="section-title"
+            >
+                {{ agent_template["name"] }}
+            </h1>
+
+            <p class="page-message">
+                {{ agent_template["description"]
+                    if agent_template["description"]
+                    else "No description has been provided." }}
+            </p>
+        </div>
+
+        <div class="directory-actions">
+            <span class="employee-status">
+                <span
+                    class="status-dot"
+                    aria-hidden="true"
+                ></span>
+                {{ agent_template["status"] | title }}
+            </span>
+
+            {% if can_manage_agent_templates %}
+            <a
+                class="add-employee-link"
+                href="{{ url_for(
+                    'agent_template_edit_form',
+                    agent_template_id=agent_template[
+                        'agent_template_id'
+                    ]
+                ) }}"
+            >
+                Edit agent template
+            </a>
+            {% endif %}
+        </div>
+    </div>
+
+    <section
+        class="employee-form-card"
+        aria-labelledby="agent-template-configuration-heading"
+    >
+        <h2 id="agent-template-configuration-heading">
+            Template configuration
+        </h2>
+
+        <dl class="profile-details">
+            <div>
+                <dt>Template ID</dt>
+                <dd>
+                    {{ agent_template["agent_template_id"] }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Model</dt>
+                <dd>{{ agent_template["model_name"] }}</dd>
+            </div>
+
+            <div>
+                <dt>Status</dt>
+                <dd>
+                    {{ agent_template["status"] | title }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Created by user ID</dt>
+                <dd>
+                    {{ agent_template["created_by_user_id"] }}
+                </dd>
+            </div>
+
+            <div>
+                <dt>Created</dt>
+                <dd>
+                    <time
+                        datetime="{{ agent_template['created_at'] }}"
+                        data-local-datetime
+                    >
+                        {{ agent_template["created_at"] }}
+                    </time>
+                </dd>
+            </div>
+
+            <div>
+                <dt>Last updated</dt>
+                <dd>
+                    <time
+                        datetime="{{ agent_template['updated_at'] }}"
+                        data-local-datetime
+                    >
+                        {{ agent_template["updated_at"] }}
+                    </time>
+                </dd>
+            </div>
+        </dl>
+    </section>
+
+    <section
+        class="employee-form-card"
+        aria-labelledby="agent-template-system-prompt-heading"
+    >
+        <h2 id="agent-template-system-prompt-heading">
+            System prompt
+        </h2>
+
+        <p class="form-help">
+            These protected instructions define how the AI agent
+            should behave.
+        </p>
+
+        <pre class="agent-template-prompt">{{ agent_template["system_prompt"] }}</pre>
+    </section>
+    {% endif %}
+</section>
+{% endblock %}

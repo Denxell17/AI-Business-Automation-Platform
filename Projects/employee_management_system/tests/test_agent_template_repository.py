@@ -7,6 +7,7 @@ from database import (
     load_agent_template_by_id,
     load_agent_templates_from_database,
     load_user_account_by_username,
+    update_agent_template_in_database,
 )
 from user_service import register_user_account
 
@@ -157,6 +158,99 @@ class TestAgentTemplateRepository(unittest.TestCase):
 
         self.assertTrue(first_inserted)
         self.assertFalse(duplicate_inserted)
+        self.assertEqual(
+            stored_template,
+            original_template,
+        )
+
+    def test_update_changes_editable_fields_and_status(self):
+        original_template = self.build_template(
+            "AGENT-000001",
+            "Original Assistant",
+        )
+
+        self.assertTrue(
+            insert_agent_template(
+                original_template,
+                self.database_file,
+            )
+        )
+
+        updated_template = original_template.copy()
+        updated_template.update(
+            {
+                "name": "Updated Assistant",
+                "description": "Updated description.",
+                "system_prompt": (
+                    "Follow the updated system instructions."
+                ),
+                "model_name": "gpt-6-astra",
+                "status": "active",
+                "updated_at": (
+                    "2026-09-11T01:00:00+00:00"
+                ),
+            }
+        )
+
+        updated = update_agent_template_in_database(
+            updated_template,
+            "draft",
+            self.database_file,
+        )
+        stored_template = load_agent_template_by_id(
+            "AGENT-000001",
+            self.database_file,
+        )
+
+        self.assertTrue(updated)
+        self.assertEqual(
+            stored_template,
+            updated_template,
+        )
+        self.assertEqual(
+            stored_template["created_by_user_id"],
+            original_template["created_by_user_id"],
+        )
+        self.assertEqual(
+            stored_template["created_at"],
+            original_template["created_at"],
+        )
+
+    def test_update_rejects_stale_expected_status(self):
+        original_template = self.build_template(
+            "AGENT-000001",
+            "Original Assistant",
+        )
+
+        self.assertTrue(
+            insert_agent_template(
+                original_template,
+                self.database_file,
+            )
+        )
+
+        attempted_update = original_template.copy()
+        attempted_update.update(
+            {
+                "name": "Stale Update",
+                "status": "active",
+                "updated_at": (
+                    "2026-09-11T01:00:00+00:00"
+                ),
+            }
+        )
+
+        updated = update_agent_template_in_database(
+            attempted_update,
+            "active",
+            self.database_file,
+        )
+        stored_template = load_agent_template_by_id(
+            "AGENT-000001",
+            self.database_file,
+        )
+
+        self.assertFalse(updated)
         self.assertEqual(
             stored_template,
             original_template,
