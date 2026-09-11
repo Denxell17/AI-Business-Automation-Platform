@@ -201,6 +201,19 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
         )
 
         with TestClient(application) as client:
+            readiness_response = client.get("/ready")
+
+            self.assertEqual(
+                readiness_response.status_code,
+                200,
+            )
+            self.assertEqual(
+                readiness_response.json(),
+                {
+                    "status": "ready",
+                },
+            )
+
             login_response = client.post(
                 "/login",
                 data={
