@@ -1,0 +1,14 @@
+**
+!Projects/
+!Projects/employee_management_system/
+!Projects/employee_management_system/*.py
+!Projects/employee_management_system/requirements*.txt
+!Projects/employee_management_system/templates/**
+!Projects/employee_management_system/static/**
+!Projects/employee_management_system/migrations/**
+!Projects/employee_management_system/tests/**
+**/__pycache__/**
+**/*.pyc
+**/.env*
+**/*.db
+**/*.log

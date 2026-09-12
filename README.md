@@ -270,6 +270,123 @@ Open `http://127.0.0.1:8000/` for the HTML home page,
 `http://127.0.0.1:8000/docs` for the interactive API documentation.
 
 
+## Deployment (Day 154)
+
+The production package uses `Dockerfile`, `compose.deploy.yaml`, and
+`Projects/employee_management_system/deployment.py`. It runs as an unprivileged
+user with PostgreSQL, persistent activity logs, and HTTPS-only session cookies.
+The original `compose.yaml` remains the local PostgreSQL development setup.
+Python and PostgreSQL images are pinned by digest; `requirements-deploy.txt`
+pins the resolved Python dependencies for the Linux Python 3.14 image. Review
+and refresh these pins deliberately, then repeat the verification below.
+
+### Configure secrets
+
+Copy `.env.example` to `.env.deploy` (ignored by Git). Set:
+
+- `POSTGRES_DB=abap` and `POSTGRES_USER=abap_user`.
+- `POSTGRES_PASSWORD` to a new random password.
+- `DATABASE_BACKEND=postgresql`.
+- `DATABASE_URL=postgresql://abap_user:PASSWORD@database:5432/abap?connect_timeout=5`.
+  Match the password and database values above; URL-encode special password
+  characters. `database` is the Compose service hostname.
+- `ABAP_SESSION_SECRET` to a separate random secret of at least 32 characters.
+  Generate secrets with `python -c "import secrets; print(secrets.token_urlsafe(48))"`.
+  Keep the session secret stable across restarts and replicas; changing it signs
+  everyone out. Production startup rejects missing, short, or placeholder secrets.
+- Leave `OPENAI_API_KEY` and `AI_ASSISTANT_MODEL` empty unless intentionally
+  enabling AI functionality. Probes, migrations, and tests require no AI calls.
+
+Restrict access to the environment file. Never commit it, put credentials in
+image build arguments, or share rendered Compose configuration containing secrets.
+Deployment platforms may inject the same values through their secret manager.
+
+### Build and start
+
+Run from the repository root with Docker and Docker Compose available:
+
+```powershell
+docker compose --env-file .env.deploy -f compose.deploy.yaml config --quiet
+docker compose --env-file .env.deploy -f compose.deploy.yaml build
+docker compose --env-file .env.deploy -f compose.deploy.yaml up -d --wait
+docker compose --env-file .env.deploy -f compose.deploy.yaml ps -a
+docker compose --env-file .env.deploy -f compose.deploy.yaml exec web python admin_setup.py
+```
+
+The database must become healthy before the one-shot migration service runs;
+the web service starts only after migrations succeed. The administrator command
+prompts for a hidden password and creates an account only when no accounts exist.
+Do not seed default credentials. The production command is:
+
+```text
+python -m uvicorn deployment:create_application --factory --host 0.0.0.0 --port 8000 --no-proxy-headers
+```
+
+On a non-Compose platform, set the same environment, run `python -m deployment`
+once as a release step from the application directory, then start Uvicorn with
+the command above. Do not run concurrent migration jobs. Development reload is
+not enabled. Database credentials currently also apply schema changes; use a
+dedicated database and restrict network and credential access.
+
+### HTTPS and probes
+
+The web port binds to host loopback `127.0.0.1:8000`; PostgreSQL has no published
+host port. Configure a host reverse proxy or platform ingress with a valid TLS
+certificate, forwarding HTTPS traffic to that web port and redirecting public
+HTTP to HTTPS. A containerized proxy needs the private Compose network instead
+of host loopback. Do not expose port 8000 publicly. TLS provisioning is an
+operator prerequisite and is not included in this package.
+
+Production cookies always have `Secure`, `HttpOnly`, and `SameSite=Lax`.
+Plain HTTP is suitable for local probes, but use HTTPS for browser login.
+Forwarded headers are disabled by default. If your ingress needs them, enable
+`--proxy-headers` and set `--forwarded-allow-ips` to its exact trusted addresses;
+do not trust arbitrary clients.
+
+- Liveness: `GET /health` returns `200` without requiring the database.
+- Readiness: `GET /ready` returns `200` with a usable core schema, otherwise
+  `503` with a safe response. No authentication is required for either probe.
+- Compose checks `/ready` every 15 seconds with a 5-second request timeout,
+  three retries, and a 20-second startup grace period. Configure platform
+  liveness separately using `/health` and route traffic only to ready instances.
+  Compose reports unhealthy status; it does not automatically restart an
+  unhealthy but still-running process or supply a load balancer.
+
+```powershell
+curl.exe --fail http://127.0.0.1:8000/health
+curl.exe --fail http://127.0.0.1:8000/ready
+docker compose --env-file .env.deploy -f compose.deploy.yaml logs --tail 100 migrate web
+```
+
+Startup ordering follows [Docker Compose dependency conditions](https://docs.docker.com/compose/how-tos/startup-order/).
+Proxy configuration follows [Uvicorn deployment guidance](https://www.uvicorn.org/deployment/).
+
+### Verification and operations
+
+```powershell
+docker run --rm abap:day154 python -m unittest discover -s tests -p test_deployment.py -v
+docker run --rm abap:day154 python run_tests.py
+```
+
+For live integration tests, use a dedicated disposable database with migrations
+applied, set `ABAP_TEST_DATABASE_URL` to it, and run
+`python -m unittest discover -s tests -p test_postgresql_integration.py -v`
+inside the image on that database's network. Never point these tests at production.
+
+Before updates, back up PostgreSQL with PostgreSQL-native tools and verify a
+restore into a separate database. SQLite backup utilities do not back up
+PostgreSQL. Preserve the `database_data` and `activity_logs` volumes. Archive or
+rotate activity logs operationally; automatic log rotation is not included.
+Changing `POSTGRES_PASSWORD` in the environment does not rotate credentials in
+an already initialized volume; coordinate database-side password changes too.
+
+For a release, set a unique `ABAP_IMAGE_TAG`, build and test the image, back up,
+stop web traffic, run `docker compose --env-file .env.deploy -f compose.deploy.yaml run --rm migrate`,
+then recreate services with `up -d --wait`. Retain the previous image. Rollback
+requires a schema-compatible image or a tested backup restore; migrations do
+not provide automatic downgrades. `down` stops services while preserving data;
+do not use `down -v` on a deployment whose data must be retained.
+
 ## Creating the Initial Administrator
 
 To create the first SQLite administrator account, run:
@@ -912,7 +1029,9 @@ The FastAPI interface continues to provide:
 
 ### Verification
 
-- **615 automated tests passed**
+- **619 automated tests ran successfully (616 passed, 3 expected live PostgreSQL skips)**
+- **4 deployment tests passed**, covering configuration rejection, secure
+  cookies, session continuity, and explicit migration configuration
 - **50 dedicated agent-template authorization, schema, migration, repository,
   service, and browser lifecycle tests passed**
 - **33 dedicated Agent Execution authorization, schema, migration, repository,
@@ -979,5 +1098,10 @@ Operational readiness now distinguishes a running FastAPI process from an
 instance that can use its configured database. The public `/health` endpoint
 remains database-independent, while `/ready` checks connectivity and the shared
 core schema and returns a safe `503` when unavailable. Both SQLite and live
-PostgreSQL paths are verified. Day 154 can add reproducible application
-deployment packaging that uses these operational endpoints.
+PostgreSQL paths are verified. Day 154 adds a verified deployment image with
+pinned dependencies, PostgreSQL startup ordering, explicit migrations, stable
+session secrets, secure cookies, persistent logs, and readiness monitoring.
+Fresh startup, repeat migrations, database-outage behavior, and recovery were
+verified with an isolated Compose stack. Public hosting and TLS configuration
+remain operator prerequisites. Day 155 is the roadmap target for portfolio MVP
+review and documentation; remaining roadmap gaps must be identified honestly.

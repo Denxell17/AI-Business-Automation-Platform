@@ -1,0 +1,59 @@
+name: abap-deploy
+
+x-application: &application
+  image: abap:${ABAP_IMAGE_TAG:-day154}
+  build: .
+  environment:
+    DATABASE_BACKEND: postgresql
+    DATABASE_URL: ${DATABASE_URL:?Set the deployment PostgreSQL URL with host database}
+    ABAP_SESSION_SECRET: ${ABAP_SESSION_SECRET:?Set a random session secret}
+    OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+    OPENAI_TIMEOUT_SECONDS: ${OPENAI_TIMEOUT_SECONDS:-30}
+    AI_ASSISTANT_MODEL: ${AI_ASSISTANT_MODEL:-}
+
+services:
+  database:
+    image: postgres:18.6@sha256:4ef4dbc939d61acea57712655ddb4b4ab27419c913f94cca0cd57cb3ea3c2280
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:?Set POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER:?Set POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "--data-checksums"
+    volumes:
+      - database_data:/var/lib/postgresql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 10s
+
+  migrate:
+    <<: *application
+    command: ["python", "-m", "deployment"]
+    depends_on:
+      database:
+        condition: service_healthy
+    restart: "no"
+
+  web:
+    <<: *application
+    restart: unless-stopped
+    volumes:
+      - activity_logs:/app/logs
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    ports:
+      - "127.0.0.1:8000:8000"
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/ready', timeout=5)"]
+      interval: 15s
+      timeout: 6s
+      retries: 3
+      start_period: 20s
+
+volumes:
+  database_data:
+  activity_logs:
