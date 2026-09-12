@@ -2,6 +2,11 @@
 
 A Python learning and portfolio project focused on building practical business automation software. The long-term goal is to develop an AI-powered platform that automates repetitive office processes.
 
+The [portfolio case study](PORTFOLIO.md) presents the business problem,
+architecture, verified capabilities, demonstration path, and an honest Phase 2
+roadmap audit. ABAP's secure automation core is portfolio-ready; the case study
+also identifies the broader modules and production operations that remain.
+
 ## Current Module
 
 ### Employee Management System
@@ -628,8 +633,8 @@ source of truth, while legacy JSON tools support migration and verification.
 
 ### ABAP Platform Development
 
-ABAP is developing into a secure business automation portfolio platform. The
-current application combines Employee Management, Workflow Automation, and
+ABAP's secure automation core is a portfolio-ready MVP. The current application
+combines Employee Management, Workflow Automation, and
 template-based AI-agent management. It includes reusable workflows, ordered
 tasks, task outcomes, stored schedules, timezone-aware eligibility, duplicate
 occurrence protection, protected Agent Template configuration, and
@@ -638,6 +643,12 @@ administrator-only Agent Execution history and detail views.
 The shared authenticated dashboard provides access to the available modules,
 API documentation, process-liveness information, and database-readiness
 information through a consistent, responsive interface.
+
+The complete [Phase 2 roadmap audit](PORTFOLIO.md#phase-2-roadmap-audit)
+distinguishes implemented, partial, and planned scope. Leads, customers,
+invoices, documents, and webhooks are not yet implemented. Stored scheduling
+does not include an autonomous background worker, and the deployment package
+has not been published to a public host.
 
 ### Database Portability
 
@@ -1103,5 +1114,7 @@ pinned dependencies, PostgreSQL startup ordering, explicit migrations, stable
 session secrets, secure cookies, persistent logs, and readiness monitoring.
 Fresh startup, repeat migrations, database-outage behavior, and recovery were
 verified with an isolated Compose stack. Public hosting and TLS configuration
-remain operator prerequisites. Day 155 is the roadmap target for portfolio MVP
-review and documentation; remaining roadmap gaps must be identified honestly.
+remain operator prerequisites. Day 155 completes the portfolio case study,
+demonstration guide, verification record, and honest Phase 2 coverage audit.
+The secure automation core is portfolio-ready, while the explicitly listed
+planned and partial capabilities remain future work.
