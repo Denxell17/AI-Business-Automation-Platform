@@ -1,246 +1,44 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon, status with context %}
 
 {% block content %}
-<section
-    class="directory-section"
-    aria-labelledby="employee-directory-heading"
->
-    <div class="directory-heading">
-        <div>
-            <p class="section-eyebrow">Employee management</p>
+<section class="data-page" aria-labelledby="employee-directory-heading">
+    <header class="data-page-heading">
+        <div><p class="section-eyebrow">Workforce</p><h1 id="employee-directory-heading" class="section-title">Employees</h1><p class="data-page-description">Manage employee records and workforce data.</p></div>
+        {% if can_register_employee %}<a class="ui-button ui-button--primary" href="{{ url_for('employee_create_form') }}">{{ icon('plus') }}<span>Add employee</span></a>{% endif %}
+    </header>
 
-            <h1
-                id="employee-directory-heading"
-                class="section-title"
-            >
-                Employee directory
-            </h1>
-
-            <p class="page-message">
-                View the current workforce records stored in SQLite.
-            </p>
+    <form class="employee-filter-bar" method="get" action="{{ url_for('employee_directory') }}" aria-label="Search and filter employees">
+        <div class="employee-filter-primary">
+            <label class="search-control" for="search_text"><span class="ui-visually-hidden">Search by name</span>{{ icon('employees') }}<input id="search_text" name="search_text" type="search" placeholder="Search employees by name…" value="{{ filter_values['search_text'] }}"></label>
+            <label class="filter-control" for="department"><span class="ui-visually-hidden">Department</span>{{ icon('report') }}<input id="department" name="department" type="text" placeholder="All departments" value="{{ filter_values['department'] }}"></label>
+            <button class="ui-button ui-button--primary" type="submit">Apply filters</button>
         </div>
-
-        <div class="directory-actions">
-            {% if can_register_employee %}
-            <a
-                class="add-employee-link"
-                href="{{ url_for('employee_create_form') }}"
-            >
-                <span aria-hidden="true">+</span>
-                Add employee
-            </a>
-            {% endif %}
-
-            {% if not error_message %}
-            <p class="directory-count">
-                <strong>{{ employee_list | length }}</strong>
-                {% if employee_list | length == 1 %}
-                    employee
-                {% else %}
-                    employees
-                {% endif %}
-            </p>
-            {% endif %}
-        </div>
-    </div>
-
-    <form
-        class="directory-filter-form"
-        method="get"
-        action="{{ url_for('employee_directory') }}"
-        aria-label="Search and filter employees"
-    >
-        <div class="directory-filter-fields">
-            <div class="form-field">
-                <label for="search_text">Search by name</label>
-                <input
-                    id="search_text"
-                    name="search_text"
-                    type="search"
-                    value="{{ filter_values['search_text'] }}"
-                >
+        <details class="advanced-filters"{% if filter_values['minimum_salary'] or filter_values['maximum_salary'] or filter_values['sort_by'] %} open{% endif %}>
+            <summary>Advanced filters{% if filters_applied %}<span class="filter-active-dot" aria-label="Filters active"></span>{% endif %}</summary>
+            <div class="advanced-filter-grid">
+                <div class="form-field"><label for="minimum_salary">Minimum salary</label><input id="minimum_salary" name="minimum_salary" type="number" min="0" step="1" value="{{ filter_values['minimum_salary'] }}"></div>
+                <div class="form-field"><label for="maximum_salary">Maximum salary</label><input id="maximum_salary" name="maximum_salary" type="number" min="0" step="1" value="{{ filter_values['maximum_salary'] }}"></div>
+                <div class="form-field"><label for="sort_by">Sort results by</label><select id="sort_by" name="sort_by"><option value=""{% if not filter_values['sort_by'] %} selected{% endif %}>Default order</option><option value="name"{% if filter_values['sort_by'] == 'name' %} selected{% endif %}>Name: A to Z</option><option value="salary"{% if filter_values['sort_by'] == 'salary' %} selected{% endif %}>Salary: highest first</option></select></div>
             </div>
-
-            <div class="form-field">
-                <label for="department">Department</label>
-                <input
-                    id="department"
-                    name="department"
-                    type="text"
-                    value="{{ filter_values['department'] }}"
-                >
-            </div>
-
-            <div class="form-field">
-                <label for="minimum_salary">
-                    Minimum salary
-                </label>
-                <input
-                    id="minimum_salary"
-                    name="minimum_salary"
-                    type="number"
-                    min="0"
-                    step="1"
-                    value="{{ filter_values['minimum_salary'] }}"
-                >
-            </div>
-
-            <div class="form-field">
-                <label for="maximum_salary">
-                    Maximum salary
-                </label>
-                <input
-                    id="maximum_salary"
-                    name="maximum_salary"
-                    type="number"
-                    min="0"
-                    step="1"
-                    value="{{ filter_values['maximum_salary'] }}"
-                >
-            </div>
-
-            <div class="form-field">
-                <label for="sort_by">Sort results by</label>
-                <select id="sort_by" name="sort_by">
-                    <option
-                        value=""
-                        {% if not filter_values["sort_by"] %}
-                        selected
-                        {% endif %}
-                    >
-                        Default order
-                    </option>
-
-                    <option
-                        value="name"
-                        {% if filter_values["sort_by"] == "name" %}
-                        selected
-                        {% endif %}
-                    >
-                        Name: A to Z
-                    </option>
-
-                    <option
-                        value="salary"
-                        {% if filter_values["sort_by"] == "salary" %}
-                        selected
-                        {% endif %}
-                    >
-                        Salary: highest first
-                    </option>
-                </select>
-            </div>
-        </div>
-
-        <div class="directory-filter-actions">
-            <button
-                class="directory-filter-button"
-                type="submit"
-            >
-                <span aria-hidden="true">⌕</span>
-                Apply filters
-            </button>
-
-            {% if filters_applied %}
-            <a
-                class="directory-clear-filters-link"
-                href="{{ url_for('employee_directory') }}"
-            >
-                Clear filters
-            </a>
-            {% endif %}
-        </div>
+        </details>
+        {% if filters_applied %}<a class="clear-filter-link" href="{{ url_for('employee_directory') }}">Clear filters</a>{% endif %}
     </form>
 
-    {% if filter_error and not error_message %}
-    <p
-        class="directory-message directory-message-error"
-        role="alert"
-    >
-        <span aria-hidden="true">!</span>
-        <span>{{ filter_error }}</span>
-    </p>
-    {% endif %}
-
-    {% if error_message %}
-    <p class="directory-message directory-message-error" role="alert">
-        <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
-    </p>
+    {% if filter_error and not error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ filter_error }}</span></div>{% endif %}
+    {% if error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ error_message }}</span></div>
     {% elif employee_list %}
-    <div
-        class="employee-table-wrapper"
-        tabindex="0"
-        aria-label="Scrollable employee directory"
-    >
-        <table class="employee-table">
-            <caption>
-                Current employee records
-            </caption>
-
-            <thead>
-                <tr>
-                    <th scope="col">Employee ID</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Department</th>
-                    <th scope="col">Position</th>
-                    <th scope="col">Status</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for employee in employee_list %}
-                <tr>
-                    <td>{{ employee["employee_id"] }}</td>
-                    <th scope="row">
-                        <a
-                            class="employee-profile-link"
-                            href="{{ url_for(
-                                'employee_profile',
-                                employee_id=employee['employee_id']
-                            ) }}"
-                        >
-                            {{ employee["name"] }}
-                        </a>
-                    </th>
-                    <td>{{ employee["department"] }}</td>
-                    <td>{{ employee["position"] }}</td>
-                    <td>
-                        <span class="employee-status">
-                            <span
-                                class="status-dot"
-                                aria-hidden="true"
-                            ></span>
-                            {{ employee["employment_status"] }}
-                        </span>
-                    </td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
+    <section class="data-table-card" aria-labelledby="employee-results-heading">
+        <header class="data-table-heading"><div><h2 id="employee-results-heading">Employee directory</h2><p>Current authorized workforce records.</p></div><p><strong>{{ employee_list | length }}</strong> result{% if employee_list | length != 1 %}s{% endif %}</p></header>
+        <div class="ui-table-wrapper employee-table-wrapper" role="region" tabindex="0" aria-label="Scrollable employee directory"><table class="employee-table"><caption>Current employee records</caption><thead><tr><th scope="col">Name</th><th scope="col">Email address</th><th scope="col">Department</th><th scope="col">Role</th><th scope="col">Status</th></tr></thead><tbody>
+            {% for employee in employee_list %}<tr>
+                <th scope="row"><a class="employee-profile-link employee-identity" href="{{ url_for('employee_profile', employee_id=employee['employee_id']) }}"><span class="employee-avatar" aria-hidden="true">{{ employee['name'][:2] | upper }}</span><span><strong>{{ employee['name'] }}</strong><small>{{ employee['employee_id'] }}</small></span></a></th>
+                <td>{{ employee['email'] }}</td><td>{{ employee['department'] }}</td><td>{{ employee['position'] }}</td><td>{{ status(employee['employment_status']) }}</td>
+            </tr>{% endfor %}
+        </tbody></table></div>
+    </section>
     {% else %}
-    <div class="directory-empty-state">
-        <span
-            class="directory-empty-icon"
-            aria-hidden="true"
-        >○</span>
-
-        <div>
-            {% if filters_applied %}
-            <h2>No matching employees found</h2>
-            <p>
-                Try changing or clearing the current filters.
-            </p>
-            {% else %}
-            <h2>No employees found</h2>
-            <p>
-                Employee records will appear here after they are added.
-            </p>
-            {% endif %}
-        </div>
-    </div>
+    <div class="ui-empty-state employee-empty-state">{{ icon('employees') }}<div>{% if filters_applied %}<h2>No matching employees found</h2><p>Try changing or clearing the current filters.</p>{% else %}<h2>No employees found</h2><p>Employee records will appear here after they are added.</p>{% endif %}</div>{% if can_register_employee and not filters_applied %}<a class="ui-button ui-button--primary" href="{{ url_for('employee_create_form') }}">Add employee</a>{% endif %}</div>
     {% endif %}
 </section>
 {% endblock %}

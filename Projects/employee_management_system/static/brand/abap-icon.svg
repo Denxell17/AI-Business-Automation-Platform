@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 132" role="img" aria-labelledby="title desc">
+    <title id="title">ABAP</title>
+    <desc id="desc">Compact ABAP A-and-dot mark.</desc>
+    <defs>
+        <linearGradient id="abap-icon-gradient" x1="0" y1="0" x2="1" y2="1">
+            <stop offset="0" stop-color="#2563eb"/>
+            <stop offset="1" stop-color="#06b6d4"/>
+        </linearGradient>
+    </defs>
+    <path d="M17 111 68 25q12-20 24 0l51 86" fill="none" stroke="url(#abap-icon-gradient)" stroke-width="25" stroke-linecap="round" stroke-linejoin="round"/>
+    <circle cx="80" cy="101" r="12" fill="url(#abap-icon-gradient)"/>
+</svg>

@@ -1,246 +1,85 @@
 {% extends "base.html" %}
+{% from "ui_macros.html" import icon with context %}
 
 {% block body %}
 <div class="application-shell">
-    <aside
-        id="primary-navigation"
-        class="sidebar"
-        aria-label="Primary navigation"
-    >
-        <div class="brand">
-            <span class="brand-mark" aria-hidden="true">A</span>
-            <div>
-                <p class="brand-name">ABAP</p>
-                <p class="brand-description">
-                    AI Business Automation Platform
-                </p>
-            </div>
+    <aside id="primary-navigation" class="sidebar" aria-label="Primary navigation">
+        <div class="sidebar-header">
+            <a class="brand" href="{{ url_for('home_page') }}" aria-label="ABAP Dashboard">
+                <img class="brand-lockup" src="{{ url_for('static', path='/brand/abap-wordmark-approved-transparent.png') }}" alt="ABAP" width="160" height="53">
+                <span class="brand-tagline">AI Business Automation Platform</span>
+            </a>
+            <button class="sidebar-close-button" type="button" data-navigation-close aria-label="Close navigation">{{ icon('x') }}</button>
         </div>
 
         <nav aria-label="ABAP workspace navigation">
-            <p class="navigation-heading">Workspace</p>
+            <section class="navigation-section" aria-labelledby="workspace-navigation-heading">
+                <h2 id="workspace-navigation-heading" class="navigation-heading">Workspace</h2>
+                <ul class="navigation-list">
+                    <li><a class="navigation-link{% if active_page == 'home' %} is-active{% endif %}" href="{{ url_for('home_page') }}" {% if active_page == 'home' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('dashboard', class_name='ui-icon--filled') }}</span><span>Dashboard</span></a></li>
+                    <li><a class="navigation-link{% if active_page == 'employees' %} is-active{% endif %}" href="{{ url_for('employee_directory') }}" {% if active_page == 'employees' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('employees') }}</span><span>Employees</span></a></li>
+                    <li><a class="navigation-link{% if active_page == 'workflows' %} is-active{% endif %}" href="{{ url_for('workflow_directory') }}" {% if active_page == 'workflows' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('workflows') }}</span><span>Workflows</span></a></li>
+                    {% if user_has_permission(current_user, VIEW_AGENT_TEMPLATES) %}
+                    <li><a class="navigation-link{% if active_page == 'agent_templates' %} is-active{% endif %}" href="{{ url_for('agent_template_directory') }}" {% if active_page == 'agent_templates' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('agent') }}</span><span>Agent templates</span></a></li>
+                    {% endif %}
+                    {% if user_has_permission(current_user, EXECUTE_AGENT_TEMPLATES) %}
+                    <li><a class="navigation-link{% if active_page == 'ai_assistant' %} is-active{% endif %}" href="{{ url_for('ai_assistant_page') }}" {% if active_page == 'ai_assistant' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('assistant', class_name='ui-icon--filled') }}</span><span>AI Assistant</span></a></li>
+                    {% endif %}
+                    <li><a class="navigation-link{% if active_page == 'reports' %} is-active{% endif %}" href="{{ url_for('workforce_report') }}" {% if active_page == 'reports' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('report') }}</span><span>Reports</span></a></li>
+                </ul>
+            </section>
 
-            <ul class="navigation-list">
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'home' %} is-active{% endif %}"
-                        href="{{ url_for('home_page') }}"
-                        {% if active_page == 'home' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >⌂</span>
-                        Dashboard
-                    </a>
-                </li>
+            {% if user_has_permission(current_user, VIEW_ACTIVITY_LOG) or user_has_permission(current_user, MANAGE_USER_ACCOUNTS) %}
+            <section class="navigation-section" aria-labelledby="administration-navigation-heading">
+                <h2 id="administration-navigation-heading" class="navigation-heading">Administration</h2>
+                <ul class="navigation-list">
+                    {% if user_has_permission(current_user, VIEW_ACTIVITY_LOG) %}
+                    <li><a class="navigation-link{% if active_page == 'activity_log' %} is-active{% endif %}" href="{{ url_for('activity_log_page') }}" {% if active_page == 'activity_log' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('activity-log') }}</span><span>Activity log</span></a></li>
+                    {% endif %}
+                    {% if user_has_permission(current_user, MANAGE_USER_ACCOUNTS) %}
+                    <li><a class="navigation-link{% if active_page == 'users' %} is-active{% endif %}" href="{{ url_for('user_account_directory') }}" {% if active_page == 'users' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('users') }}</span><span>User accounts</span></a></li>
+                    {% endif %}
+                </ul>
+            </section>
+            {% endif %}
 
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'employees' %} is-active{% endif %}"
-                        href="{{ url_for('employee_directory') }}"
-                        {% if active_page == 'employees' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >♙</span>
-                        Employees
-                    </a>
-                </li>
-
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'workflows' %} is-active{% endif %}"
-                        href="{{ url_for('workflow_directory') }}"
-                        {% if active_page == 'workflows' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >↻</span>
-                        Workflows
-                    </a>
-                </li>
-                {% if user_has_permission(
-                    current_user,
-                    VIEW_AGENT_TEMPLATES
-                ) %}
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'agent_templates' %} is-active{% endif %}"
-                        href="{{ url_for('agent_template_directory') }}"
-                        {% if active_page == 'agent_templates' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >◇</span>
-                        Agent templates
-                    </a>
-                </li>
-                {% endif %}
-
-                {% if user_has_permission(
-                    current_user,
-                    EXECUTE_AGENT_TEMPLATES
-                ) %}
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'ai_assistant' %} is-active{% endif %}"
-                        href="{{ url_for('ai_assistant_page') }}"
-                        {% if active_page == 'ai_assistant' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >✦</span>
-                        AI Assistant
-                    </a>
-                </li>
-                {% endif %}
-
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'reports' %} is-active{% endif %}"
-                        href="{{ url_for('workforce_report') }}"
-                        {% if active_page == 'reports' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >▤</span>
-                        Reports
-                    </a>
-                </li>
-                {% if user_has_permission(
-                    current_user,
-                    VIEW_ACTIVITY_LOG
-                ) %}
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'activity_log' %} is-active{% endif %}"
-                        href="{{ url_for('activity_log_page') }}"
-                        {% if active_page == 'activity_log' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >▤</span>
-                        Activity log
-                    </a>
-                </li>
-                {% endif %}
-
-                {% if user_has_permission(
-                    current_user,
-                    MANAGE_USER_ACCOUNTS
-                ) %}
-                <li>
-                    <a
-                        class="navigation-link{% if active_page == 'users' %} is-active{% endif %}"
-                        href="{{ url_for('user_account_directory') }}"
-                        {% if active_page == 'users' %}aria-current="page"{% endif %}
-                    >
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >♙</span>
-                        User accounts
-                    </a>
-                </li>
-                {% endif %}
-
-                <li>
-                    <a class="navigation-link" href="/docs">
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >?</span>
-                        API documentation
-                    </a>
-                </li>
-
-                <li>
-                    <a class="navigation-link" href="/health">
-                        <span
-                            class="navigation-icon"
-                            aria-hidden="true"
-                        >✓</span>
-                        System health
-                    </a>
-                </li>
-            </ul>
+            <section class="navigation-section" aria-labelledby="resources-navigation-heading">
+                <h2 id="resources-navigation-heading" class="navigation-heading">Resources</h2>
+                <ul class="navigation-list">
+                    <li><a class="navigation-link" href="/health"><span class="navigation-icon" aria-hidden="true">{{ icon('health') }}</span><span>System health</span></a></li>
+                    <li><a class="navigation-link" href="/docs"><span class="navigation-icon" aria-hidden="true">{{ icon('docs') }}</span><span>API documentation</span></a></li>
+                </ul>
+            </section>
         </nav>
 
         <div class="sidebar-footer">
-            <p class="session-status">
-                <span class="status-dot" aria-hidden="true"></span>
-                Secure web session
-            </p>
-
-            <form
-                class="logout-form"
-                method="post"
-                action="{{ url_for('logout') }}"
-            >
-                <button class="logout-button" type="submit">
-                    <span aria-hidden="true">↪</span>
-                    Sign out
-                </button>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-label="Use light theme" title="Use light theme">{{ icon('theme') }}<span data-theme-label>Light theme</span></button>
+            <div class="account-summary">
+                <span class="account-avatar" aria-hidden="true">{{ current_user["username"][:2] | upper }}</span>
+                <span class="account-details"><strong>{{ current_user["username"] }}</strong><span>{{ current_user["role"] | title }}</span></span>
+            </div>
+            <form class="logout-form" method="post" action="{{ url_for('logout') }}">
+                <button class="logout-button" type="submit">{{ icon('sign-out') }}<span>Sign out</span></button>
             </form>
         </div>
     </aside>
 
-    <button
-        class="navigation-backdrop"
-        type="button"
-        data-navigation-close
-        aria-label="Close navigation"
-        tabindex="-1"
-    ></button>
+    <button class="navigation-backdrop" type="button" data-navigation-backdrop aria-label="Close navigation" tabindex="-1"></button>
 
     <div class="application-main">
         <header class="topbar">
-            <button
-                class="menu-button"
-                type="button"
-                aria-controls="primary-navigation"
-                aria-expanded="false"
-                aria-label="Open navigation"
-                data-navigation-toggle
-            >
-                <span aria-hidden="true">☰</span>
-            </button>
-
-            <div>
-                <p class="topbar-label">ABAP workspace</p>
-                <p class="topbar-title">{{ page_title }}</p>
-            </div>
-
-            <span class="foundation-badge">
-                <span class="status-dot" aria-hidden="true"></span>
-                {{ current_user["username"] }}
-                ·
-                {{ current_user["role"] | title }}
-            </span>
+            <button class="menu-button" type="button" aria-controls="primary-navigation" aria-expanded="false" aria-label="Open navigation" data-navigation-toggle><span class="menu-button-lines" aria-hidden="true"></span></button>
+            <a class="mobile-brand" href="{{ url_for('home_page') }}" aria-label="ABAP Dashboard"><img src="{{ url_for('static', path='/brand/abap-icon.svg') }}" alt="" width="36" height="30"></a>
+            <p class="topbar-title">{{ page_title }}</p>
+            <button class="theme-toggle theme-toggle--compact" type="button" data-theme-toggle aria-label="Use light theme" title="Use light theme">{{ icon('theme') }}<span class="ui-visually-hidden" data-theme-label>Light theme</span></button>
         </header>
 
-        <main
-            id="main-content"
-            class="page-content"
-            tabindex="-1"
-        >
-            {% block content %}{% endblock %}
-        </main>
+        <main id="main-content" class="page-content" tabindex="-1">{% block content %}{% endblock %}</main>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script
-    src="{{ url_for('static', path='/navigation.js') }}"
-    defer
-></script>
+<script src="{{ url_for('static', path='/navigation.js') }}" defer></script>
 {% block application_scripts %}{% endblock %}
 {% endblock %}

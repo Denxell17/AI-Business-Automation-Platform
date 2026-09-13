@@ -1,8 +1,9 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon, status with context %}
 
 {% block content %}
 <section
-    class="employee-profile-section"
+    class="agent-execution-page"
     aria-labelledby="agent-execution-detail-heading"
 >
     {% if agent_template %}
@@ -42,16 +43,10 @@
         </h1>
     </div>
 
-    <p
-        class="directory-message directory-message-error"
-        role="alert"
-    >
-        <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
-    </p>
+    <div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ error_message }}</span></div>
 
     {% elif agent_execution %}
-    <div class="employee-profile-heading">
+    <header class="agent-execution-header">
         <div>
             <p class="section-eyebrow">
                 AI agent operations
@@ -69,22 +64,14 @@
             </p>
         </div>
 
-        <span class="employee-status">
-            <span
-                class="status-dot"
-                aria-hidden="true"
-            ></span>
-            {{ agent_execution["status"] | title }}
-        </span>
-    </div>
+        {{ status(agent_execution["status"] | title) }}
+    </header>
 
     <section
-        class="employee-form-card"
+        class="agent-execution-card agent-execution-summary"
         aria-labelledby="agent-execution-summary-heading"
     >
-        <h2 id="agent-execution-summary-heading">
-            Execution summary
-        </h2>
+        <header class="profile-card-heading"><span aria-hidden="true">{{ icon('agent') }}</span><div><h2 id="agent-execution-summary-heading">Execution summary</h2><p>Provider, requester, and timing metadata.</p></div></header>
 
         <dl class="profile-details">
             <div>
@@ -119,9 +106,7 @@
 
             <div>
                 <dt>Status</dt>
-                <dd>
-                    {{ agent_execution["status"] | title }}
-                </dd>
+                <dd>{{ status(agent_execution["status"] | title) }}</dd>
             </div>
 
             <div>
@@ -165,46 +150,36 @@
         </dl>
     </section>
 
+    <div class="agent-execution-content-grid">
     <section
-        class="employee-form-card"
+        class="agent-execution-card"
         aria-labelledby="agent-execution-input-heading"
     >
-        <h2 id="agent-execution-input-heading">
-            Submitted input
-        </h2>
+        <header class="profile-card-heading"><span aria-hidden="true">{{ icon('activity-log') }}</span><div><h2 id="agent-execution-input-heading">Submitted input</h2><p>Protected input stored with this execution.</p></div></header>
 
-        <pre class="agent-template-prompt">{{ agent_execution["input_text"] }}</pre>
+        <pre class="agent-execution-payload">{{ agent_execution["input_text"] }}</pre>
     </section>
 
     <section
-        class="employee-form-card"
+        class="agent-execution-card"
         aria-labelledby="agent-execution-result-heading"
     >
-        <h2 id="agent-execution-result-heading">
-            Execution result
-        </h2>
+        <header class="profile-card-heading"><span aria-hidden="true">{{ icon('assistant') }}</span><div><h2 id="agent-execution-result-heading">Execution result</h2><p>Escaped provider output or safe failure information.</p></div></header>
 
         {% if agent_execution["status"] == "completed" %}
-        <pre class="agent-template-prompt">{{ agent_execution["output_text"] }}</pre>
+        <pre class="agent-execution-payload">{{ agent_execution["output_text"] }}</pre>
 
         {% elif agent_execution["status"] == "failed" %}
-        <p
-            class="directory-message directory-message-error"
-            role="alert"
-        >
-            <span aria-hidden="true">!</span>
-            <span>
-                {{ agent_execution["error_message"] }}
-            </span>
-        </p>
+        <div class="agent-execution-result-state ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ agent_execution["error_message"] }}</span></div>
 
         {% else %}
-        <p class="page-message">
+        <div class="agent-execution-result-state ui-alert ui-alert--info" aria-live="polite">{{ icon('running') }}<p>
             This execution is still running and does not have a
             final result yet.
-        </p>
+        </p></div>
         {% endif %}
     </section>
+    </div>
     {% endif %}
 </section>
 {% endblock %}

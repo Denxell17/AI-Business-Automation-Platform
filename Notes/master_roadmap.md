@@ -19,19 +19,23 @@ Development follows Accelerated Build Mode:
 
 ## Official Visual Direction
 
-ABAP uses an accessible Warm Charcoal interface.
+ABAP uses the approved **Balanced Operations / Quiet Precision** system
+documented in `Notes/abap_approved_ui_ux_specification.md`.
 
 The design includes:
 
-- Warm charcoal backgrounds
-- Raised neutral surfaces
-- Teal primary actions
-- Warm off-white text
-- Visible keyboard focus
-- Icons and written labels for statuses
-- Responsive desktop and mobile layouts
+- A dark-first Soft Graphite interface with an optional accessible light theme
+- Main canvas near `#1B1F24` and sidebar near `#15191E`
+- Flat neutral surfaces, thin cool-gray borders, and restrained 6–10px radii
+- Cobalt primary actions; cyan reserved for the approved ABAP logo and small
+  brand accents
+- Inter Variable with readable off-white text and tabular operational numerals
+- Visible offset keyboard focus
+- Shape, symbol, persistent text, and color for statuses
+- Responsive desktop and mobile layouts with intentional reflow
 - Reduced-motion support
 - No information communicated by color alone
+- No gradients outside the approved logo
 
 ## Phase 1 — Original ABAP Roadmap
 
@@ -89,6 +93,21 @@ Planned modules include:
 - Portfolio documentation
 
 Day 155 is the target for the complete ABAP portfolio MVP.
+
+### Current ABAP UI implementation status
+
+- The approved dark SaaS application shell and responsive navigation are implemented.
+- The operational dashboard is implemented with permission-scoped database summaries, recent workflows, schedules, Agent executions, authorized activity, quick actions, and readiness state.
+- The approved ABAP wordmark is used as a transparent production asset on the application shell and login page.
+- The employee directory and workforce report now use the polished component system, responsive layouts, real workforce data, and their existing permission and export rules.
+- The Workflow and Agent Template directories now use the approved operational table and card patterns while retaining their existing lifecycle, filtering, permission, and detail flows.
+- The AI Assistant, Activity Log, and User Accounts screens now use the approved protected workspace, audit timeline, and access-management patterns while retaining provider safeguards, CSRF validation, permissions, and privacy boundaries.
+- The workflow detail experience now uses responsive summary, task, schedule, and execution cards with semantic statuses, accessible form grouping, mobile action layouts, and the existing permission and CSRF boundaries intact.
+- Employee profile and payroll now use the approved identity hero, action hierarchy, protected-access state, responsive detail cards, and compensation emphasis without changing permission or calculation behavior.
+- Agent execution history/details and employee/workflow-task destructive confirmations now use semantic states, protected payload panels, focused target summaries, explicit consequence messaging, and responsive action layouts while retaining escaping, authorization, and CSRF safeguards.
+- The release-candidate accessibility and responsive review is complete. The login and application shell expose skip navigation, labeled controls, visible focus, reduced-motion handling, keyboard-safe mobile navigation, and responsive layouts. Scrollable data tables now have named keyboard-focusable regions, captions, and scoped headers; decorative chart bars are hidden from assistive technology.
+- The approved ABAP UI implementation milestone is complete, with automated foundation checks protecting its accessibility and responsive requirements.
+- Next: resume the existing roadmap at Phase 3 — Master GoHighLevel, beginning with funnels and pipeline fundamentals before implementing any new integration features.
 
 ## Phase 3 — Master GoHighLevel
 

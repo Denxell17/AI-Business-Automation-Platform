@@ -1,151 +1,30 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon, status with context %}
 
 {% block content %}
-<section
-    class="directory-section"
-    aria-labelledby="workflow-directory-heading"
->
-    <div class="directory-heading">
-        <div>
-            <p class="section-eyebrow">Workflow automation</p>
-
-            <h1
-                id="workflow-directory-heading"
-                class="section-title"
-            >
-                Workflow directory
-            </h1>
-
-            <p class="page-message">
-                View the current workflow definitions stored in SQLite.
-            </p>
-        </div>
-
-        <div class="directory-actions">
-            {% if can_manage_workflows %}
-            <a
-                class="add-employee-link"
-                href="{{ url_for('workflow_create_form') }}"
-            >
-                <span aria-hidden="true">+</span>
-                Create workflow
-            </a>
-            {% endif %}
-
-            {% if not error_message %}
-            <p class="directory-count">
-                <strong>{{ workflow_list | length }}</strong>
-                {% if workflow_list | length == 1 %}
-                    workflow
-                {% else %}
-                    workflows
-                {% endif %}
-            </p>
-            {% endif %}
-        </div>
-    </div>
+<section class="data-page workflows-page" aria-labelledby="workflow-directory-heading">
+    <header class="data-page-heading">
+        <div><p class="section-eyebrow">Automation</p><h1 id="workflow-directory-heading" class="section-title">Workflows</h1><p class="data-page-description">Build, schedule, and monitor reusable business processes.</p></div>
+        {% if can_manage_workflows %}<a class="ui-button ui-button--primary" href="{{ url_for('workflow_create_form') }}">{{ icon('plus') }}<span>Create workflow</span></a>{% endif %}
+    </header>
 
     {% if not error_message %}
-    <form
-        class="directory-filter-form"
-        method="get"
-        action="{{ url_for('workflow_directory') }}"
-        aria-label="Filter workflows by status"
-    >
-        <div class="directory-filter-fields">
-            <div class="form-field">
-                <label for="status">Filter by status</label>
-                <select id="status" name="status">
-                    <option value="">All statuses</option>
-                    {% for option in ('draft', 'active', 'inactive') %}
-                    <option
-                        value="{{ option }}"
-                        {% if selected_status == option %}selected{% endif %}
-                    >{{ option | title }}</option>
-                    {% endfor %}
-                </select>
-            </div>
-        </div>
-
-        <div class="directory-filter-actions">
-            <button class="employee-submit-button" type="submit">
-                Apply filter
-            </button>
-        </div>
-    </form>
+    <div class="directory-toolbar">
+        <form class="status-filter-form" method="get" action="{{ url_for('workflow_directory') }}" aria-label="Filter workflows by status">
+            <label for="status">Status</label><select id="status" name="status"><option value="">All statuses</option>{% for option in ('draft', 'active', 'inactive') %}<option value="{{ option }}"{% if selected_status == option %} selected{% endif %}>{{ option | title }}</option>{% endfor %}</select><button class="ui-button ui-button--secondary" type="submit">Apply filter</button>
+        </form>
+        <p class="result-count"><strong>{{ workflow_list | length }}</strong> workflow{% if workflow_list | length != 1 %}s{% endif %}</p>
+    </div>
     {% endif %}
 
-    {% if error_message %}
-    <p class="directory-message directory-message-error" role="alert">
-        <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
-    </p>
+    {% if error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ error_message }}</span></div>
     {% elif workflow_list %}
-    <div
-        class="employee-table-wrapper"
-        tabindex="0"
-        aria-label="Scrollable workflow directory"
-    >
-        <table class="employee-table">
-            <caption>
-                Current workflow records
-            </caption>
-
-            <thead>
-                <tr>
-                    <th scope="col">Workflow ID</th>
-                    <th scope="col">Name</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Created</th>
-                    <th scope="col">Updated</th>
-                </tr>
-            </thead>
-
-            <tbody>
-                {% for workflow in workflow_list %}
-                <tr>
-                    <th scope="row">
-                        <a
-                            class="employee-profile-link"
-                            href="{{ url_for(
-                                'workflow_detail',
-                                workflow_id=workflow['workflow_id']
-                            ) }}"
-                        >
-                            {{ workflow["workflow_id"] }}
-                        </a>
-                    </th>
-                    <td>{{ workflow["name"] }}</td>
-                    <td>
-                        <span class="employee-status">
-                            <span
-                                class="status-dot"
-                                aria-hidden="true"
-                            ></span>
-                            {{ workflow["status"] | title }}
-                        </span>
-                    </td>
-                    <td><time datetime="{{ workflow['created_at'] }}" data-local-datetime>{{ workflow["created_at"] }}</time></td>
-                    <td><time datetime="{{ workflow['updated_at'] }}" data-local-datetime>{{ workflow["updated_at"] }}</time></td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
-    </div>
-    {% else %}
-    <div class="directory-empty-state">
-        <span
-            class="directory-empty-icon"
-            aria-hidden="true"
-        >○</span>
-
-        <div>
-            <h2>No workflows found</h2>
-            <p>
-                Workflow records will appear here after they are created.
-            </p>
-        </div>
-    </div>
-    {% endif %}
+    <section class="data-table-card" aria-labelledby="workflow-results-heading">
+        <header class="data-table-heading"><div><h2 id="workflow-results-heading">Workflow directory</h2><p>Current workflow definitions and lifecycle status.</p></div></header>
+        <div class="ui-table-wrapper workflow-table-wrapper" role="region" tabindex="0" aria-label="Scrollable workflow directory"><table class="workflow-table"><caption>Current workflow records</caption><thead><tr><th scope="col">Workflow</th><th scope="col">Description</th><th scope="col">Status</th><th scope="col">Created</th><th scope="col">Last updated</th></tr></thead><tbody>
+            {% for workflow in workflow_list %}<tr><th scope="row"><a class="workflow-identity" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}"><span class="workflow-symbol" aria-hidden="true">{{ icon('workflows') }}</span><span><strong>{{ workflow['name'] }}</strong><small>{{ workflow['workflow_id'] }}</small></span></a></th><td class="workflow-description">{{ workflow['description'] or 'No description provided.' }}</td><td>{{ status(workflow['status'] | title) }}</td><td><time datetime="{{ workflow['created_at'] }}" data-local-datetime>{{ workflow['created_at'] }}</time></td><td><time datetime="{{ workflow['updated_at'] }}" data-local-datetime>{{ workflow['updated_at'] }}</time></td></tr>{% endfor %}
+        </tbody></table></div>
+    </section>
+    {% else %}<div class="ui-empty-state workflow-empty-state">{{ icon('workflows') }}<div><h2>No workflows found</h2><p>Workflow records will appear here after they are created.</p></div>{% if can_manage_workflows %}<a class="ui-button ui-button--primary" href="{{ url_for('workflow_create_form') }}">Create workflow</a>{% endif %}</div>{% endif %}
 </section>
 {% endblock %}

@@ -77,6 +77,7 @@ from database import (
     load_user_account_summaries,
 )
 from data_validation import get_employee_record_errors
+from dashboard_repository import load_dashboard_snapshot
 from employee_repository import (
     load_employee_records,
     save_employee_records,
@@ -730,17 +731,53 @@ def create_web_application(
                 status_code=303,
             )
 
+        can_view_employees = user_has_permission(
+            current_user,
+            VIEW_EMPLOYEE,
+        )
+        can_view_workflows = user_has_permission(
+            current_user,
+            VIEW_WORKFLOWS,
+        )
+        can_view_agents = user_has_permission(
+            current_user,
+            VIEW_AGENT_TEMPLATES,
+        )
+        dashboard = load_dashboard_snapshot(
+            database_file,
+            include_employees=can_view_employees,
+            include_workflows=can_view_workflows,
+            include_agents=can_view_agents,
+        )
+        activity_entries = (
+            load_recent_activity_entries()
+            if user_has_permission(current_user, VIEW_ACTIVITY_LOG)
+            else None
+        )
+
         return templates.TemplateResponse(
             request=request,
             name="home.html",
             context={
-                "page_title": "ABAP Dashboard",
-                "page_message": (
-                    "Your business automation workspace "
-                    "for managing connected modules."
-                ),
+                "page_title": "Dashboard",
                 "active_page": "home",
                 "current_user": current_user,
+                "dashboard": dashboard,
+                "activity_entries": (
+                    activity_entries[:5]
+                    if activity_entries is not None
+                    else None
+                ),
+                "database_ready": database_is_ready(database_file),
+                "can_manage_workflows": user_has_permission(
+                    current_user,
+                    MANAGE_WORKFLOWS,
+                ),
+                "can_register_employee": user_has_permission(
+                    current_user,
+                    REGISTER_EMPLOYEE,
+                ),
+                "csrf_token": get_or_create_csrf_token(request),
             },
         )
 

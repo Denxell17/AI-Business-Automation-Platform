@@ -15,17 +15,16 @@
         aria-labelledby="login-heading"
     >
         <header class="authentication-brand">
-            <span
-                class="authentication-brand-mark"
-                aria-hidden="true"
-            >A</span>
-
-            <div>
-                <p class="authentication-brand-name">ABAP</p>
-                <p class="authentication-brand-description">
-                    AI Business Automation Platform
-                </p>
-            </div>
+            <img
+                class="authentication-brand-wordmark"
+                src="{{ url_for('static', path='/brand/abap-wordmark-approved-transparent.png') }}"
+                alt="ABAP"
+                width="160"
+                height="53"
+            >
+            <p class="authentication-brand-description">
+                AI Business Automation Platform
+            </p>
         </header>
 
         <div class="authentication-introduction">
@@ -39,8 +38,7 @@
             </h1>
 
             <p class="authentication-description">
-                Enter your Employee Management System account
-                credentials.
+                Enter your ABAP account credentials.
             </p>
         </div>
 
