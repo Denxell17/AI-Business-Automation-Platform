@@ -1,0 +1,39 @@
+{% macro icon(name, label=none, class_name="") -%}
+<svg
+    class="ui-icon{% if class_name %} {{ class_name }}{% endif %}"
+    {% if label %}role="img" aria-label="{{ label }}"{% else %}aria-hidden="true"{% endif %}
+    focusable="false"
+>
+    <use href="{{ url_for('static', path='/icons.svg') }}#icon-{{ name }}"></use>
+</svg>
+{%- endmacro %}
+
+{% macro status(value) -%}
+{% set normalized = value|string|lower %}
+{% if normalized in ('completed', 'enabled', 'active') %}
+    {% set status_icon = 'check' %}
+{% elif normalized == 'running' %}
+    {% set status_icon = 'running' %}
+{% elif normalized == 'failed' %}
+    {% set status_icon = 'x' %}
+{% elif normalized in ('disabled', 'inactive', 'draft') %}
+    {% set status_icon = 'minus' %}
+{% else %}
+    {% set normalized = 'inactive' %}
+    {% set status_icon = 'info' %}
+{% endif %}
+<span class="ui-status ui-status--{{ normalized }}">
+    <span class="ui-status__symbol" aria-hidden="true">{{ icon(status_icon) }}</span>
+    <span>{{ value }}</span>
+</span>
+{%- endmacro %}
+
+{% macro empty_state(title, message) -%}
+<div class="ui-empty-state">
+    <div class="ui-empty-state__content">
+        <h3>{{ title }}</h3>
+        <p>{{ message }}</p>
+        {{ caller() if caller is defined else '' }}
+    </div>
+</div>
+{%- endmacro %}

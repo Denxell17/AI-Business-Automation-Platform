@@ -1,4 +1,5 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon with context %}
 
 {% block content %}
 <section
@@ -32,8 +33,10 @@
         </div>
     </div>
     {% else %}
-    <header class="profile-header">
-        <div>
+    <header class="profile-header profile-hero">
+        <div class="profile-identity">
+            <span class="profile-avatar" aria-hidden="true">{{ employee["name"][:2] | upper }}</span>
+            <div>
             <p class="section-eyebrow">Employee profile</p>
 
             <h1
@@ -47,13 +50,11 @@
                 Employee ID:
                 <strong>{{ employee["employee_id"] }}</strong>
             </p>
+            </div>
         </div>
 
         <p class="profile-status">
-            <span
-                class="status-dot"
-                aria-hidden="true"
-            ></span>
+            <span class="status-dot" aria-hidden="true"></span>
             {{ employee["employment_status"] }}
         </p>
     </header>
@@ -66,39 +67,36 @@
     <div class="profile-actions">
         {% if can_update_employee %}
         <a
-            class="edit-employee-link"
+            class="ui-button ui-button--secondary"
             href="{{ url_for(
                 'employee_edit_form',
                 employee_id=employee['employee_id']
             ) }}"
         >
-            <span aria-hidden="true">✎</span>
             Edit employee
         </a>
         {% endif %}
 
         {% if can_delete_employee %}
         <a
-            class="delete-employee-link"
+            class="ui-button ui-button--danger"
             href="{{ url_for(
                 'employee_delete_confirmation',
                 employee_id=employee['employee_id']
             ) }}"
         >
-            <span aria-hidden="true">×</span>
             Delete employee
         </a>
         {% endif %}
 
         {% if can_view_payroll %}
         <a
-            class="payroll-link"
+            class="ui-button ui-button--primary"
             href="{{ url_for(
                 'employee_payroll',
                 employee_id=employee['employee_id']
             ) }}"
         >
-            <span aria-hidden="true">₱</span>
             View payroll
         </a>
         {% endif %}
@@ -110,9 +108,7 @@
             class="profile-card"
             aria-labelledby="employment-details-heading"
         >
-            <h2 id="employment-details-heading">
-                Employment details
-            </h2>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('employees') }}</span><div><h2 id="employment-details-heading">Employment details</h2><p>Role and organization information.</p></div></header>
 
             <dl class="profile-details">
                 <div>
@@ -153,9 +149,7 @@
             class="profile-card"
             aria-labelledby="contact-details-heading"
         >
-            <h2 id="contact-details-heading">
-                Contact details
-            </h2>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('activity-log') }}</span><div><h2 id="contact-details-heading">Contact details</h2><p>Stored business contact information.</p></div></header>
 
             <dl class="profile-details">
                 <div>

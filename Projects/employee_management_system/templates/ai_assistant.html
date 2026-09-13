@@ -1,122 +1,25 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon with context %}
 
 {% block content %}
-<section
-    class="employee-form-section"
-    aria-labelledby="ai-assistant-heading"
->
-    <a
-        class="back-link"
-        href="{{ url_for('home_page') }}"
-    >
-        <span aria-hidden="true">←</span>
-        Back to ABAP Dashboard
-    </a>
+<section class="data-page assistant-page" aria-labelledby="ai-assistant-heading">
+    <header class="data-page-heading">
+        <div><p class="section-eyebrow">Protected AI workspace</p><h1 id="ai-assistant-heading" class="section-title">AI Assistant</h1><p class="data-page-description">Ask a focused business question through ABAP's protected provider boundary.</p></div>
+        <span class="assistant-access-state">{{ icon('check') }}<span>Access authorized</span></span>
+    </header>
 
-    <div class="employee-form-heading">
-        <div>
-            <p class="section-eyebrow">
-                One-off business assistance
-            </p>
+    {% if error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ error_message }}</span></div>{% endif %}
 
-            <h1
-                id="ai-assistant-heading"
-                class="section-title"
-            >
-                AI Assistant
-            </h1>
+    <div class="assistant-layout{% if not assistant_response %} assistant-layout--single{% endif %}">
+        <form class="assistant-composer" method="post" action="{{ url_for('ai_assistant_ask') }}">
+            <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+            <header><span class="assistant-panel-icon" aria-hidden="true">{{ icon('assistant') }}</span><div><h2>Business question</h2><p>Describe the outcome or decision you need help with.</p></div></header>
+            <div class="form-field assistant-question-field"><label for="question">What would you like help with?</label><textarea id="question" name="question" rows="12" maxlength="{{ max_question_length }}" placeholder="Example: Summarize the operational risks in this workflow…" required>{{ question }}</textarea><div class="assistant-field-meta"><span>Maximum {{ max_question_length }} characters</span><span>This one-off interaction is not stored as conversation history</span></div></div>
+            <div class="assistant-privacy-note">{{ icon('health') }}<p><strong>Review before sending</strong><span>Remove confidential, personal, or regulated information that the external provider does not need.</span></p></div>
+            <button class="ui-button ui-button--primary assistant-submit" type="submit">{{ icon('assistant') }}<span>Ask AI Assistant</span></button>
+        </form>
 
-            <p class="page-message">
-                Ask one business question using ABAP's protected
-                provider boundary. Review sensitive information
-                before submitting it externally.
-            </p>
-        </div>
-
-        <span class="form-access-badge">
-            <span aria-hidden="true">✓</span>
-            AI Assistant access authorized
-        </span>
+        {% if assistant_response %}<section class="assistant-response" aria-labelledby="ai-assistant-response-heading" aria-live="polite"><header><span class="assistant-panel-icon" aria-hidden="true">{{ icon('assistant') }}</span><div><h2 id="ai-assistant-response-heading">Assistant response</h2><p>Generated with {{ model_name }}</p></div></header><div class="assistant-response-content"><pre>{{ assistant_response }}</pre></div><footer>AI-generated content may require review before business use.</footer></section>{% endif %}
     </div>
-
-    {% if error_message %}
-    <p
-        class="directory-message directory-message-error"
-        role="alert"
-    >
-        <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
-    </p>
-    {% endif %}
-
-    <form
-        class="employee-form"
-        method="post"
-        action="{{ url_for('ai_assistant_ask') }}"
-    >
-        <input
-            type="hidden"
-            name="csrf_token"
-            value="{{ csrf_token }}"
-        >
-
-        <section
-            class="employee-form-card"
-            aria-labelledby="ai-assistant-question-heading"
-        >
-            <h2 id="ai-assistant-question-heading">
-                Business question
-            </h2>
-
-            <div class="form-field">
-                <label for="question">
-                    What would you like help with?
-                </label>
-
-                <textarea
-                    id="question"
-                    name="question"
-                    rows="10"
-                    maxlength="{{ max_question_length }}"
-                    required
-                >{{ question }}</textarea>
-
-                <p class="form-help">
-                    Enter no more than {{ max_question_length }}
-                    characters. This one-off interaction is not
-                    stored as Assistant conversation history.
-                </p>
-            </div>
-        </section>
-
-        <div class="employee-form-actions">
-            <button
-                class="employee-submit-button"
-                type="submit"
-            >
-                <span aria-hidden="true">✦</span>
-                Ask AI Assistant
-            </button>
-        </div>
-    </form>
-
-    {% if assistant_response %}
-    <section
-        class="employee-form-card"
-        aria-labelledby="ai-assistant-response-heading"
-        aria-live="polite"
-    >
-        <h2 id="ai-assistant-response-heading">
-            Assistant response
-        </h2>
-
-        <p class="form-help">
-            Generated with the configured model:
-            {{ model_name }}
-        </p>
-
-        <pre class="agent-template-prompt">{{ assistant_response }}</pre>
-    </section>
-    {% endif %}
 </section>
 {% endblock %}

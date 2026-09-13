@@ -1,4 +1,5 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon with context %}
 
 {% block content %}
 <section
@@ -45,8 +46,10 @@
         </div>
     </div>
     {% else %}
-    <header class="payroll-header">
-        <div>
+    <header class="payroll-header payroll-hero">
+        <div class="profile-identity">
+            <span class="profile-avatar payroll-avatar" aria-hidden="true">₱</span>
+            <div>
             <p class="section-eyebrow">Payroll information</p>
 
             <h1
@@ -60,10 +63,11 @@
                 Employee ID:
                 <strong>{{ employee["employee_id"] }}</strong>
             </p>
+            </div>
         </div>
 
         <p class="payroll-access-status">
-            <span aria-hidden="true">✓</span>
+            {{ icon('check') }}
             Payroll access authorized
         </p>
     </header>
@@ -73,9 +77,7 @@
             class="payroll-card"
             aria-labelledby="monthly-payroll-heading"
         >
-            <h2 id="monthly-payroll-heading">
-                Monthly payroll
-            </h2>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('report') }}</span><div><h2 id="monthly-payroll-heading">Monthly payroll</h2><p>Recurring income and estimated deductions.</p></div></header>
 
             <dl class="payroll-details">
                 <div>
@@ -123,7 +125,7 @@
                     </dd>
                 </div>
 
-                <div class="payroll-total-row">
+                <div class="payroll-total-row payroll-highlight-row">
                     <dt>Net monthly income</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
@@ -138,9 +140,7 @@
             class="payroll-card"
             aria-labelledby="annual-payroll-heading"
         >
-            <h2 id="annual-payroll-heading">
-                Annual compensation
-            </h2>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('activity-log') }}</span><div><h2 id="annual-payroll-heading">Annual compensation</h2><p>Projected yearly compensation package.</p></div></header>
 
             <dl class="payroll-details">
                 <div>
@@ -170,7 +170,7 @@
                     </dd>
                 </div>
 
-                <div class="payroll-total-row">
+                <div class="payroll-total-row payroll-highlight-row">
                     <dt>Total compensation</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
@@ -185,9 +185,7 @@
             class="payroll-card payroll-performance-card"
             aria-labelledby="performance-payroll-heading"
         >
-            <h2 id="performance-payroll-heading">
-                Performance basis
-            </h2>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('health') }}</span><div><h2 id="performance-payroll-heading">Performance basis</h2><p>Inputs used for the estimated bonus.</p></div></header>
 
             <dl class="payroll-details">
                 <div>

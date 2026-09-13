@@ -1,8 +1,9 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon with context %}
 
 {% block content %}
 <section
-    class="employee-form-section"
+    class="employee-form-section destructive-page"
     aria-labelledby="employee-delete-heading"
 >
     <a
@@ -48,29 +49,23 @@
             </p>
         </div>
 
-        <span class="form-access-badge">
-            <span aria-hidden="true">✓</span>
+        <span class="form-access-badge destructive-access-badge">
+            {{ icon('check') }}
             Delete access authorized
         </span>
     </div>
 
     <section
-        class="employee-edit-summary"
+        class="destructive-target-card"
         aria-label="Employee being deleted"
     >
-        <p>
-            <strong>{{ employee["name"] }}</strong>
-        </p>
-
-        <p>
-            Employee ID:
-            <strong>{{ employee["employee_id"] }}</strong>
-        </p>
+        <span class="destructive-target-icon" aria-hidden="true">{{ icon('employees') }}</span>
+        <div><p><strong>{{ employee["name"] }}</strong></p><p>Employee ID: <strong>{{ employee["employee_id"] }}</strong></p></div>
     </section>
 
     {% if error_message %}
     <p
-        class="directory-message directory-message-error"
+        class="ui-alert ui-alert--danger"
         role="alert"
     >
         <span aria-hidden="true">!</span>
@@ -80,14 +75,11 @@
 
     <div
         id="employee-delete-warning"
-        class="directory-message directory-message-error"
-        role="alert"
+        class="destructive-warning"
+        role="note"
     >
-        <span aria-hidden="true">!</span>
-        <span>
-            This permanently deletes the employee record and
-            cannot be undone.
-        </span>
+        <span class="destructive-warning-icon" aria-hidden="true">{{ icon('info') }}</span>
+        <div><strong>This action is permanent</strong><p>This permanently deletes the employee record and cannot be undone.</p></div>
     </div>
 
     <form
@@ -114,10 +106,9 @@
             </a>
 
             <button
-                class="employee-delete-button"
+                class="ui-button ui-button--danger destructive-confirm-button"
                 type="submit"
             >
-                <span aria-hidden="true">×</span>
                 Permanently delete employee
             </button>
         </div>

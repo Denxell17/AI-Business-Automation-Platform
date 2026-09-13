@@ -1,203 +1,121 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon, status with context %}
 
 {% block content %}
-<section class="directory-section" aria-labelledby="workflow-heading">
-    <a class="back-link" href="{{ url_for('workflow_directory') }}">
-        <span aria-hidden="true">←</span>
-        Back to workflow directory
-    </a>
+<section class="workflow-detail-page" aria-labelledby="workflow-heading">
+    <a class="back-link" href="{{ url_for('workflow_directory') }}"><span aria-hidden="true">←</span>Back to workflow directory</a>
 
-    <div class="employee-form-heading">
+    <header class="workflow-detail-header">
         <div>
             <p class="section-eyebrow">Workflow automation</p>
-            <h1 id="workflow-heading" class="section-title">
-                {{ workflow["name"] }}
-            </h1>
-            <p class="page-message">Workflow ID: {{ workflow["workflow_id"] }}</p>
+            <h1 id="workflow-heading" class="section-title">{{ workflow["name"] }}</h1>
+            <p class="workflow-identifier">Workflow ID: <strong>{{ workflow["workflow_id"] }}</strong></p>
         </div>
+        {{ status(workflow["status"] | title) }}
+    </header>
 
-        {% if can_manage_workflows %}
-        <a
-            class="add-employee-link"
-            href="{{ url_for(
-                'workflow_edit_form',
-                workflow_id=workflow['workflow_id']
-            ) }}"
-        >
-            Edit workflow
-        </a>
-        <a
-            class="add-employee-link"
-            href="{{ url_for(
-                'workflow_task_create_form',
-                workflow_id=workflow['workflow_id']
-            ) }}"
-        >
-            Add task
-        </a>
-        {% if workflow_tasks %}
-        <a class="add-employee-link" href="{{ url_for('workflow_task_resequence_form', workflow_id=workflow['workflow_id']) }}">Set task order</a>
-        {% endif %}
+    {% if can_manage_workflows %}
+    <nav class="workflow-action-bar" aria-label="Workflow management actions">
+        <a class="ui-button ui-button--secondary" href="{{ url_for('workflow_edit_form', workflow_id=workflow['workflow_id']) }}">Edit workflow</a>
+        <a class="ui-button ui-button--secondary" href="{{ url_for('workflow_task_create_form', workflow_id=workflow['workflow_id']) }}">{{ icon('plus') }}Add task</a>
+        {% if workflow_tasks %}<a class="ui-button ui-button--tertiary" href="{{ url_for('workflow_task_resequence_form', workflow_id=workflow['workflow_id']) }}">Set task order</a>{% endif %}
         {% if workflow['status'] == 'active' %}
-        <a class="add-employee-link" href="{{ url_for('workflow_schedule_create_form', workflow_id=workflow['workflow_id']) }}">Add schedule</a>
-        {% endif %}
-        {% if workflow['status'] == 'active' %}
+        <a class="ui-button ui-button--secondary" href="{{ url_for('workflow_schedule_create_form', workflow_id=workflow['workflow_id']) }}">{{ icon('plus') }}Add schedule</a>
         <form method="post" action="{{ url_for('workflow_execution_start', workflow_id=workflow['workflow_id']) }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <button class="employee-submit-button" type="submit">Start execution</button>
+            <button class="ui-button ui-button--primary" type="submit">Start execution</button>
         </form>
         {% endif %}
-        {% endif %}
+    </nav>
+    {% endif %}
+
+    <section class="workflow-summary-card" aria-labelledby="workflow-summary-heading">
+        <header class="panel-heading"><div><h2 id="workflow-summary-heading">Workflow overview</h2><p>Configuration and record history.</p></div></header>
+        <dl class="workflow-summary-grid">
+            <div><dt>Status</dt><dd>{{ status(workflow["status"] | title) }}</dd></div>
+            <div><dt>Created</dt><dd><time datetime="{{ workflow['created_at'] }}" data-local-datetime>{{ workflow["created_at"] }}</time></dd></div>
+            <div><dt>Last updated</dt><dd><time datetime="{{ workflow['updated_at'] }}" data-local-datetime>{{ workflow["updated_at"] }}</time></dd></div>
+            <div class="workflow-summary-description"><dt>Description</dt><dd>{{ workflow["description"] or "No description provided." }}</dd></div>
+        </dl>
+    </section>
+
+    <div class="workflow-detail-layout">
+        <section class="workflow-detail-card" aria-labelledby="workflow-tasks-heading">
+            <header class="panel-heading"><div><h2 id="workflow-tasks-heading">Workflow tasks</h2><p>Ordered manual steps for this workflow.</p></div><span class="panel-count">{{ workflow_tasks | length }}</span></header>
+            {% if workflow_tasks %}
+            <ol class="workflow-item-list workflow-task-list">
+                {% for task in workflow_tasks %}
+                <li value="{{ task['sequence_number'] }}">
+                    <span class="workflow-sequence" aria-label="Step {{ task['sequence_number'] }}">{{ task['sequence_number'] }}</span>
+                    <div class="workflow-item-content">
+                        <div class="workflow-item-heading"><h3>{{ task["title"] }}</h3><span class="workflow-type-chip">{{ task["task_type"] | title }}</span></div>
+                        <p>{{ task["instructions"] or "No instructions provided." }}</p>
+                        <span class="workflow-requirement">{{ "Required" if task["is_required"] else "Optional" }}</span>
+                    </div>
+                    {% if can_manage_workflows %}<div class="workflow-row-actions"><a href="{{ url_for('workflow_task_edit_form', workflow_id=workflow['workflow_id'], task_id=task['task_id']) }}">Edit task</a><a class="danger-link" href="{{ url_for('workflow_task_delete_form', workflow_id=workflow['workflow_id'], task_id=task['task_id']) }}" aria-label="Delete task: {{ task['title'] }}">Delete task</a></div>{% endif %}
+                </li>
+                {% endfor %}
+            </ol>
+            {% else %}<div class="workflow-empty-state">{{ icon('workflows') }}<div><h3>No tasks added</h3><p>No tasks have been added to this workflow yet.</p></div></div>{% endif %}
+        </section>
+
+        <section class="workflow-detail-card" aria-labelledby="workflow-schedules-heading">
+            <header class="panel-heading"><div><h2 id="workflow-schedules-heading">Workflow schedules</h2><p>Schedule times use {{ workflow_time_zone }}.</p></div><span class="panel-count">{{ workflow_schedules | length }}</span></header>
+            <div class="ui-alert ui-alert--info workflow-schedule-note">{{ icon('info') }}<span>ABAP evaluates a due time for {{ schedule_grace_minutes }} minutes and stores claimed occurrences in UTC. Automatic task execution is not active yet.</span></div>
+            {% if workflow_schedules %}
+            <ol class="workflow-item-list">
+                {% for schedule in workflow_schedules %}
+                {% set evaluation = schedule_evaluations[schedule['schedule_id']] %}
+                <li><div class="workflow-item-content">
+                    <div class="workflow-item-heading"><h3>{{ schedule['schedule_type'] | title }} schedule</h3><span class="ui-visually-hidden">Status: {{ 'Enabled' if schedule['is_enabled'] else 'Disabled' }}</span>{{ status('Enabled' if schedule['is_enabled'] else 'Disabled') }}</div>
+                    <dl class="workflow-inline-details">
+                        <div><dt>Schedule ID</dt><dd>{{ schedule['schedule_id'] }}</dd></div>
+                        <div><dt>Timing</dt><dd>{% if schedule['schedule_type'] == 'manual' %}Manual eligibility only{% elif schedule['schedule_type'] == 'daily' %}Daily at {{ schedule['scheduled_time'] }}{% else %}Every {{ schedule['day_of_week'] | title }} at {{ schedule['scheduled_time'] }}{% endif %}</dd></div>
+                        <div><dt>Next eligible time</dt><dd>{% if evaluation['next_eligible_at_utc'] %}<time datetime="{{ evaluation['next_eligible_at_utc'] }}" data-local-datetime>{{ evaluation['next_eligible_at_utc'] }}</time>{% elif schedule['schedule_type'] == 'manual' %}Started manually{% else %}Disabled{% endif %}</dd></div>
+                        <div><dt>Created</dt><dd><time datetime="{{ schedule['created_at'] }}" data-local-datetime>{{ schedule['created_at'] }}</time></dd></div>
+                    </dl>
+                    {% if can_manage_workflows and current_user['role'] == 'admin' %}
+                    <form class="workflow-inline-form" method="post" action="{{ url_for('workflow_schedule_status_update', workflow_id=workflow['workflow_id'], schedule_id=schedule['schedule_id']) }}">
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token }}"><input type="hidden" name="is_enabled" value="{{ 'false' if schedule['is_enabled'] else 'true' }}">
+                        <button class="ui-button ui-button--secondary" type="submit" {% if not schedule['is_enabled'] and workflow['status'] != 'active' %}disabled aria-describedby="schedule-inactive-{{ schedule['schedule_id'] }}"{% endif %}>{{ 'Disable schedule' if schedule['is_enabled'] else 'Enable schedule' }}</button>
+                        {% if not schedule['is_enabled'] and workflow['status'] != 'active' %}<small id="schedule-inactive-{{ schedule['schedule_id'] }}">Activate the workflow before enabling this schedule.</small>{% endif %}
+                    </form>
+                    {% endif %}
+                </div></li>
+                {% endfor %}
+            </ol>
+            {% else %}<div class="workflow-empty-state">{{ icon('activity-log') }}<div><h3>No schedules configured</h3><p>Stored eligibility rules will appear here.</p></div></div>{% endif %}
+        </section>
     </div>
 
-    <dl class="profile-details">
-        <div class="profile-detail-card">
-            <dt>Status</dt>
-            <dd>{{ workflow["status"] | title }}</dd>
-        </div>
-        <div class="profile-detail-card">
-            <dt>Created</dt>
-            <dd><time datetime="{{ workflow['created_at'] }}" data-local-datetime>{{ workflow["created_at"] }}</time></dd>
-        </div>
-        <div class="profile-detail-card">
-            <dt>Last updated</dt>
-            <dd><time datetime="{{ workflow['updated_at'] }}" data-local-datetime>{{ workflow["updated_at"] }}</time></dd>
-        </div>
-        <div class="profile-detail-card profile-detail-card-wide">
-            <dt>Description</dt>
-            <dd>{{ workflow["description"] or "No description provided." }}</dd>
-        </div>
-    </dl>
-
-    <section aria-labelledby="workflow-tasks-heading">
-        <h2 id="workflow-tasks-heading" class="section-title">Workflow tasks</h2>
-        {% if workflow_tasks %}
-        <ol>
-            {% for task in workflow_tasks %}
-            <li value="{{ task['sequence_number'] }}">
-                <h3>{{ task["title"] }}</h3>
-                {% if can_manage_workflows %}<a href="{{ url_for('workflow_task_edit_form', workflow_id=workflow['workflow_id'], task_id=task['task_id']) }}">Edit task</a> <a href="{{ url_for('workflow_task_delete_form', workflow_id=workflow['workflow_id'], task_id=task['task_id']) }}" aria-label="Delete task: {{ task['title'] }}">Delete task</a>{% endif %}
-                <p>{{ task["task_type"] | title }} · {{ "Required" if task["is_required"] else "Optional" }}</p>
-                <p>{{ task["instructions"] or "No instructions provided." }}</p>
-            </li>
-            {% endfor %}
-        </ol>
-        {% else %}
-        <p class="page-message">No tasks have been added to this workflow yet.</p>
-        {% endif %}
-    </section>
-
-    <section aria-labelledby="workflow-schedules-heading">
-        <h2 id="workflow-schedules-heading" class="section-title">Workflow schedules</h2>
-        <p class="page-message">
-            Schedule times use {{ workflow_time_zone }}. ABAP evaluates a due
-            time for {{ schedule_grace_minutes }} minutes and stores claimed
-            occurrences in UTC. Automatic task execution is not active yet.
-        </p>
-        {% if workflow_schedules %}
-        <ol>
-            {% for schedule in workflow_schedules %}
-            <li>
-                <h3>{{ schedule['schedule_type'] | title }} schedule</h3>
-                <p>Schedule ID: {{ schedule['schedule_id'] }}</p>
-                <p>Status: {{ 'Enabled' if schedule['is_enabled'] else 'Disabled' }}</p>
-                {% if schedule['schedule_type'] == 'manual' %}
-                <p>Timing: Manual eligibility only</p>
-                {% elif schedule['schedule_type'] == 'daily' %}
-                <p>Timing: Daily at {{ schedule['scheduled_time'] }}</p>
-                {% else %}
-                <p>Timing: Every {{ schedule['day_of_week'] | title }} at {{ schedule['scheduled_time'] }}</p>
-                {% endif %}
-                {% set evaluation = schedule_evaluations[schedule['schedule_id']] %}
-                {% if evaluation['next_eligible_at_utc'] %}
-                <p>
-                    Next eligible time:
-                    <time datetime="{{ evaluation['next_eligible_at_utc'] }}" data-local-datetime>
-                        {{ evaluation['next_eligible_at_utc'] }}
-                    </time>
-                </p>
-                {% elif schedule['schedule_type'] == 'manual' %}
-                <p>Next eligible time: Started manually</p>
-                {% else %}
-                <p>Next eligible time: Disabled</p>
-                {% endif %}
-                <p>Created: <time datetime="{{ schedule['created_at'] }}" data-local-datetime>{{ schedule['created_at'] }}</time></p>
-                {% if can_manage_workflows and current_user['role'] == 'admin' %}
-                <form method="post" action="{{ url_for('workflow_schedule_status_update', workflow_id=workflow['workflow_id'], schedule_id=schedule['schedule_id']) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <input type="hidden" name="is_enabled" value="{{ 'false' if schedule['is_enabled'] else 'true' }}">
-                    <button class="employee-submit-button" type="submit" {% if not schedule['is_enabled'] and workflow['status'] != 'active' %}disabled aria-describedby="schedule-inactive-{{ schedule['schedule_id'] }}"{% endif %}>
-                        {{ 'Disable schedule' if schedule['is_enabled'] else 'Enable schedule' }}
-                    </button>
-                    {% if not schedule['is_enabled'] and workflow['status'] != 'active' %}
-                    <span id="schedule-inactive-{{ schedule['schedule_id'] }}">Activate the workflow before enabling this schedule.</span>
-                    {% endif %}
-                </form>
-                {% endif %}
-            </li>
-            {% endfor %}
-        </ol>
-        {% else %}
-        <p class="page-message">No schedules have been added to this workflow yet.</p>
-        {% endif %}
-    </section>
-
-    <section aria-labelledby="workflow-executions-heading">
-        <h2 id="workflow-executions-heading" class="section-title">Execution history</h2>
+    <section class="workflow-detail-card workflow-execution-card" aria-labelledby="workflow-executions-heading">
+        <header class="panel-heading"><div><h2 id="workflow-executions-heading">Execution history</h2><p>Recorded runs and task outcomes.</p></div><span class="panel-count">{{ workflow_executions | length }}</span></header>
         {% if workflow_executions %}
-        <ol>
+        <ol class="workflow-execution-list">
             {% for execution in workflow_executions %}
             <li>
-                <h3>{{ execution['status'] | title }}</h3>
-                <p>Execution ID: {{ execution['execution_id'] }}</p>
-                <p>Started: <time datetime="{{ execution['started_at'] }}" data-local-datetime>{{ execution['started_at'] }}</time></p>
-                <p>{{ execution['result_summary'] }}</p>
-                <section aria-labelledby="tasks-{{ execution['execution_id'] }}">
+                <header class="workflow-execution-heading"><div>{{ status(execution['status'] | title) }}<h3>Execution {{ execution['execution_id'] }}</h3></div><time datetime="{{ execution['started_at'] }}" data-local-datetime>{{ execution['started_at'] }}</time></header>
+                <p class="workflow-result-summary">{{ execution['result_summary'] }}</p>
+                <section class="workflow-task-outcomes" aria-labelledby="tasks-{{ execution['execution_id'] }}">
                     <h4 id="tasks-{{ execution['execution_id'] }}">Task outcomes</h4>
                     {% if task_executions_by_run[execution['execution_id']] %}
-                    <ol>
-                        {% for task_run in task_executions_by_run[execution['execution_id']] %}
-                        <li value="{{ task_run['sequence_number'] }}">
-                            <h5>{{ task_run['task_title'] }}</h5>
-                            <p>Task ID: {{ task_run['task_id'] }}</p>
-                            <p>Status: {{ task_run['status'] | title }}</p>
-                            <p>Started: <time datetime="{{ task_run['started_at'] }}" data-local-datetime>{{ task_run['started_at'] }}</time></p>
-                            <p>Finished: {% if task_run['finished_at'] %}<time datetime="{{ task_run['finished_at'] }}" data-local-datetime>{{ task_run['finished_at'] }}</time>{% else %}Not finished{% endif %}</p>
-                            <p>{{ task_run['result_summary'] }}</p>
-                            {% if can_manage_workflows and current_user['role'] == 'admin' and execution['status'] == 'running' and task_run['status'] == 'running' %}
-                            <form method="post" action="{{ url_for('workflow_task_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id'], task_execution_id=task_run['task_execution_id']) }}">
-                                <fieldset>
-                                    <legend>Update outcome: {{ task_run['task_title'] }}</legend>
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                                    <label for="result-{{ task_run['task_execution_id'] }}">Task result summary (required)</label>
-                                    <input id="result-{{ task_run['task_execution_id'] }}" name="result_summary" type="text" required>
-                                    <button class="employee-submit-button" name="status" value="completed" type="submit">Mark task completed</button>
-                                    <button class="employee-submit-button" name="status" value="failed" type="submit">Mark task failed</button>
-                                </fieldset>
-                            </form>
-                            {% endif %}
-                        </li>
-                        {% endfor %}
-                    </ol>
-                    {% else %}
-                    <p class="page-message">No task execution records were stored for this run.</p>
-                    {% endif %}
+                    <ol>{% for task_run in task_executions_by_run[execution['execution_id']] %}<li value="{{ task_run['sequence_number'] }}">
+                        <div class="workflow-item-heading"><h5>{{ task_run['task_title'] }}</h5><span class="ui-visually-hidden">Status: {{ task_run['status'] | title }}</span>{{ status(task_run['status'] | title) }}</div>
+                        <p>Task ID: {{ task_run['task_id'] }} · Started <time datetime="{{ task_run['started_at'] }}" data-local-datetime>{{ task_run['started_at'] }}</time> · Finished: {% if task_run['finished_at'] %}<time datetime="{{ task_run['finished_at'] }}" data-local-datetime>{{ task_run['finished_at'] }}</time>{% else %}Not finished{% endif %}</p>
+                        <p>{{ task_run['result_summary'] }}</p>
+                        {% if can_manage_workflows and current_user['role'] == 'admin' and execution['status'] == 'running' and task_run['status'] == 'running' %}
+                        <form class="workflow-outcome-form" method="post" action="{{ url_for('workflow_task_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id'], task_execution_id=task_run['task_execution_id']) }}"><fieldset><legend>Update outcome: {{ task_run['task_title'] }}</legend><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label for="result-{{ task_run['task_execution_id'] }}">Task result summary (required)</label><input id="result-{{ task_run['task_execution_id'] }}" name="result_summary" type="text" required><div><button class="ui-button ui-button--secondary" name="status" value="completed" type="submit">Mark task completed</button><button class="ui-button ui-button--danger" name="status" value="failed" type="submit">Mark task failed</button></div></fieldset></form>
+                        {% endif %}
+                    </li>{% endfor %}</ol>
+                    {% else %}<p class="page-message">No task execution records were stored for this run.</p>{% endif %}
                 </section>
                 {% if can_manage_workflows and execution['status'] == 'running' %}
-                <form method="post" action="{{ url_for('workflow_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id']) }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-                    <label for="result-{{ execution['execution_id'] }}">Result summary</label>
-                    <input id="result-{{ execution['execution_id'] }}" name="result_summary" type="text" required>
-                    <button class="employee-submit-button" name="status" value="completed" type="submit">Mark completed</button>
-                    <button class="employee-submit-button" name="status" value="failed" type="submit">Mark failed</button>
-                </form>
+                <form class="workflow-outcome-form" method="post" action="{{ url_for('workflow_execution_finish', workflow_id=workflow['workflow_id'], execution_id=execution['execution_id']) }}"><fieldset><legend>Finish this execution</legend><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><label for="result-{{ execution['execution_id'] }}">Result summary</label><input id="result-{{ execution['execution_id'] }}" name="result_summary" type="text" required><div><button class="ui-button ui-button--secondary" name="status" value="completed" type="submit">Mark completed</button><button class="ui-button ui-button--danger" name="status" value="failed" type="submit">Mark failed</button></div></fieldset></form>
                 {% endif %}
             </li>
             {% endfor %}
         </ol>
-        {% else %}
-        <p class="page-message">This workflow has not been run yet.</p>
-        {% endif %}
+        {% else %}<div class="workflow-empty-state">{{ icon('activity-log') }}<div><h3>No executions recorded</h3><p>Completed and in-progress runs will appear here.</p></div></div>{% endif %}
     </section>
 </section>
 {% endblock %}

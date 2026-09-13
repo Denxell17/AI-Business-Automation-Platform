@@ -1,8 +1,9 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon, status with context %}
 
 {% block content %}
 <section
-    class="directory-section"
+    class="directory-section agent-history-page"
     aria-labelledby="agent-execution-history-heading"
 >
     {% if agent_template %}
@@ -50,13 +51,7 @@
         </div>
 
         {% if agent_template %}
-        <span class="employee-status">
-            <span
-                class="status-dot"
-                aria-hidden="true"
-            ></span>
-            {{ agent_template["status"] | title }}
-        </span>
+        {{ status(agent_template["status"] | title) }}
         {% endif %}
     </div>
 
@@ -77,7 +72,7 @@
         tabindex="0"
     >
         <table class="employee-table">
-            <caption class="visually-hidden">
+            <caption class="ui-visually-hidden">
                 Agent Execution history for
                 {{ agent_template["name"] }}
             </caption>
@@ -114,13 +109,7 @@
                     </th>
 
                     <td>
-                        <span class="employee-status">
-                            <span
-                                class="status-dot"
-                                aria-hidden="true"
-                            ></span>
-                            {{ execution["status"] | title }}
-                        </span>
+                        {{ status(execution["status"] | title) }}
                     </td>
 
                     <td>{{ execution["model_name"] }}</td>
@@ -158,17 +147,7 @@
     </div>
 
     {% else %}
-    <div class="empty-state">
-        <p class="empty-state-icon" aria-hidden="true">
-            ◎
-        </p>
-
-        <h2>No Agent Executions yet</h2>
-
-        <p>
-            This Agent Template has no stored execution history.
-        </p>
-    </div>
+    <div class="ui-empty-state agent-history-empty"><div class="ui-empty-state__content">{{ icon('activity-log') }}<h2>No Agent Executions yet</h2><p>This Agent Template has no stored execution history.</p></div></div>
     {% endif %}
 </section>
 {% endblock %}

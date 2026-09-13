@@ -1,256 +1,55 @@
 {% extends "application_base.html" %}
+{% from "ui_macros.html" import icon, status with context %}
+{% macro value_or_dash(value) -%}{{ value if value is not none else "—" }}{%- endmacro %}
 
 {% block content %}
-<section
-    class="dashboard-hero"
-    aria-labelledby="dashboard-heading"
->
-    <p class="section-eyebrow">AI Business Automation Platform</p>
+<div class="dashboard-page">
+    <header class="dashboard-heading">
+        <div><p class="section-eyebrow">Operational overview</p><h1 id="dashboard-heading" class="section-title">Dashboard</h1><p class="dashboard-subtitle">System activity, attention items, and useful actions.</p></div>
+        {% if can_manage_workflows %}<a class="ui-button ui-button--primary dashboard-primary-action" href="{{ url_for('workflow_create_form') }}">{{ icon('plus') }}<span>Create workflow</span></a>{% endif %}
+    </header>
 
-    <h1
-        id="dashboard-heading"
-        class="section-title"
-    >
-        ABAP Dashboard
-    </h1>
+    <section class="dashboard-metrics" aria-label="Platform summary">
+        <article class="metric-card metric-card--blue"><div><p>Employees</p><strong>{{ value_or_dash(dashboard.employee_total) }}</strong><span>Current records</span></div><span class="metric-icon" aria-hidden="true">{{ icon('employees') }}</span></article>
+        <article class="metric-card metric-card--green"><div><p>Departments</p><strong>{{ value_or_dash(dashboard.department_total) }}</strong><span>Derived from workforce data</span></div><span class="metric-icon" aria-hidden="true">{{ icon('report') }}</span></article>
+        <article class="metric-card metric-card--purple"><div><p>Active workflows</p><strong>{{ value_or_dash(dashboard.active_workflow_total) }}</strong><span>Current workflow status</span></div><span class="metric-icon" aria-hidden="true">{{ icon('workflows') }}</span></article>
+        <article class="metric-card metric-card--red"><div><p>Failed runs</p><strong>{{ value_or_dash(dashboard.failed_workflow_run_total) }}</strong><span>Execution history</span></div><span class="metric-icon" aria-hidden="true">{{ icon('info') }}</span></article>
+    </section>
 
-    <p class="page-message">
-        {{ page_message }}
-    </p>
+    <div class="dashboard-grid dashboard-grid--primary">
+        <section class="dashboard-panel dashboard-panel--wide" aria-labelledby="workflow-operations-heading">
+            <header class="panel-heading"><div><h2 id="workflow-operations-heading">Workflow operations</h2><p>Recent workflow executions from execution history.</p></div><a href="{{ url_for('workflow_directory') }}">View all</a></header>
+            {% if dashboard.workflow_executions is none %}<p class="permission-message">Workflow information is not available for this account.</p>
+            {% elif dashboard.workflow_executions %}<div class="ui-table-wrapper dashboard-table" role="region" tabindex="0" aria-label="Recent workflow executions"><table><caption class="ui-visually-hidden">Recent workflow execution status</caption><thead><tr><th scope="col">Status</th><th scope="col">Workflow</th><th scope="col">Triggered</th><th scope="col">Finished</th></tr></thead><tbody>{% for execution in dashboard.workflow_executions %}<tr><td>{{ status(execution.status | title) }}</td><th scope="row">{{ execution.workflow_name }}</th><td>{{ execution.started_at }}</td><td>{{ execution.finished_at or "Running" }}</td></tr>{% endfor %}</tbody></table></div>
+            {% else %}<div class="dashboard-empty">{{ icon('workflows') }}<strong>No workflow executions</strong><span>Execution data will appear here when workflows run.</span></div>{% endif %}
+        </section>
 
-    <p class="status-message">
-        <span
-            class="status-indicator"
-            aria-hidden="true"
-        >✓</span>
-        <span>Platform access is secure and available.</span>
-    </p>
-</section>
+        <section class="dashboard-panel" aria-labelledby="department-heading">
+            <header class="panel-heading"><div><h2 id="department-heading">Department headcounts</h2><p>Employee counts by department from workforce data.</p></div></header>
+            {% if dashboard.department_counts is none %}<p class="permission-message">Workforce information is not available for this account.</p>
+            {% elif dashboard.department_counts %}<ul class="department-list">{% set maximum = dashboard.department_counts[0].employee_count %}{% for department in dashboard.department_counts %}<li><div><span>{{ department.department }}</span><strong>{{ department.employee_count }}</strong></div><progress class="department-bar" value="{{ department.employee_count }}" max="{{ maximum }}" aria-label="{{ department.department }} headcount relative to the largest department">{{ department.employee_count }} of {{ maximum }}</progress></li>{% endfor %}</ul>
+            {% else %}<div class="dashboard-empty">{{ icon('report') }}<strong>No department data available</strong><span>Headcounts will appear when workforce records are available.</span></div>{% endif %}
+        </section>
 
-<section
-    class="dashboard-section"
-    aria-labelledby="modules-heading"
->
-    <div class="section-heading-group">
-        <p class="section-eyebrow">Portfolio modules</p>
-
-        <h2
-            id="modules-heading"
-            class="dashboard-section-title"
-        >
-            Business automation workspace
-        </h2>
-
-        <p class="dashboard-section-description">
-            Open an available module or review the capabilities
-            planned for the growing ABAP portfolio.
-        </p>
+        <aside class="dashboard-panel quick-actions" aria-labelledby="quick-actions-heading">
+            <header class="panel-heading"><div><h2 id="quick-actions-heading">Quick actions</h2></div></header><nav aria-label="Dashboard actions">
+                {% if can_register_employee %}<a href="{{ url_for('employee_create_form') }}">{{ icon('employees') }}<span>Add employee</span>{{ icon('chevron-right') }}</a>{% endif %}
+                {% if can_manage_workflows %}<a href="{{ url_for('workflow_create_form') }}">{{ icon('workflows') }}<span>Create workflow</span>{{ icon('chevron-right') }}</a>{% endif %}
+                {% if user_has_permission(current_user, EXECUTE_AGENT_TEMPLATES) %}<a href="{{ url_for('ai_assistant_page') }}">{{ icon('assistant') }}<span>Open AI Assistant</span>{{ icon('chevron-right') }}</a>{% endif %}
+                <a href="{{ url_for('workforce_report') }}">{{ icon('report') }}<span>View reports</span>{{ icon('chevron-right') }}</a>
+            </nav>
+        </aside>
     </div>
 
-    <div class="module-grid">
-        <article class="module-card is-available">
-            <div class="module-card-heading">
-                <span
-                    class="module-icon"
-                    aria-hidden="true"
-                >♙</span>
+    <div class="dashboard-grid dashboard-grid--secondary">
+        <section class="dashboard-panel" aria-labelledby="schedules-heading"><header class="panel-heading"><div><h2 id="schedules-heading">Upcoming schedules</h2><p>Enabled workflow schedules.</p></div><a href="{{ url_for('workflow_directory') }}">View all</a></header>{% if dashboard.enabled_schedules %}<ul class="compact-list">{% for schedule in dashboard.enabled_schedules %}<li>{{ status('Enabled') }}<span><strong>{{ schedule.workflow_name }}</strong><small>{{ schedule.schedule_type | title }}{% if schedule.scheduled_time %} · {{ schedule.scheduled_time }}{% endif %}</small></span></li>{% endfor %}</ul>{% else %}<div class="dashboard-empty dashboard-empty--compact">{{ icon('activity-log') }}<strong>No schedules configured</strong><span>Enabled workflow schedules will appear here.</span></div>{% endif %}</section>
 
-                <span class="module-status is-available">
-                    <span aria-hidden="true">✓</span>
-                    Available
-                </span>
-            </div>
+        <section class="dashboard-panel" aria-labelledby="recent-activity-heading"><header class="panel-heading"><div><h2 id="recent-activity-heading">Recent activity</h2><p>Latest authorized activity from the audit log.</p></div>{% if activity_entries is not none %}<a href="{{ url_for('activity_log_page') }}">View all</a>{% endif %}</header>{% if activity_entries %}<ul class="compact-list activity-list">{% for entry in activity_entries %}<li>{{ icon('activity-log') }}<span>{{ entry }}</span></li>{% endfor %}</ul>{% elif activity_entries is none %}<p class="permission-message">Activity history is restricted for this account.</p>{% else %}<div class="dashboard-empty dashboard-empty--compact">{{ icon('activity-log') }}<strong>No recent activity</strong><span>Authorized audit events will appear here.</span></div>{% endif %}</section>
 
-            <h3>Employee Management</h3>
-
-            <p>
-                Manage employee records, payroll, workforce reports,
-                user accounts, and protected activity history.
-            </p>
-
-            <a
-                class="module-action"
-                href="/employees"
-            >
-                Open employee workspace
-                <span aria-hidden="true">→</span>
-            </a>
-        </article>
-
-        <article class="module-card is-available">
-            <div class="module-card-heading">
-                <span
-                    class="module-icon"
-                    aria-hidden="true"
-                >↻</span>
-
-                <span class="module-status is-available">
-                    <span aria-hidden="true">✓</span>
-                    Available
-                </span>
-            </div>
-
-            <h3>Workflow Automation</h3>
-
-            <p>
-                Review workflows, ordered tasks, stored schedules, and
-                execution history. Automatic background processing remains
-                planned for a future module update.
-            </p>
-
-            <a
-                class="module-action"
-                href="/workflows"
-            >
-                Open workflow directory
-                <span aria-hidden="true">→</span>
-            </a>
-        </article>
-
-        <article class="module-card">
-            <div class="module-card-heading">
-                <span
-                    class="module-icon"
-                    aria-hidden="true"
-                >◎</span>
-
-                <span class="module-status">
-                    Planned
-                </span>
-            </div>
-
-            <h3>Customer Management</h3>
-
-            <p>
-                Organize leads, customers, contact details, and
-                business relationships in one protected workspace.
-            </p>
-        </article>
-
-        <article class="module-card">
-            <div class="module-card-heading">
-                <span
-                    class="module-icon"
-                    aria-hidden="true"
-                >▤</span>
-
-                <span class="module-status">
-                    Planned
-                </span>
-            </div>
-
-            <h3>Invoice Management</h3>
-
-            <p>
-                Create and track invoices, payment states, customer
-                balances, and related business documents.
-            </p>
-        </article>
-
-        <article class="module-card is-available">
-            <div class="module-card-heading">
-                <span
-                    class="module-icon"
-                    aria-hidden="true"
-                >✦</span>
-
-                <span class="module-status is-available">
-                    <span aria-hidden="true">✓</span>
-                    Available
-                </span>
-            </div>
-
-            <h3>AI Agents</h3>
-
-            <p>
-                Configure reusable Agent Templates, run protected
-                executions, and review completed or safely failed
-                results.
-            </p>
-
-            <a
-                class="module-action"
-                href="/agent-templates"
-            >
-                Open Agent Template directory
-                <span aria-hidden="true">→</span>
-            </a>
-
-            {% if user_has_permission(
-                current_user,
-                EXECUTE_AGENT_TEMPLATES
-            ) %}
-            <a
-                class="module-action"
-                href="{{ url_for('ai_assistant_page') }}"
-            >
-                Open AI Assistant
-                <span aria-hidden="true">→</span>
-            </a>
-            {% endif %}
-
-        </article>
+        <div class="dashboard-stack">
+            <section class="dashboard-panel" aria-labelledby="agent-heading"><header class="panel-heading"><div><h2 id="agent-heading">Agent executions</h2><p>Recent Agent Template executions.</p></div>{% if dashboard.agent_executions is not none %}<a href="{{ url_for('agent_template_directory') }}">View all</a>{% endif %}</header>{% if dashboard.agent_executions %}<ul class="compact-list">{% for execution in dashboard.agent_executions %}<li>{{ status(execution.status | title) }}<span><strong>{{ execution.agent_template_name }}</strong><small>{{ execution.started_at }}</small></span></li>{% endfor %}</ul>{% elif dashboard.agent_executions is none %}<p class="permission-message">Agent information is restricted for this account.</p>{% else %}<div class="dashboard-empty dashboard-empty--compact"><strong>No agent executions</strong><span>Agent runs will appear here.</span></div>{% endif %}</section>
+            <section class="dashboard-panel readiness-panel" aria-labelledby="readiness-heading"><header class="panel-heading"><div><h2 id="readiness-heading">System readiness</h2><p>Current application and database status.</p></div></header><div class="readiness-status">{{ icon('health') }}<span><strong>{{ 'Operational' if database_ready else 'Attention required' }}</strong><small>{{ 'Database connection is ready.' if database_ready else 'Database readiness check failed.' }}</small></span><span class="readiness-dot{% if database_ready %} is-ready{% endif %}"></span></div></section>
+        </div>
     </div>
-</section>
-
-<section
-    class="dashboard-section"
-    aria-labelledby="resources-heading"
->
-    <div class="section-heading-group">
-        <p class="section-eyebrow">Platform resources</p>
-
-        <h2
-            id="resources-heading"
-            class="dashboard-section-title"
-        >
-            Development and system tools
-        </h2>
-    </div>
-
-    <div class="resource-grid">
-        <a class="resource-card" href="/docs">
-            <span
-                class="resource-icon"
-                aria-hidden="true"
-            >?</span>
-
-            <span>
-                <strong>API documentation</strong>
-                <small>
-                    Explore and test available endpoints.
-                </small>
-            </span>
-        </a>
-
-        <a class="resource-card" href="/health">
-            <span
-                class="resource-icon"
-                aria-hidden="true"
-            >✓</span>
-
-            <span>
-                <strong>System health</strong>
-                <small>
-                    Confirm that the FastAPI service is available.
-                </small>
-            </span>
-        </a>
-
-
-        <a class="resource-card" href="/ready">
-            <span
-                class="resource-icon"
-                aria-hidden="true"
-            >●</span>
-
-            <span>
-                <strong>System readiness</strong>
-                <small>
-                    Verify that the configured database is usable.
-                </small>
-            </span>
-        </a>
-    </div>
-</section>
+</div>
 {% endblock %}

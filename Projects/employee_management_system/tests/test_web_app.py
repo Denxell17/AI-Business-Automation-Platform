@@ -297,48 +297,30 @@ class TestWebApplication(unittest.TestCase):
             "text/html",
             response.headers["content-type"],
         )
+        self.assertIn("Operational overview", response.text)
+        self.assertIn("System activity, attention items", response.text)
+        self.assertIn("Employees", response.text)
+        self.assertIn("Workflow operations", response.text)
         self.assertIn(
-            "ABAP Dashboard",
-            response.text,
-        )
-        self.assertIn(
-            "Your business automation workspace",
-            response.text,
-        )
-        self.assertIn(
-            "Employee Management",
-            response.text,
-        )
-        self.assertIn(
-            'href="/employees"',
+            'href="http://testserver/employees"',
             response.text,
         )
 
-    def test_home_page_identifies_available_and_planned_modules(self):
+    def test_home_page_presents_operational_actions_and_status(self):
         self.sign_in()
         response = self.client.get("/")
 
         self.assertEqual(response.status_code, 200)
-        self.assertIn("Available", response.text)
-        self.assertIn("Planned", response.text)
-        self.assertIn("Workflow Automation", response.text)
+        self.assertIn("Active workflows", response.text)
+        self.assertIn("Failed runs", response.text)
+        self.assertIn("Create workflow", response.text)
         self.assertIn(
-            "Open workflow directory",
+            'href="http://testserver/workflows"',
             response.text,
         )
+        self.assertIn("Agent executions", response.text)
         self.assertIn(
-            'href="/workflows"',
-            response.text,
-        )
-        self.assertIn("Customer Management", response.text)
-        self.assertIn("Invoice Management", response.text)
-        self.assertIn("AI Agents", response.text)
-        self.assertIn(
-            "Open Agent Template directory",
-            response.text,
-        )
-        self.assertIn(
-            'href="/agent-templates"',
+            'href="http://testserver/agent-templates"',
             response.text,
         )
         self.assertIn("Open AI Assistant", response.text)
@@ -361,9 +343,16 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
         self.assertIn(
-            'class="topbar-label">ABAP workspace</p>',
+            'id="workspace-navigation-heading"',
             response.text,
         )
+        self.assertIn("Administration", response.text)
+        self.assertIn("Resources", response.text)
+        self.assertIn(
+            "/static/brand/abap-wordmark-approved-transparent.png",
+            response.text,
+        )
+        self.assertIn("data-theme-toggle", response.text)
         self.assertIn(
             'aria-current="page"',
             response.text,
@@ -388,10 +377,7 @@ class TestWebApplication(unittest.TestCase):
             "System readiness",
             response.text,
         )
-        self.assertIn(
-            'href="/ready"',
-            response.text,
-        )
+        self.assertIn("Database connection is ready.", response.text)
 
     def test_home_page_includes_accessibility_foundations(self):
         self.sign_in()
@@ -428,6 +414,10 @@ class TestWebApplication(unittest.TestCase):
             "/static/navigation.js",
             response.text,
         )
+        self.assertIn(
+            "/static/theme.js",
+            response.text,
+        )
 
     def test_login_page_returns_accessible_password_form(self):
         response = self.client.get("/login")
@@ -437,6 +427,12 @@ class TestWebApplication(unittest.TestCase):
             "Sign in to your workspace",
             response.text,
         )
+        self.assertIn(
+            "/static/brand/abap-wordmark-approved-transparent.png",
+            response.text,
+        )
+        self.assertNotIn("authentication-brand-mark", response.text)
+        self.assertIn("Enter your ABAP account credentials.", response.text)
         self.assertIn(
             'method="post"',
             response.text,
@@ -2303,7 +2299,7 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
         self.assertIn(
-            'class="employee-profile-link"',
+            'class="employee-profile-link employee-identity"',
             response.text,
         )
 
@@ -3424,7 +3420,15 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
         self.assertIn(
-            "--color-background: #1b1d21",
+            "--color-background: #1b1f24",
+            response.text,
+        )
+        self.assertIn(
+            "--color-action: #2563eb",
+            response.text,
+        )
+        self.assertIn(
+            ':root[data-theme="light"]',
             response.text,
         )
         self.assertIn(
@@ -3461,6 +3465,20 @@ class TestWebApplication(unittest.TestCase):
             "Intl.DateTimeFormat",
             response.text,
         )
+        self.assertIn("navigation.inert", response.text)
+        self.assertIn("focusableNavigationItems", response.text)
+
+    def test_theme_script_is_available(self):
+        response = self.client.get("/static/theme.js")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn(
+            "javascript",
+            response.headers["content-type"],
+        )
+        self.assertIn('storageKey = "abap-theme"', response.text)
+        self.assertIn('return "dark"', response.text)
+        self.assertIn("data-theme-toggle", response.text)
 
     def test_health_check_returns_healthy_status(self):
         response = self.client.get("/health")
