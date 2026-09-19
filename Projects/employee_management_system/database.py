@@ -262,15 +262,26 @@ def initialize_database(
                 ),
                 workflow_id TEXT NOT NULL,
                 workflow_name TEXT NOT NULL CHECK (length(trim(workflow_name)) > 0),
+                trigger_type TEXT NOT NULL DEFAULT 'manual' CHECK (
+                    trigger_type IN ('manual', 'schedule')
+                ),
+                schedule_occurrence_id TEXT UNIQUE,
                 status TEXT NOT NULL CHECK (
                     status IN ('running', 'completed', 'failed')
                 ),
-                started_by_user_id INTEGER NOT NULL,
+                started_by_user_id INTEGER,
                 started_at TEXT NOT NULL,
                 finished_at TEXT,
                 result_summary TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id),
-                FOREIGN KEY (started_by_user_id) REFERENCES users(user_id)
+                FOREIGN KEY (started_by_user_id) REFERENCES users(user_id),
+                FOREIGN KEY (schedule_occurrence_id)
+                    REFERENCES workflow_schedule_occurrences(occurrence_id),
+                CHECK (
+                    (trigger_type = 'manual' AND started_by_user_id IS NOT NULL
+                     AND schedule_occurrence_id IS NULL)
+                    OR (trigger_type = 'schedule' AND schedule_occurrence_id IS NOT NULL)
+                )
             )
             """
         )
@@ -340,6 +351,28 @@ def initialize_database(
                ON workflow_schedule_occurrences (
                    workflow_id, scheduled_for_utc
                )"""
+        )
+        execution_columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(workflow_executions)"
+            ).fetchall()
+        }
+        if "trigger_type" not in execution_columns:
+            connection.execute(
+                "ALTER TABLE workflow_executions "
+                "ADD COLUMN trigger_type TEXT NOT NULL DEFAULT 'manual'"
+            )
+        if "schedule_occurrence_id" not in execution_columns:
+            connection.execute(
+                "ALTER TABLE workflow_executions "
+                "ADD COLUMN schedule_occurrence_id TEXT"
+            )
+        connection.execute(
+            """CREATE UNIQUE INDEX IF NOT EXISTS
+                   idx_workflow_executions_schedule_occurrence
+               ON workflow_executions (schedule_occurrence_id)
+               WHERE schedule_occurrence_id IS NOT NULL"""
         )
         connection.commit()
     finally:
@@ -1195,13 +1228,15 @@ def insert_workflow_execution(
         connection.execute(
             """
             INSERT INTO workflow_executions (
-                execution_id, workflow_id, workflow_name, status,
+                execution_id, workflow_id, workflow_name, trigger_type,
+                schedule_occurrence_id, status,
                 started_by_user_id, started_at, finished_at, result_summary
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 execution["execution_id"], execution["workflow_id"],
-                execution["workflow_name"], execution["status"],
+                execution["workflow_name"], execution.get("trigger_type", "manual"),
+                execution.get("schedule_occurrence_id"), execution["status"],
                 execution["started_by_user_id"], execution["started_at"],
                 execution["finished_at"], execution["result_summary"],
             ),
@@ -1211,6 +1246,73 @@ def insert_workflow_execution(
     except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
+    finally:
+        connection.close()
+
+
+def create_scheduled_workflow_execution(
+    execution: WorkflowExecution,
+    task_records: list[WorkflowTaskExecution],
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically create one occurrence-bound run and its task snapshots."""
+    if (
+        execution.get("trigger_type") != "schedule"
+        or not execution.get("schedule_occurrence_id")
+    ):
+        return False
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        occurrence = connection.execute(
+            """SELECT occurrence_id
+               FROM workflow_schedule_occurrences
+               WHERE occurrence_id = ? AND workflow_id = ?""",
+            (execution["schedule_occurrence_id"], execution["workflow_id"]),
+        ).fetchone()
+        if occurrence is None:
+            connection.rollback()
+            return False
+        connection.execute(
+            """INSERT INTO workflow_executions (
+                   execution_id, workflow_id, workflow_name, trigger_type,
+                   schedule_occurrence_id, status, started_by_user_id,
+                   started_at, finished_at, result_summary
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                execution["execution_id"], execution["workflow_id"],
+                execution["workflow_name"], execution["trigger_type"],
+                execution["schedule_occurrence_id"], execution["status"],
+                execution["started_by_user_id"], execution["started_at"],
+                execution["finished_at"], execution["result_summary"],
+            ),
+        )
+        if task_records:
+            connection.executemany(
+                """INSERT INTO workflow_task_executions (
+                       task_execution_id, execution_id, task_id, sequence_number,
+                       task_title, status, started_at, finished_at, result_summary
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                [
+                    (
+                        record["task_execution_id"], record["execution_id"],
+                        record["task_id"], record["sequence_number"],
+                        record["task_title"], record["status"],
+                        record["started_at"], record["finished_at"],
+                        record["result_summary"],
+                    )
+                    for record in task_records
+                ],
+            )
+        connection.commit()
+        return True
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return False
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
     finally:
         connection.close()
 
@@ -1225,7 +1327,8 @@ def load_workflow_executions(
     try:
         rows = connection.execute(
             """
-            SELECT execution_id, workflow_id, workflow_name, status,
+            SELECT execution_id, workflow_id, workflow_name, trigger_type,
+                   schedule_occurrence_id, status,
                    started_by_user_id, started_at, finished_at, result_summary
             FROM workflow_executions
             WHERE workflow_id = ?
@@ -1240,6 +1343,8 @@ def load_workflow_executions(
             "execution_id": row["execution_id"],
             "workflow_id": row["workflow_id"],
             "workflow_name": row["workflow_name"],
+            "trigger_type": row["trigger_type"],
+            "schedule_occurrence_id": row["schedule_occurrence_id"],
             "status": row["status"],
             "started_by_user_id": row["started_by_user_id"],
             "started_at": row["started_at"],
@@ -1248,6 +1353,117 @@ def load_workflow_executions(
         }
         for row in rows
     ]
+
+
+def load_unstarted_workflow_schedule_occurrences(
+    limit: int,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowScheduleOccurrence]:
+    """Load claimed occurrences that have no execution for safe recovery."""
+    if type(limit) is not int or limit <= 0:
+        raise ValueError("The occurrence limit must be a positive integer.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT occurrence.occurrence_id, occurrence.schedule_id,
+                      occurrence.workflow_id, occurrence.scheduled_for_utc,
+                      occurrence.claimed_at
+               FROM workflow_schedule_occurrences AS occurrence
+               LEFT JOIN workflow_executions AS execution
+                 ON execution.schedule_occurrence_id = occurrence.occurrence_id
+               WHERE execution.execution_id IS NULL
+               ORDER BY occurrence.claimed_at, occurrence.occurrence_id
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def workflow_schedule_occurrence_is_started(
+    occurrence_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Return whether another worker has already created this occurrence's run."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        row = connection.execute(
+            """SELECT 1 FROM workflow_executions
+               WHERE schedule_occurrence_id = ? LIMIT 1""",
+            (occurrence_id,),
+        ).fetchone()
+        return row is not None
+    finally:
+        connection.close()
+
+
+def load_stale_scheduled_workflow_executions(
+    stale_before: str,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowExecution]:
+    """Load scheduled runs still active beyond the configured recovery age."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT execution_id, workflow_id, workflow_name, trigger_type,
+                      schedule_occurrence_id, status, started_by_user_id,
+                      started_at, finished_at, result_summary
+               FROM workflow_executions
+               WHERE trigger_type = 'schedule' AND status = 'running'
+                 AND started_at < ?
+               ORDER BY started_at, execution_id""",
+            (stale_before,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def fail_stale_scheduled_workflow_execution(
+    execution_id: str,
+    stale_before: str,
+    finished_at: str,
+    result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically finish a stale scheduled run and every running task as failed."""
+    if not all(isinstance(value, str) and value.strip() for value in (
+        execution_id, stale_before, finished_at, result_summary,
+    )):
+        return False
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        cursor = connection.execute(
+            """UPDATE workflow_executions
+               SET status = 'failed', finished_at = ?, result_summary = ?
+               WHERE execution_id = ? AND trigger_type = 'schedule'
+                 AND status = 'running' AND started_at < ?""",
+            (finished_at, result_summary, execution_id, stale_before),
+        )
+        if cursor.rowcount != 1:
+            connection.rollback()
+            return False
+        connection.execute(
+            """UPDATE workflow_task_executions
+               SET status = 'failed', finished_at = ?, result_summary = ?
+               WHERE execution_id = ? AND status = 'running'""",
+            (finished_at, result_summary, execution_id),
+        )
+        connection.commit()
+        return True
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def finish_workflow_execution(

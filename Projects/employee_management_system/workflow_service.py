@@ -9,6 +9,7 @@ from authorization import (
 )
 from database import (
     DATABASE_FILE,
+    create_scheduled_workflow_execution,
     delete_workflow_task,
     finish_workflow_execution,
     finish_workflow_task_execution,
@@ -32,6 +33,7 @@ from models import (
     VALID_WORKFLOW_STATUSES,
     Workflow,
     WorkflowExecution,
+    WorkflowScheduleOccurrence,
     WorkflowTaskExecution,
     WorkflowTask,
     WorkflowSchedule,
@@ -451,6 +453,8 @@ def start_workflow_execution(
         "execution_id": f"WFE-{uuid4().hex.upper()}",
         "workflow_id": workflow["workflow_id"],
         "workflow_name": workflow["name"],
+        "trigger_type": "manual",
+        "schedule_occurrence_id": None,
         "status": "running",
         "started_by_user_id": stored_user["user_id"],
         "started_at": started_at,
@@ -467,6 +471,68 @@ def start_workflow_execution(
         for task in load_workflow_tasks(workflow["workflow_id"], database_file)
     ]
     return execution if insert_workflow_task_executions(task_records, database_file) else None
+
+
+def start_scheduled_workflow_execution(
+    occurrence: WorkflowScheduleOccurrence,
+    started_at: str,
+    database_file: Path = DATABASE_FILE,
+) -> WorkflowExecution | None:
+    """Create one idempotent, occurrence-bound scheduled workflow run."""
+    if (
+        not all(
+            isinstance(occurrence.get(key), str) and occurrence[key].strip()
+            for key in (
+                "occurrence_id", "schedule_id", "workflow_id",
+                "scheduled_for_utc", "claimed_at",
+            )
+        )
+        or not isinstance(started_at, str)
+        or not started_at.strip()
+    ):
+        return None
+    workflow = load_workflow_by_id(occurrence["workflow_id"], database_file)
+    if workflow is None:
+        return None
+    tasks = load_workflow_tasks(workflow["workflow_id"], database_file)
+    can_start = workflow["status"] == "active" and bool(tasks)
+    execution: WorkflowExecution = {
+        "execution_id": f"WFE-{uuid4().hex.upper()}",
+        "workflow_id": workflow["workflow_id"],
+        "workflow_name": workflow["name"],
+        "trigger_type": "schedule",
+        "schedule_occurrence_id": occurrence["occurrence_id"],
+        "status": "running" if can_start else "failed",
+        "started_by_user_id": None,
+        "started_at": started_at,
+        "finished_at": None if can_start else started_at,
+        "result_summary": (
+            "Scheduled execution started."
+            if can_start
+            else "Scheduled execution could not start."
+        ),
+    }
+    task_records: list[WorkflowTaskExecution] = []
+    if can_start:
+        task_records = [
+            {
+                "task_execution_id": f"WFTE-{uuid4().hex.upper()}",
+                "execution_id": execution["execution_id"],
+                "task_id": task["task_id"],
+                "sequence_number": task["sequence_number"],
+                "task_title": task["title"],
+                "status": "running",
+                "started_at": started_at,
+                "finished_at": None,
+                "result_summary": "Task execution started.",
+            }
+            for task in tasks
+        ]
+    if not create_scheduled_workflow_execution(
+        execution, task_records, database_file,
+    ):
+        return None
+    return execution
 
 
 def finish_workflow_task_execution_record(

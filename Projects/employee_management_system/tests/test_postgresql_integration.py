@@ -946,6 +946,8 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
             "execution_id": self.execution_id,
             "workflow_id": self.workflow_id,
             "workflow_name": workflow["name"],
+            "trigger_type": "manual",
+            "schedule_occurrence_id": None,
             "status": "running",
             "started_by_user_id": account["user_id"],
             "started_at": TEST_TIMESTAMP,

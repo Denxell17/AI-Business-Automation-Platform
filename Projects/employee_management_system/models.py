@@ -136,8 +136,10 @@ class WorkflowExecution(TypedDict):
     execution_id: str
     workflow_id: str
     workflow_name: str
+    trigger_type: str
+    schedule_occurrence_id: str | None
     status: str
-    started_by_user_id: int
+    started_by_user_id: int | None
     started_at: str
     finished_at: str | None
     result_summary: str

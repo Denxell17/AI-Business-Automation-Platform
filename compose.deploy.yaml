@@ -54,6 +54,31 @@ services:
       retries: 3
       start_period: 20s
 
+  worker:
+    <<: *application
+    command: ["python", "-m", "workflow_worker"]
+    restart: unless-stopped
+    environment:
+      DATABASE_BACKEND: postgresql
+      DATABASE_URL: ${DATABASE_URL:?Set the deployment PostgreSQL URL with host database}
+      ABAP_WORKER_ENABLED: "true"
+      ABAP_WORKER_POLL_SECONDS: ${ABAP_WORKER_POLL_SECONDS:-5}
+      ABAP_WORKER_CLAIM_LIMIT: ${ABAP_WORKER_CLAIM_LIMIT:-25}
+      ABAP_WORKER_MAX_ATTEMPTS: ${ABAP_WORKER_MAX_ATTEMPTS:-5}
+      ABAP_WORKER_RETRY_BASE_SECONDS: ${ABAP_WORKER_RETRY_BASE_SECONDS:-5}
+      ABAP_WORKER_RETRY_MAX_SECONDS: ${ABAP_WORKER_RETRY_MAX_SECONDS:-300}
+      ABAP_WORKER_STALE_AFTER_SECONDS: ${ABAP_WORKER_STALE_AFTER_SECONDS:-900}
+      ABAP_WORKER_SHUTDOWN_GRACE_SECONDS: ${ABAP_WORKER_SHUTDOWN_GRACE_SECONDS:-30}
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "workflow_worker", "--check"]
+      interval: 15s
+      timeout: 6s
+      retries: 3
+      start_period: 20s
+
 volumes:
   database_data:
   activity_logs:

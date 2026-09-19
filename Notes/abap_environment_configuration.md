@@ -2,9 +2,9 @@
 
 ## Purpose and current scope
 
-This document fixes the configuration boundary for the completion roadmap. It
-does not activate a worker, webhook endpoint, n8n workflow, or external
-provider. Those capabilities remain gated by Milestones 1, 2, 3, and 6.
+This document fixes the configuration boundary for the completion roadmap. The
+dedicated worker is introduced in Milestone 1; webhook, n8n, and external
+provider capabilities remain gated by Milestones 2, 3, and 6.
 
 Configuration is supplied through environment variables. `.env.example`
 contains names and non-secret examples only. Real secrets must be stored in an
@@ -41,7 +41,7 @@ production defaults rather than silently falling back.
 | `ABAP_WORKER_SHUTDOWN_GRACE_SECONDS` | Bounded graceful-shutdown window; example `30`. |
 
 The worker and web process use the same database contract, but remain separate
-processes. Future validation must impose safe numeric bounds and fail closed.
+processes. Worker configuration validates safe numeric bounds and fails closed.
 
 ## Webhook and n8n contract (Milestones 2 and 3)
 
