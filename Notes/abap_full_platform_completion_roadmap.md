@@ -264,7 +264,7 @@ The completion program is finished only when:
 | Milestone | Status | Evidence / gate |
 | --- | --- | --- |
 | 0 — Baseline and Delivery Controls | Complete | On 2026-09-17, `HEAD`, `main`, and `origin/main` were verified at commit `123044d`; branch `codex/full-platform-completion` is active. Environment and configuration contracts are recorded in `.env.example` and `Notes/abap_environment_configuration.md`. The full suite passed in the project-local Python 3.14 environment: 631 tests passed, 3 PostgreSQL integration tests skipped because no integration database was configured. Common tracked-file credential signatures were absent. `.venv/` and generated activity logs are ignored; no application database, export, or secret file is tracked. No external/cloud behavior was claimed or verified. |
-| 1 — Autonomous Scheduler and Worker | In verification | A separate `workflow_worker` process claims due schedule occurrences and atomically creates one schedule-triggered workflow execution with task snapshots. It has bounded exponential retries, interruptible retry shutdown, stale-run recovery, structured safe logs, and a Compose health check. SQLite-focused coverage verifies due, early, late, disabled, inactive, duplicate, retry, restart, shutdown, and stale recovery behavior. The full local suite passed: 641 tests ran with 4 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. `docker compose -f compose.deploy.yaml config --quiet` passed using isolated synthetic values. Live PostgreSQL worker concurrency and Compose startup were not verified: the local Docker Desktop engine was unavailable. The exit gate is therefore not marked complete. |
+| 1 — Autonomous Scheduler and Worker | Complete | A separate `workflow_worker` process claims due schedule occurrences and atomically creates one schedule-triggered workflow execution with task snapshots. It has bounded exponential retries, interruptible retry shutdown, stale-run recovery, structured safe logs, and a Compose health check. SQLite-focused coverage verifies due, early, late, disabled, inactive, duplicate, retry, restart, shutdown, and stale recovery behavior. The full local suite passed: 641 tests ran with 4 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. On 2026-09-19, isolated Compose project `abap_m1_verify`, using only synthetic credentials, built successfully; PostgreSQL became healthy; migrations succeeded; and web and worker health checks passed. Its live PostgreSQL two-worker concurrency test passed, proving exactly one execution was created for one due occurrence. The Milestone 1 exit gate passed. |
 | 2 — Secure Webhook and Integration Foundation | Not started | No webhook behavior is claimed. |
 | 3 — n8n End-to-End Automation | Not started | No n8n or external/cloud behavior is claimed. |
 | 4 — Leads and Customers Domain | Not started | Exit gate not evaluated. |
@@ -276,8 +276,6 @@ The completion program is finished only when:
 
 ## Immediate Next Action
 
-Start the local Docker Desktop engine, then use an isolated test project and
-synthetic credentials to run the Compose startup check and the live PostgreSQL
-concurrency test. Verify that one enabled schedule produces exactly one tracked
-run, record that evidence, and only then mark Milestone 1 complete. Do not
-begin webhook or n8n work until the exit gate passes.
+Begin Milestone 2: implement the secure webhook and integration foundation.
+Keep the new worker boundaries intact; do not begin n8n integration until the
+Milestone 2 signed, replay-safe webhook exit gate passes.
