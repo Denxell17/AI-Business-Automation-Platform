@@ -16,6 +16,14 @@
         <article class="metric-card metric-card--red"><div><p>Failed runs</p><strong>{{ value_or_dash(dashboard.failed_workflow_run_total) }}</strong><span>Execution history</span></div><span class="metric-icon" aria-hidden="true">{{ icon('info') }}</span></article>
     </section>
 
+    {% if dashboard.lead_total is not none %}
+    <section class="dashboard-metrics" aria-label="Customer relationships">
+        <article class="metric-card metric-card--blue"><div><p>Leads</p><strong>{{ dashboard.lead_total }}</strong><span>Persisted lead records</span></div></article>
+        <article class="metric-card metric-card--green"><div><p>Qualified leads</p><strong>{{ dashboard.qualified_lead_total }}</strong><span>Ready for conversion</span></div></article>
+        <article class="metric-card metric-card--purple"><div><p>Customers</p><strong>{{ dashboard.customer_total }}</strong><span>Converted customer records</span></div></article>
+    </section>
+    {% endif %}
+
     <div class="dashboard-grid dashboard-grid--primary">
         <section class="dashboard-panel dashboard-panel--wide" aria-labelledby="workflow-operations-heading">
             <header class="panel-heading"><div><h2 id="workflow-operations-heading">Workflow operations</h2><p>Recent workflow executions from execution history.</p></div><a href="{{ url_for('workflow_directory') }}">View all</a></header>
@@ -35,6 +43,7 @@
             <header class="panel-heading"><div><h2 id="quick-actions-heading">Quick actions</h2></div></header><nav aria-label="Dashboard actions">
                 {% if can_register_employee %}<a href="{{ url_for('employee_create_form') }}">{{ icon('employees') }}<span>Add employee</span>{{ icon('chevron-right') }}</a>{% endif %}
                 {% if can_manage_workflows %}<a href="{{ url_for('workflow_create_form') }}">{{ icon('workflows') }}<span>Create workflow</span>{{ icon('chevron-right') }}</a>{% endif %}
+                {% if can_manage_crm %}<a href="{{ url_for('lead_create_form') }}">{{ icon('users') }}<span>Create lead</span>{{ icon('chevron-right') }}</a>{% endif %}
                 {% if user_has_permission(current_user, EXECUTE_AGENT_TEMPLATES) %}<a href="{{ url_for('ai_assistant_page') }}">{{ icon('assistant') }}<span>Open AI Assistant</span>{{ icon('chevron-right') }}</a>{% endif %}
                 <a href="{{ url_for('workforce_report') }}">{{ icon('report') }}<span>View reports</span>{{ icon('chevron-right') }}</a>
             </nav>

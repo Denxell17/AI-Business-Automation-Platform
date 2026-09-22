@@ -1,6 +1,34 @@
 from typing import TypedDict
 
 
+LEAD_STAGES = frozenset({"new", "contacted", "qualified", "unqualified", "converted"})
+CUSTOMER_STATUSES = frozenset({"active", "inactive"})
+
+
+class Lead(TypedDict):
+    lead_id: str
+    name: str
+    email: str
+    phone_number: str
+    company: str
+    stage: str
+    owner_user_id: int | None
+    created_at: str
+    updated_at: str
+
+
+class Customer(TypedDict):
+    customer_id: str
+    source_lead_id: str
+    name: str
+    email: str
+    phone_number: str
+    company: str
+    status: str
+    created_at: str
+    updated_at: str
+
+
 class Employee(TypedDict):
     employee_id: str
     name: str

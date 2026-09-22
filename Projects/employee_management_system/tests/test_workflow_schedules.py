@@ -191,7 +191,7 @@ class TestWorkflowSchedules(unittest.TestCase):
         self.assertIn("Status: Enabled", page.text)
         self.assertIn("Schedule times use Asia/Shanghai", page.text)
         self.assertIn("Next eligible time", page.text)
-        self.assertIn("Automatic task execution is not active yet", page.text)
+        self.assertIn("starts one tracked run for each enabled due occurrence", page.text)
 
     def test_browser_validation_preserves_values_and_errors_are_safe(self):
         self.sign_in()

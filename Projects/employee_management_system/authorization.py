@@ -17,6 +17,8 @@ EXECUTE_AGENT_TEMPLATES = "agent_templates.execute"
 VIEW_AGENT_TEMPLATES = "agent_templates.view"
 VIEW_ACTIVITY_LOG = "activity_log.view"
 VIEW_INTEGRATION_STATUS = "integrations.view"
+VIEW_CRM = "crm.view"
+MANAGE_CRM = "crm.manage"
 
 
 ROLE_PERMISSIONS = {
@@ -37,6 +39,8 @@ ROLE_PERMISSIONS = {
         VIEW_AGENT_TEMPLATES,
         VIEW_ACTIVITY_LOG,
         VIEW_INTEGRATION_STATUS,
+        VIEW_CRM,
+        MANAGE_CRM,
     },
     "viewer": {
         VIEW_EMPLOYEE,
@@ -44,6 +48,7 @@ ROLE_PERMISSIONS = {
         EXPORT_REPORT,
         VIEW_WORKFLOWS,
         VIEW_AGENT_TEMPLATES,
+        VIEW_CRM,
     },
 }
 

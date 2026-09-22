@@ -46,6 +46,8 @@ from agent_template_service import (
     update_agent_template,
 )
 from authorization import (
+    MANAGE_CRM,
+    VIEW_CRM,
     DELETE_EMPLOYEE,
     EXECUTE_AGENT_TEMPLATES,
     EXPORT_REPORT,
@@ -80,6 +82,7 @@ from database import (
 )
 from data_validation import get_employee_record_errors
 from dashboard_repository import load_dashboard_snapshot
+from crm_web import register_crm_routes
 from employee_repository import (
     load_employee_records,
     save_employee_records,
@@ -274,6 +277,7 @@ templates.env.globals["MANAGE_USER_ACCOUNTS"] = (
 templates.env.globals["VIEW_INTEGRATION_STATUS"] = (
     VIEW_INTEGRATION_STATUS
 )
+templates.env.globals["VIEW_CRM"] = VIEW_CRM
 
 
 async def read_bounded_request_body(
@@ -891,11 +895,13 @@ def create_web_application(
             current_user,
             VIEW_AGENT_TEMPLATES,
         )
+        can_view_crm = user_has_permission(current_user, VIEW_CRM)
         dashboard = load_dashboard_snapshot(
             database_file,
             include_employees=can_view_employees,
             include_workflows=can_view_workflows,
             include_agents=can_view_agents,
+            include_crm=can_view_crm,
         )
         activity_entries = (
             load_recent_activity_entries()
@@ -925,6 +931,7 @@ def create_web_application(
                     current_user,
                     REGISTER_EMPLOYEE,
                 ),
+                "can_manage_crm": user_has_permission(current_user, MANAGE_CRM),
                 "csrf_token": get_or_create_csrf_token(request),
             },
         )
@@ -4557,6 +4564,11 @@ def create_web_application(
                 "error_message": None,
             },
         )
+
+    register_crm_routes(
+        application, templates, database_file,
+        get_or_create_csrf_token, csrf_token_is_valid, log_activity,
+    )
 
     @application.get("/health")
     def health_check() -> dict[str, str]:
