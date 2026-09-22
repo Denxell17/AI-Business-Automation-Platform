@@ -23,6 +23,7 @@ class TestPostgresqlMigrations(unittest.TestCase):
                 "002_correct_schema_contract.sql",
                 "003_create_agent_templates.sql",
                 "004_create_agent_executions.sql",
+                "005_create_webhook_delivery_state.sql",
             ],
         )
 
@@ -157,6 +158,18 @@ class TestPostgresqlMigrations(unittest.TestCase):
             "agent_executions_user_started_index",
             agent_execution_sql,
         )
+
+    def test_webhook_delivery_migration_contains_safe_metadata_contract(self):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        webhook_sql = migration_files[4].read_text(encoding="utf-8-sig")
+
+        self.assertIn("CREATE TABLE IF NOT EXISTS webhook_replay_events", webhook_sql)
+        self.assertIn("CREATE TABLE IF NOT EXISTS webhook_deliveries", webhook_sql)
+        self.assertIn("UNIQUE (direction, event_id)", webhook_sql)
+        self.assertIn("failure_code TEXT", webhook_sql)
+        self.assertNotIn("payload", webhook_sql.casefold())
 
     def test_missing_migrations_directory_is_rejected(self):
         with TemporaryDirectory() as temporary_directory:

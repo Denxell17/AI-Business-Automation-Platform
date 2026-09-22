@@ -201,6 +201,28 @@ class WorkflowScheduleOccurrence(TypedDict):
     claimed_at: str
 
 
+class WebhookReplayEvent(TypedDict):
+    event_id: str
+    received_at: str
+    expires_at: str
+
+
+class WebhookDelivery(TypedDict):
+    delivery_id: str
+    direction: str
+    event_id: str
+    correlation_id: str
+    event_type: str
+    status: str
+    attempt_count: int
+    next_attempt_at: str | None
+    response_status: int | None
+    failure_code: str
+    created_at: str
+    updated_at: str
+    completed_at: str | None
+
+
 class PayrollSummary(TypedDict):
     performance_rating: str
     bonus_rate: float

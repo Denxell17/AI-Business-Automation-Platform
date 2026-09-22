@@ -20,6 +20,8 @@ from models import (
     WorkflowTask,
     WorkflowSchedule,
     WorkflowScheduleOccurrence,
+    WebhookDelivery,
+    WebhookReplayEvent,
 )
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
@@ -373,6 +375,68 @@ def initialize_database(
                    idx_workflow_executions_schedule_occurrence
                ON workflow_executions (schedule_occurrence_id)
                WHERE schedule_occurrence_id IS NOT NULL"""
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS webhook_replay_events (
+                event_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(event_id)) = 36
+                ),
+                received_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """CREATE INDEX IF NOT EXISTS
+                   idx_webhook_replay_events_expiry
+               ON webhook_replay_events (expires_at)"""
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS webhook_deliveries (
+                delivery_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(delivery_id)) > 0
+                ),
+                direction TEXT NOT NULL CHECK (
+                    direction IN ('inbound', 'outbound')
+                ),
+                event_id TEXT NOT NULL CHECK (length(trim(event_id)) = 36),
+                correlation_id TEXT NOT NULL CHECK (
+                    length(trim(correlation_id)) > 0
+                ),
+                event_type TEXT NOT NULL CHECK (length(trim(event_type)) > 0),
+                status TEXT NOT NULL CHECK (
+                    status IN ('pending', 'retrying', 'accepted', 'succeeded', 'failed')
+                ),
+                attempt_count INTEGER NOT NULL CHECK (
+                    typeof(attempt_count) = 'integer' AND attempt_count >= 0
+                ),
+                next_attempt_at TEXT,
+                response_status INTEGER CHECK (
+                    response_status IS NULL
+                    OR (response_status BETWEEN 100 AND 599)
+                ),
+                failure_code TEXT NOT NULL DEFAULT '' CHECK (
+                    length(failure_code) <= 64
+                ),
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                completed_at TEXT,
+                UNIQUE (direction, event_id),
+                CHECK (
+                    (direction = 'inbound' AND status = 'accepted'
+                     AND attempt_count = 1 AND next_attempt_at IS NULL)
+                    OR (direction = 'outbound'
+                        AND status IN ('pending', 'retrying', 'succeeded', 'failed'))
+                )
+            )
+            """
+        )
+        connection.execute(
+            """CREATE INDEX IF NOT EXISTS
+                   idx_webhook_deliveries_status_next_attempt
+               ON webhook_deliveries (status, next_attempt_at)"""
         )
         connection.commit()
     finally:
@@ -1397,6 +1461,138 @@ def workflow_schedule_occurrence_is_started(
             (occurrence_id,),
         ).fetchone()
         return row is not None
+    finally:
+        connection.close()
+
+
+def record_verified_inbound_webhook(
+    replay_event: WebhookReplayEvent,
+    delivery: WebhookDelivery,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically claim an inbound event and retain only safe metadata."""
+    if (
+        delivery["direction"] != "inbound"
+        or delivery["status"] != "accepted"
+        or delivery["event_id"] != replay_event["event_id"]
+    ):
+        raise ValueError("Inbound webhook replay and delivery records disagree.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """INSERT INTO webhook_replay_events (
+                   event_id, received_at, expires_at
+               ) VALUES (?, ?, ?)""",
+            (
+                replay_event["event_id"], replay_event["received_at"],
+                replay_event["expires_at"],
+            ),
+        )
+        connection.execute(
+            """INSERT INTO webhook_deliveries (
+                   delivery_id, direction, event_id, correlation_id, event_type,
+                   status, attempt_count, next_attempt_at, response_status,
+                   failure_code, created_at, updated_at, completed_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                delivery["delivery_id"], delivery["direction"],
+                delivery["event_id"], delivery["correlation_id"],
+                delivery["event_type"], delivery["status"],
+                delivery["attempt_count"], delivery["next_attempt_at"],
+                delivery["response_status"], delivery["failure_code"],
+                delivery["created_at"], delivery["updated_at"],
+                delivery["completed_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return False
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def insert_outbound_webhook_delivery(
+    delivery: WebhookDelivery,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Create an outbound delivery record without persisting its payload."""
+    if delivery["direction"] != "outbound" or delivery["status"] != "pending":
+        raise ValueError("Outbound webhook delivery must start pending.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute(
+            """INSERT INTO webhook_deliveries (
+                   delivery_id, direction, event_id, correlation_id, event_type,
+                   status, attempt_count, next_attempt_at, response_status,
+                   failure_code, created_at, updated_at, completed_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                delivery["delivery_id"], delivery["direction"],
+                delivery["event_id"], delivery["correlation_id"],
+                delivery["event_type"], delivery["status"],
+                delivery["attempt_count"], delivery["next_attempt_at"],
+                delivery["response_status"], delivery["failure_code"],
+                delivery["created_at"], delivery["updated_at"],
+                delivery["completed_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_webhook_deliveries(
+    limit: int = 100,
+    database_file: Path = DATABASE_FILE,
+) -> list[WebhookDelivery]:
+    """Load operational metadata only, newest first."""
+    if type(limit) is not int or not 1 <= limit <= 500:
+        raise ValueError("Webhook delivery limit must be between 1 and 500.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT delivery_id, direction, event_id, correlation_id,
+                      event_type, status, attempt_count, next_attempt_at,
+                      response_status, failure_code, created_at, updated_at,
+                      completed_at
+               FROM webhook_deliveries
+               ORDER BY created_at DESC, delivery_id DESC
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+    finally:
+        connection.close()
+    return [dict(row) for row in rows]
+
+
+def purge_expired_webhook_replay_events(
+    expires_before: str,
+    database_file: Path = DATABASE_FILE,
+) -> int:
+    """Remove only event IDs whose configured replay window has expired."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        result = connection.execute(
+            "DELETE FROM webhook_replay_events WHERE expires_at < ?",
+            (expires_before,),
+        )
+        connection.commit()
+        return result.rowcount
     finally:
         connection.close()
 

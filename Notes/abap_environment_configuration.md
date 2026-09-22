@@ -81,6 +81,13 @@ constant-time comparison, a bounded timestamp window, strict shape parsing,
 and the configured request-size limit. Replay persistence, delivery, and HTTP
 routes are not implemented yet.
 
+Day 158 added durable replay and delivery metadata. A verified inbound event ID
+is inserted once with its expiry time before any future callback handler can
+use it. The same transaction records an accepted inbound delivery. Outbound
+records begin pending and retain only IDs, event type, status, retry timing,
+response status, and a short safe failure code. Webhook bodies, response
+bodies, destinations, private configuration, and secrets are never stored.
+
 ## External provider contract (Milestone 6)
 
 `ABAP_INTEGRATIONS_ENABLED=false` is the fail-closed default.
