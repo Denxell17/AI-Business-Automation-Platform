@@ -9,6 +9,7 @@ import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from typing import Callable
+from uuid import uuid4
 
 import psycopg
 
@@ -19,8 +20,11 @@ from database import (
     load_unstarted_workflow_schedule_occurrences,
     workflow_schedule_occurrence_is_started,
 )
+from integration_config import IntegrationSettings, load_integration_settings
 from schedule_service import claim_due_workflow_schedules
 from system_status_service import database_is_ready
+from webhook_contract import build_webhook_envelope
+from webhook_sender import deliver_outbound_webhook
 from worker_config import WorkerSettings, load_worker_settings
 from workflow_service import start_scheduled_workflow_execution
 
@@ -76,6 +80,47 @@ def recover_stale_scheduled_executions(
     return recovered
 
 
+def dispatch_scheduled_execution_to_integration(
+    execution: dict[str, object],
+    current_time: datetime,
+    settings: IntegrationSettings,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Send only a new scheduled run's fixed, non-private dispatch envelope."""
+    if not settings["enabled"]:
+        return False
+    execution_id = execution.get("execution_id")
+    workflow_id = execution.get("workflow_id")
+    if not isinstance(execution_id, str) or not isinstance(workflow_id, str):
+        return False
+    try:
+        envelope = build_webhook_envelope(
+            str(uuid4()),
+            execution_id,
+            "workflow.execution.started",
+            current_time,
+            {
+                "execution_id": execution_id,
+                "workflow_id": workflow_id,
+                "trigger_type": "schedule",
+            },
+        )
+        result = deliver_outbound_webhook(
+            settings, envelope, current_time, database_file,
+        )
+    except (OSError, ValueError, sqlite3.Error, psycopg.Error):
+        worker_logger.error(
+            "event=scheduled_execution_dispatch_failed execution_id=%s",
+            execution_id,
+        )
+        return False
+    worker_logger.info(
+        "event=scheduled_execution_dispatched execution_id=%s sent=%s attempts=%s",
+        execution_id, result["sent"], result["attempts"],
+    )
+    return result["sent"]
+
+
 def _start_occurrence_with_retry(
     occurrence: dict[str, str],
     current_time: datetime,
@@ -83,6 +128,7 @@ def _start_occurrence_with_retry(
     database_file: Path,
     sleep: Callable[[float], None],
     stop_event: threading.Event | None = None,
+    dispatch: Callable[[dict[str, object]], None] | None = None,
 ) -> bool | None:
     """Retry only durable, idempotent scheduled-run creation."""
     for attempt in range(settings["max_attempts"]):
@@ -99,6 +145,8 @@ def _start_occurrence_with_retry(
                 "event=scheduled_execution_started occurrence_id=%s execution_id=%s",
                 occurrence["occurrence_id"], execution["execution_id"],
             )
+            if dispatch is not None:
+                dispatch(execution)
             return True
         if workflow_schedule_occurrence_is_started(
             occurrence["occurrence_id"], database_file,
@@ -127,6 +175,7 @@ def run_worker_cycle(
     database_file: Path = DATABASE_FILE,
     sleep: Callable[[float], None] = time.sleep,
     stop_event: threading.Event | None = None,
+    integration_settings_loader: Callable[[], IntegrationSettings] = load_integration_settings,
 ) -> dict[str, int]:
     """Recover stale runs, claim due work, and start pending occurrences once."""
     _utc_timestamp(current_time)
@@ -139,11 +188,22 @@ def run_worker_cycle(
     pending = load_unstarted_workflow_schedule_occurrences(
         settings["claim_limit"], database_file,
     )
+    dispatch = None
+    try:
+        integration_settings = integration_settings_loader()
+    except ValueError:
+        integration_settings = None
+        worker_logger.error("event=scheduled_execution_dispatch_configuration_error")
+    if integration_settings is not None and integration_settings["enabled"]:
+        dispatch = lambda execution: dispatch_scheduled_execution_to_integration(
+            execution, current_time, integration_settings, database_file,
+        )
     started = 0
     failed = 0
     for occurrence in pending:
         outcome = _start_occurrence_with_retry(
             occurrence, current_time, settings, database_file, sleep, stop_event,
+            dispatch,
         )
         if outcome is True:
             started += 1

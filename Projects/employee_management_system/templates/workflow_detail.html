@@ -61,7 +61,7 @@
 
         <section class="workflow-detail-card" aria-labelledby="workflow-schedules-heading">
             <header class="panel-heading"><div><h2 id="workflow-schedules-heading">Workflow schedules</h2><p>Schedule times use {{ workflow_time_zone }}.</p></div><span class="panel-count">{{ workflow_schedules | length }}</span></header>
-            <div class="ui-alert ui-alert--info workflow-schedule-note">{{ icon('info') }}<span>ABAP evaluates a due time for {{ schedule_grace_minutes }} minutes and stores claimed occurrences in UTC. Automatic task execution is not active yet.</span></div>
+            <div class="ui-alert ui-alert--info workflow-schedule-note">{{ icon('info') }}<span>ABAP evaluates a due time for {{ schedule_grace_minutes }} minutes, stores claimed occurrences in UTC, and starts one tracked run for each enabled due occurrence.</span></div>
             {% if workflow_schedules %}
             <ol class="workflow-item-list">
                 {% for schedule in workflow_schedules %}

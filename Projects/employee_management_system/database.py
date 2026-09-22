@@ -1755,6 +1755,7 @@ def record_outbound_webhook_attempt(
         raise ValueError("Successful webhook deliveries cannot have a failure code.")
     initialize_database(database_file)
     connection = get_database_connection(database_file)
+    completed_at = attempt_at if status in {"succeeded", "failed"} else None
     try:
         result = connection.execute(
             """UPDATE webhook_deliveries
@@ -1764,16 +1765,13 @@ def record_outbound_webhook_attempt(
                    response_status = ?,
                    failure_code = ?,
                    updated_at = ?,
-                   completed_at = CASE
-                       WHEN ? IN ('succeeded', 'failed') THEN ?
-                       ELSE NULL
-                   END
+                   completed_at = ?
                WHERE delivery_id = ?
                  AND direction = 'outbound'
                  AND status IN ('pending', 'retrying')""",
             (
                 status, next_attempt_at, response_status, failure_code,
-                attempt_at, status, attempt_at, delivery_id,
+                attempt_at, completed_at, delivery_id,
             ),
         )
         connection.commit()

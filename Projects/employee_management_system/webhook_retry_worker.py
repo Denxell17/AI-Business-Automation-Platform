@@ -27,6 +27,7 @@ from webhook_sender import next_webhook_attempt_at, send_outbound_webhook_once
 retry_worker_logger = logging.getLogger("abap.webhook_retry_worker")
 
 _WORKFLOW_EVENT_STATUSES = {
+    "workflow.execution.started": "running",
     "workflow.execution.completed": "completed",
     "workflow.execution.failed": "failed",
 }
@@ -74,12 +75,20 @@ def reconstruct_workflow_execution_webhook(
         execution["execution_id"],
         delivery["event_type"],
         occurred_at,
-        {
-            "execution_id": execution["execution_id"],
-            "workflow_id": execution["workflow_id"],
-            "status": execution["status"],
-            "trigger_type": execution["trigger_type"],
-        },
+        (
+            {
+                "execution_id": execution["execution_id"],
+                "workflow_id": execution["workflow_id"],
+                "trigger_type": execution["trigger_type"],
+            }
+            if delivery["event_type"] == "workflow.execution.started"
+            else {
+                "execution_id": execution["execution_id"],
+                "workflow_id": execution["workflow_id"],
+                "status": execution["status"],
+                "trigger_type": execution["trigger_type"],
+            }
+        ),
     )
 
 

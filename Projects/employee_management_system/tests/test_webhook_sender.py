@@ -39,6 +39,10 @@ def public_resolver(_host, port, **_kwargs):
     return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", port))]
 
 
+def private_n8n_resolver(_host, port, **_kwargs):
+    return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("172.28.0.8", port))]
+
+
 class FakeResponse:
     def __init__(self, status, body=b""):
         self.status = status
@@ -182,3 +186,20 @@ class TestWebhookSender(unittest.TestCase):
         self.assertTrue(duplicate["duplicate"])
         self.assertFalse(duplicate["sent"])
         self.assertEqual(len(load_webhook_deliveries(database_file=self.database_file)), 1)
+
+    def test_private_development_n8n_transport_accepts_only_private_service_dns(self):
+        private_settings = settings(
+            ABAP_ENVIRONMENT="integration-test",
+            ABAP_N8N_PRIVATE_DEVELOPMENT_NETWORK="true",
+            ABAP_N8N_BASE_URL="http://n8n:5678",
+            ABAP_INTEGRATION_ALLOWED_HOSTS="n8n",
+        )
+        connection = FakeConnection(FakeResponse(202))
+
+        result = deliver_outbound_webhook(
+            private_settings, message(), NOW, self.database_file,
+            private_n8n_resolver, self.factory([connection]), lambda _seconds: None,
+        )
+
+        self.assertTrue(result["sent"])
+        self.assertEqual(connection.requests[0][1], "/webhook/v1/workflow")

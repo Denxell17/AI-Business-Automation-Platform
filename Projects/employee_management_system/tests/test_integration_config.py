@@ -85,6 +85,29 @@ class TestIntegrationConfig(unittest.TestCase):
                 with self.assertRaises(ValueError):
                     load_integration_settings(config)
 
+    def test_private_compose_transport_is_fixed_to_the_development_service(self):
+        config = {
+            **VALID,
+            "ABAP_ENVIRONMENT": "integration-test",
+            "ABAP_N8N_PRIVATE_DEVELOPMENT_NETWORK": "true",
+            "ABAP_N8N_BASE_URL": "http://n8n:5678",
+            "ABAP_INTEGRATION_ALLOWED_HOSTS": "n8n",
+        }
+        settings = load_integration_settings(config)
+
+        self.assertTrue(settings["private_development_network"])
+        self.assertEqual(settings["base_url"], "http://n8n:5678")
+        for name, value in (
+            ("ABAP_ENVIRONMENT", "production"),
+            ("ABAP_N8N_BASE_URL", "http://other:5678"),
+            ("ABAP_INTEGRATION_ALLOWED_HOSTS", "n8n,other"),
+        ):
+            with self.subTest(name=name):
+                unsafe = dict(config)
+                unsafe[name] = value
+                with self.assertRaises(ValueError):
+                    load_integration_settings(unsafe)
+
     def test_workflow_path_cannot_contain_query_credentials_or_control_characters(self):
         for path in ("webhook/v1", "//evil.test/hook", "/hook?token=private", "/hook#x", "/hook\nX: y"):
             with self.subTest(path=path):

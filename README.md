@@ -392,6 +392,33 @@ requires a schema-compatible image or a tested backup restore; migrations do
 not provide automatic downgrades. `down` stops services while preserving data;
 do not use `down -v` on a deployment whose data must be retained.
 
+### Private n8n portfolio demonstration (Day 164)
+
+`compose.n8n-demo.yaml` is an **integration-test/development overlay**, not a
+production deployment. It adds pinned n8n `1.121.3`, its persistent private
+volume, a deterministic private demo provider, and the durable webhook retry
+worker. n8n and the provider have no published host ports. It accepts only the
+internal `http://n8n:5678` destination when
+`ABAP_N8N_PRIVATE_DEVELOPMENT_NETWORK=true` and the environment is `local` or
+`integration-test`; staging and production retain the HTTPS public-host policy.
+
+Use a disposable Compose project and synthetic values in an ignored environment
+file. In addition to the normal PostgreSQL and session settings, define distinct
+random `ABAP_OUTBOUND_WEBHOOK_SECRET` and `ABAP_INBOUND_WEBHOOK_SECRET`, plus
+`ABAP_N8N_ENCRYPTION_KEY`. Then run:
+
+```powershell
+docker compose --env-file .env.n8n-demo -p abap_n8n_demo -f compose.deploy.yaml -f compose.n8n-demo.yaml --profile n8n-demo up -d --wait
+docker compose --env-file .env.n8n-demo -p abap_n8n_demo -f compose.deploy.yaml -f compose.n8n-demo.yaml --profile n8n-demo ps
+```
+
+Create an active workflow with an enabled schedule in the ABAP interface. The
+worker claims one occurrence, sends its minimal signed execution event to n8n,
+n8n calls the private deterministic provider, and n8n sends a separately signed
+completion callback. ABAP displays the completed execution and retained
+delivery metadata. This profile intentionally exposes no n8n editor and is not
+an authorization substitute for a future production n8n deployment.
+
 ## Creating the Initial Administrator
 
 To create the first SQLite administrator account, run:
@@ -646,9 +673,10 @@ information through a consistent, responsive interface.
 
 The complete [Phase 2 roadmap audit](PORTFOLIO.md#phase-2-roadmap-audit)
 distinguishes implemented, partial, and planned scope. Leads, customers,
-invoices, documents, and webhooks are not yet implemented. Stored scheduling
-does not include an autonomous background worker, and the deployment package
-has not been published to a public host.
+invoices, and documents remain planned. The automation core now includes the
+autonomous schedule worker and signed webhook delivery/callback foundation,
+including the private n8n portfolio demo. The deployment package has not been
+published to a public host.
 
 ### Database Portability
 

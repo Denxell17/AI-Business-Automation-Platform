@@ -58,6 +58,23 @@ class _VerifiedHTTPSConnection(http.client.HTTPSConnection):
         self.sock.settimeout(self._read_timeout_seconds)
 
 
+class _VerifiedHTTPConnection(http.client.HTTPConnection):
+    """Use the Compose-resolved private address without a second DNS lookup."""
+    def __init__(
+        self, hostname: str, port: int, address: str,
+        connect_timeout_seconds: int, read_timeout_seconds: int,
+    ) -> None:
+        super().__init__(hostname, port=port, timeout=connect_timeout_seconds)
+        self._verified_address = address
+        self._read_timeout_seconds = read_timeout_seconds
+
+    def connect(self) -> None:
+        self.sock = socket.create_connection(
+            (self._verified_address, self.port), self.timeout,
+        )
+        self.sock.settimeout(self._read_timeout_seconds)
+
+
 def resolve_public_addresses(
     hostname: str,
     port: int,
@@ -81,11 +98,45 @@ def resolve_public_addresses(
     return addresses
 
 
+def resolve_private_development_addresses(
+    hostname: str,
+    port: int,
+    resolver: Callable[..., list[tuple]] = socket.getaddrinfo,
+) -> tuple[str, ...]:
+    """Resolve only the fixed, private development n8n service address."""
+    if hostname != "n8n" or port != 5678:
+        raise ValueError("Private webhook destination is not permitted.")
+    try:
+        records = resolver(hostname, port, type=socket.SOCK_STREAM)
+    except OSError as error:
+        raise ValueError("Private webhook destination could not be resolved.") from error
+    addresses = tuple(dict.fromkeys(record[4][0] for record in records))
+    if not addresses:
+        raise ValueError("Private webhook destination could not be resolved.")
+    try:
+        if any(not ipaddress.ip_address(address).is_private for address in addresses):
+            raise ValueError("Private webhook destination resolved to a blocked address.")
+    except ValueError as error:
+        if str(error).startswith("Private webhook destination"):
+            raise
+        raise ValueError("Private webhook destination resolved to an invalid address.") from error
+    return addresses
+
+
 def _connection(
     hostname: str, port: int, address: str, connect_timeout_seconds: int,
     read_timeout_seconds: int,
 ) -> WebhookConnection:
     return _VerifiedHTTPSConnection(
+        hostname, port, address, connect_timeout_seconds, read_timeout_seconds,
+    )
+
+
+def _private_connection(
+    hostname: str, port: int, address: str, connect_timeout_seconds: int,
+    read_timeout_seconds: int,
+) -> WebhookConnection:
+    return _VerifiedHTTPConnection(
         hostname, port, address, connect_timeout_seconds, read_timeout_seconds,
     )
 
@@ -118,14 +169,22 @@ def _post_once(
     hostname = parsed.hostname
     if not hostname or hostname not in settings["allowed_hosts"]:
         raise ValueError("Outbound webhook destination is not allowlisted.")
-    port = parsed.port or 443
-    addresses = resolve_public_addresses(hostname, port, resolver)
+    private_development_network = settings["private_development_network"]
+    port = parsed.port or (5678 if private_development_network else 443)
+    addresses = (
+        resolve_private_development_addresses(hostname, port, resolver)
+        if private_development_network
+        else resolve_public_addresses(hostname, port, resolver)
+    )
     headers, body = signed_webhook_headers(
         secret, envelope, int(current_time.astimezone(timezone.utc).timestamp()),
     )
     if len(body) > settings["max_request_bytes"]:
         return False, False, None, "request_too_large"
-    connection = connection_factory(
+    selected_connection_factory = connection_factory
+    if private_development_network and connection_factory is _connection:
+        selected_connection_factory = _private_connection
+    connection = selected_connection_factory(
         hostname, port, addresses[0], settings["connect_timeout_seconds"],
         settings["read_timeout_seconds"],
     )

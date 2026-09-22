@@ -48,6 +48,7 @@ processes. Worker configuration validates safe numeric bounds and fails closed.
 | Variable | Secret | Contract |
 | --- | --- | --- |
 | `ABAP_N8N_BASE_URL` | No | Day 156 accepts a clean HTTPS origin with a public DNS hostname matching the allowlist. Private n8n networking needs a separately verified policy in Milestone 3. |
+| `ABAP_N8N_PRIVATE_DEVELOPMENT_NETWORK` | No | Defaults to `false`. When exactly `true`, only `local` or `integration-test` may use the exact private origin `http://n8n:5678` with an exact allowlist of `n8n`. Staging and production reject it. |
 | `ABAP_N8N_WORKFLOW_PATH` | No | Root-relative, version-controlled webhook path; it must not contain credentials or query-string secrets. |
 | `ABAP_INTEGRATION_ALLOWED_HOSTS` | No | Comma-separated exact hostnames allowed for outbound delivery. Redirects must not escape the allowlist. Wildcards are forbidden. |
 | `ABAP_WEBHOOK_CONNECT_TIMEOUT_SECONDS` | No | Positive bounded connection timeout; example `3`. |
@@ -128,6 +129,19 @@ signed with the separate inbound secret, and posts that exact callback twice.
 The schedule-triggered execution completes once; the duplicate is accepted as a
 replay without creating another outcome. This test does not contact n8n or any
 real network endpoint.
+
+Day 164 completes the Milestone 3 private portfolio demo. The
+`compose.n8n-demo.yaml` overlay pins n8n `1.121.3`, retains its data in the
+`n8n_demo_data` volume, starts only on the `n8n-demo` profile, and publishes no
+n8n or deterministic-provider host port. `Notes/n8n/abap-signed-workflow.json`
+is the version-controlled import: it verifies ABAP's outbound HMAC before
+calling the private deterministic provider, then sends the allowed fixed result
+through ABAP's separate inbound HMAC callback. The profile is restricted to
+synthetic development/integration-test credentials; its internal HTTP exception
+is not available to staging or production. On 2026-09-22, isolated Compose
+project `abap_m3_verify` completed two separate enabled synthetic scheduled
+runs: each had one completed task, one successful outbound HTTP 202 delivery,
+and one accepted inbound event.
 
 ## External provider contract (Milestone 6)
 

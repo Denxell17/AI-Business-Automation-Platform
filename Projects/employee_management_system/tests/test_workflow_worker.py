@@ -24,6 +24,7 @@ from workflow_service import (
     update_workflow,
 )
 from workflow_worker import run_worker_cycle, run_worker_forever
+from integration_config import load_integration_settings
 
 
 TEST_DATABASE_URL = os.environ.get("ABAP_TEST_DATABASE_URL", "").strip()
@@ -119,6 +120,35 @@ class TestWorkflowWorker(unittest.TestCase):
         self.assertEqual(second["claimed"], 0)
         self.assertEqual(second["started"], 0)
         self.assertEqual(len(load_workflow_executions("WF-WORKER", self.database_file)), 1)
+
+    def test_new_scheduled_execution_dispatches_only_a_minimal_started_event(self):
+        self.create_schedule()
+        integration = load_integration_settings({
+            "ABAP_INTEGRATIONS_ENABLED": "true",
+            "ABAP_N8N_BASE_URL": "https://automation.example.test",
+            "ABAP_N8N_WORKFLOW_PATH": "/webhook/v1/workflow",
+            "ABAP_INTEGRATION_ALLOWED_HOSTS": "automation.example.test",
+            "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-worker-test-secret",
+            "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-worker-test-secret",
+        })
+        with patch("workflow_worker.deliver_outbound_webhook") as deliver:
+            deliver.return_value = {
+                "sent": True, "duplicate": False, "delivery_id": "WHD-TEST",
+                "attempts": 1,
+            }
+            result = run_worker_cycle(
+                self.now(), self.settings, self.database_file,
+                integration_settings_loader=lambda: integration,
+            )
+
+        envelope = deliver.call_args.args[1]
+        self.assertEqual(result["started"], 1)
+        self.assertEqual(envelope["event_type"], "workflow.execution.started")
+        self.assertEqual(
+            set(envelope["data"]),
+            {"execution_id", "workflow_id", "trigger_type"},
+        )
+        self.assertEqual(envelope["data"]["trigger_type"], "schedule")
 
     def test_start_retry_uses_bounded_exponential_backoff(self):
         self.create_schedule()

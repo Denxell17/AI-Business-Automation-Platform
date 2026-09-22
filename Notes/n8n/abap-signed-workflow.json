@@ -1,0 +1,101 @@
+{
+  "name": "ABAP signed workflow demo",
+  "id": "abapM3Demo000001",
+  "active": true,
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "abap-workflow",
+        "responseMode": "responseNode",
+        "options": { "rawBody": true }
+      },
+      "id": "f01b6a13-4e53-4453-a128-9a65ca019154",
+      "webhookId": "abap-m3-workflow-hook",
+      "name": "Receive signed ABAP request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst input = $input.first().json;\nconst headers = input.headers || {};\nconst timestamp = headers['x-abap-timestamp'];\nconst eventId = headers['x-abap-event-id'];\nconst signature = headers['x-abap-signature'];\nconst body = input.body;\nif (!Number.isSafeInteger(Number(timestamp)) || !eventId || !signature || !body) throw new Error('Invalid ABAP webhook headers.');\nconst canonical = JSON.stringify(body);\nconst signed = ['abap.webhook.v1', timestamp, eventId, canonical].join('\\n');\nconst expected = 'v1=' + crypto.createHmac('sha256', $env.ABAP_OUTBOUND_WEBHOOK_SECRET).update(signed).digest('hex');\nif (expected.length !== signature.length || !crypto.timingSafeEqual(Buffer.from(expected), Buffer.from(signature))) throw new Error('ABAP webhook signature rejected.');\nif (body.schema_version !== 'abap.webhook.v1' || body.event_type !== 'workflow.execution.started' || Object.keys(body.data || {}).sort().join(',') !== 'execution_id,trigger_type,workflow_id' || body.data.trigger_type !== 'schedule') throw new Error('ABAP webhook shape rejected.');\nconst execution_id = body.data.execution_id;\nconst workflow_id = body.data.workflow_id;\nreturn [{ json: { execution_id, workflow_id, provider_body: JSON.stringify({ execution_id, workflow_id }) } }];"
+      },
+      "id": "04e793c8-4c23-46c6-b2ec-f04f2f507c38",
+      "name": "Verify signed ABAP request",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [240, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://demo-provider:8090/demo-action",
+        "sendHeaders": true,
+        "headerParameters": { "parameters": [{ "name": "Content-Type", "value": "application/json" }] },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.provider_body }}",
+        "options": {}
+      },
+      "id": "29f22f38-8eea-4b0c-8bf7-0f4e92b168b1",
+      "name": "Run deterministic demo action",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "jsCode": "const crypto = require('crypto');\nconst executionId = $('Verify signed ABAP request').first().json.execution_id;\nconst now = Math.floor(Date.now() / 1000);\nconst eventId = crypto.randomUUID();\nconst body = JSON.stringify({ correlation_id: executionId, data: { status: 'completed' }, event_id: eventId, event_type: 'workflow.execution.result', occurred_at: new Date(now * 1000).toISOString(), schema_version: 'abap.webhook.v1' });\nconst signed = ['abap.webhook.v1', String(now), eventId, body].join('\\n');\nconst signature = 'v1=' + crypto.createHmac('sha256', $env.ABAP_INBOUND_WEBHOOK_SECRET).update(signed).digest('hex');\nreturn [{ json: { body, headers: { 'Content-Type': 'application/json', 'X-ABAP-Timestamp': String(now), 'X-ABAP-Event-Id': eventId, 'X-ABAP-Signature': signature } } }];"
+      },
+      "id": "5e57c1ae-fb8c-4ecf-97c1-2fa6b1bd771d",
+      "name": "Build signed ABAP callback",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [720, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "={{ $env.ABAP_CALLBACK_URL }}",
+        "sendHeaders": true,
+        "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify($json.headers) }}",
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "={{ $json.body }}",
+        "options": {}
+      },
+      "id": "2f7d8f77-0b89-49f8-a0dd-9a56858d4f7f",
+      "name": "Send signed ABAP callback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [960, 0]
+    },
+    {
+      "parameters": {
+        "respondWith": "json",
+        "responseBody": "{\"accepted\":true}",
+        "options": { "responseCode": 202 }
+      },
+      "id": "82c0ab31-6bd0-44a5-9f73-d31fb66a0e7e",
+      "name": "Acknowledge ABAP request",
+      "type": "n8n-nodes-base.respondToWebhook",
+      "typeVersion": 1.4,
+      "position": [1200, 0]
+    }
+  ],
+  "connections": {
+    "Receive signed ABAP request": { "main": [[{ "node": "Verify signed ABAP request", "type": "main", "index": 0 }]] },
+    "Verify signed ABAP request": { "main": [[{ "node": "Run deterministic demo action", "type": "main", "index": 0 }]] },
+    "Run deterministic demo action": { "main": [[{ "node": "Build signed ABAP callback", "type": "main", "index": 0 }]] },
+    "Build signed ABAP callback": { "main": [[{ "node": "Send signed ABAP callback", "type": "main", "index": 0 }]] },
+    "Send signed ABAP callback": { "main": [[{ "node": "Acknowledge ABAP request", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1" },
+  "versionId": "36fbff9e-8c99-4ddd-aae8-09b8d7ac1e2b",
+  "meta": { "templateCredsSetupCompleted": true },
+  "pinData": {}
+}
