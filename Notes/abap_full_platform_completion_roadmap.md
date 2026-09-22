@@ -265,7 +265,7 @@ The completion program is finished only when:
 | --- | --- | --- |
 | 0 — Baseline and Delivery Controls | Complete | On 2026-09-17, `HEAD`, `main`, and `origin/main` were verified at commit `123044d`; branch `codex/full-platform-completion` is active. Environment and configuration contracts are recorded in `.env.example` and `Notes/abap_environment_configuration.md`. The full suite passed in the project-local Python 3.14 environment: 631 tests passed, 3 PostgreSQL integration tests skipped because no integration database was configured. Common tracked-file credential signatures were absent. `.venv/` and generated activity logs are ignored; no application database, export, or secret file is tracked. No external/cloud behavior was claimed or verified. |
 | 1 — Autonomous Scheduler and Worker | Complete | A separate `workflow_worker` process claims due schedule occurrences and atomically creates one schedule-triggered workflow execution with task snapshots. It has bounded exponential retries, interruptible retry shutdown, stale-run recovery, structured safe logs, and a Compose health check. SQLite-focused coverage verifies due, early, late, disabled, inactive, duplicate, retry, restart, shutdown, and stale recovery behavior. The full local suite passed: 641 tests ran with 4 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. On 2026-09-19, isolated Compose project `abap_m1_verify`, using only synthetic credentials, built successfully; PostgreSQL became healthy; migrations succeeded; and web and worker health checks passed. Its live PostgreSQL two-worker concurrency test passed, proving exactly one execution was created for one due occurrence. The Milestone 1 exit gate passed. |
-| 2 — Secure Webhook and Integration Foundation | Not started | No webhook behavior is claimed. |
+| 2 — Secure Webhook and Integration Foundation | In progress | Day 156 added fail-closed integration configuration: a public HTTPS origin must match an exact host allowlist; enabled settings require separate inbound/outbound secrets and a clean workflow path; timeouts, body/response limits, and signature age have safe bounds; unknown environment labels are rejected. The new focused tests passed (10 tests). The full local suite passed on 2026-09-22: 651 tests ran, with 4 optional live PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. No webhook is sent or received yet; private n8n transport and connection-time DNS/redirect checks remain for later work. The Milestone 2 exit gate is not met. |
 | 3 — n8n End-to-End Automation | Not started | No n8n or external/cloud behavior is claimed. |
 | 4 — Leads and Customers Domain | Not started | Exit gate not evaluated. |
 | 5 — Invoices and Documents Domain | Not started | Exit gate not evaluated. |
@@ -276,6 +276,7 @@ The completion program is finished only when:
 
 ## Immediate Next Action
 
-Begin Milestone 2: implement the secure webhook and integration foundation.
-Keep the new worker boundaries intact; do not begin n8n integration until the
-Milestone 2 signed, replay-safe webhook exit gate passes.
+Continue Milestone 2 on Day 157 with versioned outbound and inbound webhook
+schemas and the signing/verification contract. Keep the new worker boundaries
+intact; do not begin n8n integration until the Milestone 2 signed, replay-safe
+webhook exit gate passes.

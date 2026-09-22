@@ -47,8 +47,8 @@ processes. Worker configuration validates safe numeric bounds and fails closed.
 
 | Variable | Secret | Contract |
 | --- | --- | --- |
-| `ABAP_N8N_BASE_URL` | No | Base URL for the private n8n service. HTTPS is required outside an isolated private network. |
-| `ABAP_N8N_WORKFLOW_PATH` | No | Relative, version-controlled webhook path; it must not contain credentials or query-string secrets. |
+| `ABAP_N8N_BASE_URL` | No | Day 156 accepts a clean HTTPS origin with a public DNS hostname matching the allowlist. Private n8n networking needs a separately verified policy in Milestone 3. |
+| `ABAP_N8N_WORKFLOW_PATH` | No | Root-relative, version-controlled webhook path; it must not contain credentials or query-string secrets. |
 | `ABAP_INTEGRATION_ALLOWED_HOSTS` | No | Comma-separated exact hostnames allowed for outbound delivery. Redirects must not escape the allowlist. Wildcards are forbidden. |
 | `ABAP_WEBHOOK_CONNECT_TIMEOUT_SECONDS` | No | Positive bounded connection timeout; example `3`. |
 | `ABAP_WEBHOOK_READ_TIMEOUT_SECONDS` | No | Positive bounded response timeout; example `15`. |
@@ -64,6 +64,13 @@ verification, bounded bodies and responses, destination validation before each
 request, safe redirect handling, idempotency keys, replay rejection, sanitized
 errors, and audited delivery state. Configuration values never prove that an
 external service is reachable or correctly configured.
+
+Day 156 added `integration_config.py`. When `ABAP_INTEGRATIONS_ENABLED=false`,
+the loader exposes no destination or secret. Enabling it requires distinct
+inbound/outbound secrets, a clean allowlisted HTTPS origin, a root-relative
+workflow path, and bounded numeric settings. The loader makes no network
+request; the sender must revalidate DNS results, redirects, and destinations
+at connection time. No webhook delivery or callback is implemented yet.
 
 ## External provider contract (Milestone 6)
 
