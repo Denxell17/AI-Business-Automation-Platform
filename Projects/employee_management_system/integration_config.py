@@ -28,6 +28,7 @@ class IntegrationSettings(TypedDict):
     max_request_bytes: int
     max_response_bytes: int
     signature_ttl_seconds: int
+    max_attempts: int
 
 
 def _bounded_integer(
@@ -125,6 +126,9 @@ def load_integration_settings(
         ),
         "signature_ttl_seconds": _bounded_integer(
             selected, "ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS", 300, 900,
+        ),
+        "max_attempts": _bounded_integer(
+            selected, "ABAP_WEBHOOK_MAX_ATTEMPTS", 3, 10,
         ),
     }
     if not enabled:

@@ -75,11 +75,11 @@ def accept_inbound_webhook(
     }
 
 
-def queue_outbound_webhook_delivery(
+def prepare_outbound_webhook_delivery(
     envelope: WebhookEnvelope,
     current_time: datetime,
     database_file: Path = DATABASE_FILE,
-) -> bool:
+) -> str | None:
     """Persist a send-ready record without payload, secret, or destination data."""
     created_at = _timestamp(current_time)
     delivery: WebhookDelivery = {
@@ -97,4 +97,17 @@ def queue_outbound_webhook_delivery(
         "updated_at": created_at,
         "completed_at": None,
     }
-    return insert_outbound_webhook_delivery(delivery, database_file)
+    if not insert_outbound_webhook_delivery(delivery, database_file):
+        return None
+    return delivery["delivery_id"]
+
+
+def queue_outbound_webhook_delivery(
+    envelope: WebhookEnvelope,
+    current_time: datetime,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Compatibility wrapper for callers that only need queued/not queued."""
+    return prepare_outbound_webhook_delivery(
+        envelope, current_time, database_file,
+    ) is not None

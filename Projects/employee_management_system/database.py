@@ -1579,6 +1579,55 @@ def load_webhook_deliveries(
     return [dict(row) for row in rows]
 
 
+def record_outbound_webhook_attempt(
+    delivery_id: str,
+    status: str,
+    attempt_at: str,
+    response_status: int | None,
+    failure_code: str,
+    next_attempt_at: str | None,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Advance one outbound record without storing its request or response body."""
+    if status not in {"retrying", "succeeded", "failed"}:
+        raise ValueError("Outbound webhook status is invalid.")
+    if not isinstance(failure_code, str) or len(failure_code) > 64:
+        raise ValueError("Outbound webhook failure code is invalid.")
+    if status == "retrying" and next_attempt_at is None:
+        raise ValueError("Retrying webhook deliveries need a next attempt time.")
+    if status != "retrying" and next_attempt_at is not None:
+        raise ValueError("Terminal webhook deliveries cannot have a next attempt time.")
+    if status == "succeeded" and failure_code:
+        raise ValueError("Successful webhook deliveries cannot have a failure code.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        result = connection.execute(
+            """UPDATE webhook_deliveries
+               SET status = ?,
+                   attempt_count = attempt_count + 1,
+                   next_attempt_at = ?,
+                   response_status = ?,
+                   failure_code = ?,
+                   updated_at = ?,
+                   completed_at = CASE
+                       WHEN ? IN ('succeeded', 'failed') THEN ?
+                       ELSE NULL
+                   END
+               WHERE delivery_id = ?
+                 AND direction = 'outbound'
+                 AND status IN ('pending', 'retrying')""",
+            (
+                status, next_attempt_at, response_status, failure_code,
+                attempt_at, status, attempt_at, delivery_id,
+            ),
+        )
+        connection.commit()
+        return result.rowcount == 1
+    finally:
+        connection.close()
+
+
 def purge_expired_webhook_replay_events(
     expires_before: str,
     database_file: Path = DATABASE_FILE,

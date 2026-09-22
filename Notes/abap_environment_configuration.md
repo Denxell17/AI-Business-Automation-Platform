@@ -55,6 +55,7 @@ processes. Worker configuration validates safe numeric bounds and fails closed.
 | `ABAP_WEBHOOK_MAX_REQUEST_BYTES` | No | Hard serialized outbound/inbound payload limit; example `262144`. |
 | `ABAP_WEBHOOK_MAX_RESPONSE_BYTES` | No | Hard response-read limit; example `262144`. |
 | `ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS` | No | Allowed signed timestamp age; example `300`. Replay protection must also store a unique event ID or nonce. |
+| `ABAP_WEBHOOK_MAX_ATTEMPTS` | No | Bounded immediate delivery attempts for one signed event; example `3`, maximum `10`. |
 | `ABAP_OUTBOUND_WEBHOOK_SECRET` | Yes | Signs ABAP-to-n8n messages. Must be random, stable during rotation overlap, and different from the inbound secret. |
 | `ABAP_INBOUND_WEBHOOK_SECRET` | Yes | Verifies n8n-to-ABAP callbacks. Must be random, stable during rotation overlap, and different from the outbound secret. |
 
@@ -87,6 +88,14 @@ use it. The same transaction records an accepted inbound delivery. Outbound
 records begin pending and retain only IDs, event type, status, retry timing,
 response status, and a short safe failure code. Webhook bodies, response
 bodies, destinations, private configuration, and secrets are never stored.
+
+Day 159 added outbound HTTPS delivery. Each attempt resolves the allowlisted
+hostname again, rejects any non-public address, connects to that verified IP
+while validating the original TLS hostname, sends the Day 157 signature, and
+rejects redirects. Requests and responses stay within configured byte limits.
+Transient network, timeout, and 5xx responses retry immediately with bounded
+backoff. Delivery records retain only status, attempt count, response status,
+and safe failure code. The outbound body remains in memory only.
 
 ## External provider contract (Milestone 6)
 
