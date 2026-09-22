@@ -94,7 +94,7 @@ def _timestamp(value: datetime) -> str:
     return value.astimezone(timezone.utc).isoformat()
 
 
-def _next_attempt(current_time: datetime, attempt: int) -> str:
+def next_webhook_attempt_at(current_time: datetime, attempt: int) -> str:
     return _timestamp(
         current_time.astimezone(timezone.utc)
         + timedelta(seconds=min(2 ** (attempt - 1), 8)),
@@ -157,6 +157,26 @@ def _post_once(
         connection.close()
 
 
+def send_outbound_webhook_once(
+    settings: IntegrationSettings,
+    envelope: WebhookEnvelope,
+    current_time: datetime,
+    resolver: Callable[..., list[tuple]] = socket.getaddrinfo,
+    connection_factory: Callable[..., WebhookConnection] = _connection,
+) -> tuple[bool, bool, int | None, str]:
+    """Send one signed attempt without persisting request or response bodies."""
+    try:
+        return _post_once(
+            settings,
+            envelope,
+            current_time,
+            resolver,
+            connection_factory,
+        )
+    except ValueError:
+        return False, False, None, "destination_blocked"
+
+
 def deliver_outbound_webhook(
     settings: IntegrationSettings,
     envelope: WebhookEnvelope,
@@ -180,14 +200,11 @@ def deliver_outbound_webhook(
     if delivery_id is None:
         return {"sent": False, "duplicate": True, "delivery_id": None, "attempts": 0}
     for attempt in range(1, settings["max_attempts"] + 1):
-        try:
-            succeeded, retryable, response_status, failure_code = _post_once(
+        succeeded, retryable, response_status, failure_code = (
+            send_outbound_webhook_once(
                 settings, envelope, current_time, resolver, connection_factory,
             )
-        except ValueError:
-            succeeded, retryable, response_status, failure_code = (
-                False, False, None, "destination_blocked",
-            )
+        )
         if succeeded:
             record_outbound_webhook_attempt(
                 delivery_id, "succeeded", _timestamp(current_time), response_status,
@@ -197,7 +214,9 @@ def deliver_outbound_webhook(
         if retryable and attempt < settings["max_attempts"]:
             record_outbound_webhook_attempt(
                 delivery_id, "retrying", _timestamp(current_time), response_status,
-                failure_code, _next_attempt(current_time, attempt), database_file,
+                failure_code,
+                next_webhook_attempt_at(current_time, attempt),
+                database_file,
             )
             sleep(min(2 ** (attempt - 1), 8))
             continue

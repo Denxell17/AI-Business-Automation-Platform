@@ -56,6 +56,9 @@ processes. Worker configuration validates safe numeric bounds and fails closed.
 | `ABAP_WEBHOOK_MAX_RESPONSE_BYTES` | No | Hard response-read limit; example `262144`. |
 | `ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS` | No | Allowed signed timestamp age; example `300`. Replay protection must also store a unique event ID or nonce. |
 | `ABAP_WEBHOOK_MAX_ATTEMPTS` | No | Bounded immediate delivery attempts for one signed event; example `3`, maximum `10`. |
+| `ABAP_WEBHOOK_RETRY_POLL_SECONDS` | No | Retry-worker polling interval; example `10`, maximum `300`. |
+| `ABAP_WEBHOOK_RETRY_LEASE_SECONDS` | No | Short lease for one durable retry attempt; example `30`, maximum `300`. A crashed worker's delivery becomes eligible after this expires. |
+| `ABAP_WEBHOOK_RETRY_CLAIM_LIMIT` | No | Maximum due records leased in one retry-worker cycle; example `25`, maximum `100`. |
 | `ABAP_OUTBOUND_WEBHOOK_SECRET` | Yes | Signs ABAP-to-n8n messages. Must be random, stable during rotation overlap, and different from the inbound secret. |
 | `ABAP_INBOUND_WEBHOOK_SECRET` | Yes | Verifies n8n-to-ABAP callbacks. Must be random, stable during rotation overlap, and different from the outbound secret. |
 
@@ -71,7 +74,7 @@ the loader exposes no destination or secret. Enabling it requires distinct
 inbound/outbound secrets, a clean allowlisted HTTPS origin, a root-relative
 workflow path, and bounded numeric settings. The loader makes no network
 request; the sender must revalidate DNS results, redirects, and destinations
-at connection time. No webhook delivery or callback is implemented yet.
+at connection time.
 
 Day 157 added `webhook_contract.py`. Its only accepted content type is
 `application/json`. Every message has schema version `abap.webhook.v1`, a
@@ -79,8 +82,7 @@ canonical UUID event ID, correlation ID, event type, UTC timestamp, and JSON
 object data. HMAC-SHA256 signs the schema version, Unix timestamp, event ID,
 and exact canonical JSON bytes. Verification uses the inbound secret,
 constant-time comparison, a bounded timestamp window, strict shape parsing,
-and the configured request-size limit. Replay persistence, delivery, and HTTP
-routes are not implemented yet.
+and the configured request-size limit.
 
 Day 158 added durable replay and delivery metadata. A verified inbound event ID
 is inserted once with its expiry time before any future callback handler can
@@ -96,6 +98,21 @@ rejects redirects. Requests and responses stay within configured byte limits.
 Transient network, timeout, and 5xx responses retry immediately with bounded
 backoff. Delivery records retain only status, attempt count, response status,
 and safe failure code. The outbound body remains in memory only.
+
+Day 160 added the protected `POST /integrations/webhooks/callback` route. It
+streams only up to the configured request limit, verifies the exact signed
+body and timestamp window, claims the event ID atomically, and returns generic
+responses. Browser sessions and CSRF tokens do not authorize this external
+callback. The administrator-only webhook delivery page displays only retained
+metadata, never request/response bodies, secrets, or destination URLs.
+
+Day 161 added the separate `webhook_retry_worker` process. It leases due
+outbound delivery records before sending and can retry an abandoned lease
+after restart. Because webhook payloads are intentionally not persisted, it
+reconstructs only allowlisted completed/failed workflow-execution messages
+from the execution record, excluding names, result summaries, task content,
+and other private payload values. A record that cannot be safely reconstructed
+is marked `reconstruction_unavailable` and is never sent.
 
 ## External provider contract (Milestone 6)
 

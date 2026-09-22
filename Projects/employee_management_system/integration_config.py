@@ -29,6 +29,9 @@ class IntegrationSettings(TypedDict):
     max_response_bytes: int
     signature_ttl_seconds: int
     max_attempts: int
+    retry_poll_seconds: int
+    retry_lease_seconds: int
+    retry_claim_limit: int
 
 
 def _bounded_integer(
@@ -129,6 +132,15 @@ def load_integration_settings(
         ),
         "max_attempts": _bounded_integer(
             selected, "ABAP_WEBHOOK_MAX_ATTEMPTS", 3, 10,
+        ),
+        "retry_poll_seconds": _bounded_integer(
+            selected, "ABAP_WEBHOOK_RETRY_POLL_SECONDS", 10, 300,
+        ),
+        "retry_lease_seconds": _bounded_integer(
+            selected, "ABAP_WEBHOOK_RETRY_LEASE_SECONDS", 30, 300,
+        ),
+        "retry_claim_limit": _bounded_integer(
+            selected, "ABAP_WEBHOOK_RETRY_CLAIM_LIMIT", 25, 100,
         ),
     }
     if not enabled:

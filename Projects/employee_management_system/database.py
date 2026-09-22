@@ -1419,6 +1419,30 @@ def load_workflow_executions(
     ]
 
 
+def load_workflow_execution_by_id(
+    execution_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> WorkflowExecution | None:
+    """Load one persisted workflow execution for safe webhook reconstruction."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        row = connection.execute(
+            """SELECT execution_id, workflow_id, workflow_name, trigger_type,
+                      schedule_occurrence_id, status, started_by_user_id,
+                      started_at, finished_at, result_summary
+               FROM workflow_executions
+               WHERE execution_id = ?""",
+            (execution_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    if row is None:
+        return None
+    return dict(row)
+
+
 def load_unstarted_workflow_schedule_occurrences(
     limit: int,
     database_file: Path = DATABASE_FILE,
@@ -1577,6 +1601,60 @@ def load_webhook_deliveries(
     finally:
         connection.close()
     return [dict(row) for row in rows]
+
+
+def claim_due_outbound_webhook_deliveries(
+    now: str,
+    lease_until: str,
+    limit: int,
+    database_file: Path = DATABASE_FILE,
+) -> list[WebhookDelivery]:
+    """Lease due outbound records so one retry worker sends each attempt."""
+    if type(limit) is not int or not 1 <= limit <= 100:
+        raise ValueError("Webhook delivery claim limit must be between 1 and 100.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        candidates = connection.execute(
+            """SELECT delivery_id, direction, event_id, correlation_id,
+                      event_type, status, attempt_count, next_attempt_at,
+                      response_status, failure_code, created_at, updated_at,
+                      completed_at
+               FROM webhook_deliveries
+               WHERE direction = 'outbound'
+                 AND status IN ('pending', 'retrying')
+                 AND next_attempt_at <= ?
+               ORDER BY next_attempt_at, delivery_id
+               LIMIT ?""",
+            (now, limit),
+        ).fetchall()
+        claimed: list[WebhookDelivery] = []
+        for candidate in candidates:
+            update = connection.execute(
+                """UPDATE webhook_deliveries
+                   SET status = 'retrying', next_attempt_at = ?, updated_at = ?
+                   WHERE delivery_id = ?
+                     AND direction = 'outbound'
+                     AND status IN ('pending', 'retrying')
+                     AND next_attempt_at <= ?""",
+                (lease_until, now, candidate["delivery_id"], now),
+            )
+            if update.rowcount != 1:
+                continue
+            delivery = dict(candidate)
+            delivery["status"] = "retrying"
+            delivery["next_attempt_at"] = lease_until
+            delivery["updated_at"] = now
+            claimed.append(delivery)
+        connection.commit()
+        return claimed
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def record_outbound_webhook_attempt(

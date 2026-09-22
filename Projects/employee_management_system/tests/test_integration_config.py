@@ -101,6 +101,9 @@ class TestIntegrationConfig(unittest.TestCase):
             "ABAP_WEBHOOK_MAX_RESPONSE_BYTES": 1048576,
             "ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS": 900,
             "ABAP_WEBHOOK_MAX_ATTEMPTS": 10,
+            "ABAP_WEBHOOK_RETRY_POLL_SECONDS": 300,
+            "ABAP_WEBHOOK_RETRY_LEASE_SECONDS": 300,
+            "ABAP_WEBHOOK_RETRY_CLAIM_LIMIT": 100,
         }
         for name, maximum in maximums.items():
             for value in ("0", "-1", "slow", str(maximum + 1)):
