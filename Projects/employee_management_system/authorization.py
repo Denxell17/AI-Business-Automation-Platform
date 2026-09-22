@@ -16,6 +16,7 @@ MANAGE_AGENT_TEMPLATES = "agent_templates.manage"
 EXECUTE_AGENT_TEMPLATES = "agent_templates.execute"
 VIEW_AGENT_TEMPLATES = "agent_templates.view"
 VIEW_ACTIVITY_LOG = "activity_log.view"
+VIEW_INTEGRATION_STATUS = "integrations.view"
 
 
 ROLE_PERMISSIONS = {
@@ -35,6 +36,7 @@ ROLE_PERMISSIONS = {
         EXECUTE_AGENT_TEMPLATES,
         VIEW_AGENT_TEMPLATES,
         VIEW_ACTIVITY_LOG,
+        VIEW_INTEGRATION_STATUS,
     },
     "viewer": {
         VIEW_EMPLOYEE,
