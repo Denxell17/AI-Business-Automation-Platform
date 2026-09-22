@@ -1542,6 +1542,82 @@ def record_verified_inbound_webhook(
         connection.close()
 
 
+def record_verified_inbound_workflow_result(
+    replay_event: WebhookReplayEvent,
+    delivery: WebhookDelivery,
+    execution_id: str,
+    result_status: str,
+    finished_at: str,
+    result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> str:
+    """Atomically claim a callback and finish one scheduled workflow run."""
+    if (
+        delivery["direction"] != "inbound"
+        or delivery["status"] != "accepted"
+        or delivery["event_id"] != replay_event["event_id"]
+        or delivery["correlation_id"] != execution_id
+        or result_status not in {"completed", "failed"}
+    ):
+        raise ValueError("Inbound workflow result records disagree.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """INSERT INTO webhook_replay_events (
+                   event_id, received_at, expires_at
+               ) VALUES (?, ?, ?)""",
+            (
+                replay_event["event_id"], replay_event["received_at"],
+                replay_event["expires_at"],
+            ),
+        )
+        updated = connection.execute(
+            """UPDATE workflow_executions
+               SET status = ?, finished_at = ?, result_summary = ?
+               WHERE execution_id = ?
+                 AND trigger_type = 'schedule'
+                 AND status = 'running'""",
+            (result_status, finished_at, result_summary, execution_id),
+        )
+        if updated.rowcount != 1:
+            connection.rollback()
+            return "not_applicable"
+        connection.execute(
+            """UPDATE workflow_task_executions
+               SET status = ?, finished_at = ?, result_summary = ?
+               WHERE execution_id = ? AND status = 'running'""",
+            (result_status, finished_at, result_summary, execution_id),
+        )
+        connection.execute(
+            """INSERT INTO webhook_deliveries (
+                   delivery_id, direction, event_id, correlation_id, event_type,
+                   status, attempt_count, next_attempt_at, response_status,
+                   failure_code, created_at, updated_at, completed_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                delivery["delivery_id"], delivery["direction"],
+                delivery["event_id"], delivery["correlation_id"],
+                delivery["event_type"], delivery["status"],
+                delivery["attempt_count"], delivery["next_attempt_at"],
+                delivery["response_status"], delivery["failure_code"],
+                delivery["created_at"], delivery["updated_at"],
+                delivery["completed_at"],
+            ),
+        )
+        connection.commit()
+        return "applied"
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return "duplicate"
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
 def insert_outbound_webhook_delivery(
     delivery: WebhookDelivery,
     database_file: Path = DATABASE_FILE,

@@ -114,6 +114,14 @@ from the execution record, excluding names, result summaries, task content,
 and other private payload values. A record that cannot be safely reconstructed
 is marked `reconstruction_unavailable` and is never sent.
 
+Day 162 reserves `workflow.execution.result` for a signed callback whose data
+is exactly `{"status":"completed"}` or `{"status":"failed"}`. The callback
+can atomically finish only a running schedule-triggered execution and its
+running task snapshots. Manual executions, extra data fields, unsupported
+event types, and already-terminal executions are rejected without changing
+workflow state. ABAP records a fixed safe summary rather than retaining an
+external provider's free-form response.
+
 ## External provider contract (Milestone 6)
 
 `ABAP_INTEGRATIONS_ENABLED=false` is the fail-closed default.

@@ -138,6 +138,8 @@ from schedule_service import (
     evaluate_workflow_schedule_list,
 )
 from webhook_delivery_service import accept_inbound_webhook
+from webhook_delivery_service import apply_verified_inbound_workflow_result
+from webhook_contract import verify_inbound_webhook
 
 
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
@@ -401,11 +403,54 @@ def create_web_application(
             "signature": request.headers.get("x-abap-signature"),
         }
         try:
+            current_time = selected_webhook_clock()
+            envelope = verify_inbound_webhook(
+                headers,
+                body,
+                inbound_secret,
+                current_time,
+                settings["signature_ttl_seconds"],
+                settings["max_request_bytes"],
+            )
+        except ValueError:
+            return JSONResponse(
+                content={"detail": "Webhook signature could not be verified."},
+                status_code=401,
+            )
+
+        if envelope["event_type"] == "workflow.execution.result":
+            try:
+                result = apply_verified_inbound_workflow_result(
+                    envelope,
+                    current_time,
+                    settings["signature_ttl_seconds"],
+                    database_file,
+                )
+            except ValueError:
+                return JSONResponse(
+                    content={"detail": "Webhook result could not be applied."},
+                    status_code=422,
+                )
+            except (sqlite3.Error, psycopg.Error):
+                return JSONResponse(
+                    content={"detail": "Webhook delivery is unavailable."},
+                    status_code=503,
+                )
+            if result["duplicate"]:
+                return JSONResponse(content={"status": "duplicate"}, status_code=200)
+            if result["not_applicable"]:
+                return JSONResponse(
+                    content={"detail": "Webhook result could not be applied."},
+                    status_code=409,
+                )
+            return JSONResponse(content={"status": "applied"}, status_code=202)
+
+        try:
             acceptance = accept_inbound_webhook(
                 headers,
                 body,
                 inbound_secret,
-                selected_webhook_clock(),
+                current_time,
                 settings["signature_ttl_seconds"],
                 settings["max_request_bytes"],
                 database_file,

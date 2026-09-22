@@ -9,9 +9,14 @@ from database import (
     DATABASE_FILE,
     insert_outbound_webhook_delivery,
     record_verified_inbound_webhook,
+    record_verified_inbound_workflow_result,
 )
 from models import WebhookDelivery, WebhookReplayEvent
-from webhook_contract import WebhookEnvelope, verify_inbound_webhook
+from webhook_contract import (
+    WebhookEnvelope,
+    validate_webhook_envelope,
+    verify_inbound_webhook,
+)
 
 
 class InboundWebhookAcceptance(TypedDict):
@@ -20,35 +25,27 @@ class InboundWebhookAcceptance(TypedDict):
     envelope: WebhookEnvelope
 
 
+class InboundWorkflowResult(TypedDict):
+    applied: bool
+    duplicate: bool
+    not_applicable: bool
+
+
 def _timestamp(value: datetime) -> str:
     if not isinstance(value, datetime) or value.tzinfo is None:
         raise ValueError("Webhook time must include a time zone.")
     return value.astimezone(timezone.utc).isoformat()
 
 
-def accept_inbound_webhook(
-    headers: dict[str, object],
-    body: bytes,
-    inbound_secret: str,
+def _inbound_records(
+    envelope: WebhookEnvelope,
     current_time: datetime,
-    signature_ttl_seconds: int,
-    max_request_bytes: int,
-    database_file: Path = DATABASE_FILE,
-) -> InboundWebhookAcceptance:
-    """Verify then atomically claim an event before a future handler uses it."""
-    envelope = verify_inbound_webhook(
-        headers, body, inbound_secret, current_time, signature_ttl_seconds,
-        max_request_bytes,
-    )
+) -> tuple[WebhookReplayEvent, WebhookDelivery]:
     received_at = _timestamp(current_time)
-    expires_at = _timestamp(
-        current_time.astimezone(timezone.utc)
-        + timedelta(seconds=signature_ttl_seconds),
-    )
     replay_event: WebhookReplayEvent = {
         "event_id": envelope["event_id"],
         "received_at": received_at,
-        "expires_at": expires_at,
+        "expires_at": received_at,
     }
     delivery: WebhookDelivery = {
         "delivery_id": f"WHD-{uuid4().hex.upper()}",
@@ -65,6 +62,28 @@ def accept_inbound_webhook(
         "updated_at": received_at,
         "completed_at": received_at,
     }
+    return replay_event, delivery
+
+
+def accept_inbound_webhook(
+    headers: dict[str, object],
+    body: bytes,
+    inbound_secret: str,
+    current_time: datetime,
+    signature_ttl_seconds: int,
+    max_request_bytes: int,
+    database_file: Path = DATABASE_FILE,
+) -> InboundWebhookAcceptance:
+    """Verify then atomically claim an event before a future handler uses it."""
+    envelope = verify_inbound_webhook(
+        headers, body, inbound_secret, current_time, signature_ttl_seconds,
+        max_request_bytes,
+    )
+    replay_event, delivery = _inbound_records(envelope, current_time)
+    replay_event["expires_at"] = _timestamp(
+        current_time.astimezone(timezone.utc)
+        + timedelta(seconds=signature_ttl_seconds),
+    )
     accepted = record_verified_inbound_webhook(
         replay_event, delivery, database_file,
     )
@@ -72,6 +91,45 @@ def accept_inbound_webhook(
         "accepted": accepted,
         "duplicate": not accepted,
         "envelope": envelope,
+    }
+
+
+def apply_verified_inbound_workflow_result(
+    envelope: WebhookEnvelope,
+    current_time: datetime,
+    signature_ttl_seconds: int,
+    database_file: Path = DATABASE_FILE,
+) -> InboundWorkflowResult:
+    """Apply one narrow, pre-verified integration outcome atomically."""
+    validated = validate_webhook_envelope(envelope)
+    data = validated["data"]
+    if (
+        validated["event_type"] != "workflow.execution.result"
+        or set(data) != {"status"}
+        or data["status"] not in {"completed", "failed"}
+    ):
+        raise ValueError("Webhook result callback is not supported.")
+    if signature_ttl_seconds <= 0:
+        raise ValueError("Webhook signature TTL must be positive.")
+    replay_event, delivery = _inbound_records(validated, current_time)
+    replay_event["expires_at"] = _timestamp(
+        current_time.astimezone(timezone.utc)
+        + timedelta(seconds=signature_ttl_seconds),
+    )
+    result_status = data["status"]
+    outcome = record_verified_inbound_workflow_result(
+        replay_event,
+        delivery,
+        validated["correlation_id"],
+        result_status,
+        _timestamp(current_time),
+        f"{result_status.title()} by signed integration callback.",
+        database_file,
+    )
+    return {
+        "applied": outcome == "applied",
+        "duplicate": outcome == "duplicate",
+        "not_applicable": outcome == "not_applicable",
     }
 
 
