@@ -72,6 +72,15 @@ workflow path, and bounded numeric settings. The loader makes no network
 request; the sender must revalidate DNS results, redirects, and destinations
 at connection time. No webhook delivery or callback is implemented yet.
 
+Day 157 added `webhook_contract.py`. Its only accepted content type is
+`application/json`. Every message has schema version `abap.webhook.v1`, a
+canonical UUID event ID, correlation ID, event type, UTC timestamp, and JSON
+object data. HMAC-SHA256 signs the schema version, Unix timestamp, event ID,
+and exact canonical JSON bytes. Verification uses the inbound secret,
+constant-time comparison, a bounded timestamp window, strict shape parsing,
+and the configured request-size limit. Replay persistence, delivery, and HTTP
+routes are not implemented yet.
+
 ## External provider contract (Milestone 6)
 
 `ABAP_INTEGRATIONS_ENABLED=false` is the fail-closed default.
