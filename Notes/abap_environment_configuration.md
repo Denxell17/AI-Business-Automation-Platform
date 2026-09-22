@@ -122,6 +122,13 @@ event types, and already-terminal executions are rejected without changing
 workflow state. ABAP records a fixed safe summary rather than retaining an
 external provider's free-form response.
 
+Day 163 supplies the Milestone 2 deterministic in-process receiver coverage.
+It validates ABAP's outgoing signature with the outbound secret, posts a result
+signed with the separate inbound secret, and posts that exact callback twice.
+The schedule-triggered execution completes once; the duplicate is accepted as a
+replay without creating another outcome. This test does not contact n8n or any
+real network endpoint.
+
 ## External provider contract (Milestone 6)
 
 `ABAP_INTEGRATIONS_ENABLED=false` is the fail-closed default.
