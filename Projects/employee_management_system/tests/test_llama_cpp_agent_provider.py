@@ -1,20 +1,29 @@
 import json
 import unittest
-from agent_provider import AgentProviderError
+from agent_provider import (
+    AgentProviderError,
+    AgentProviderFailureCode,
+)
 
 from llama_cpp_agent_provider import (
     HttpLlamaCppTransport,
     LlamaCppAgentProvider,
+    LlamaCppTransportError,
+    SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE,
 )
 
 
 class RecordingTransport:
-    def __init__(self):
+    def __init__(self, response=None, error=None):
         self.requests = []
+        self.response = response
+        self.error = error
 
     def post_json(self, **request):
         self.requests.append(request)
-        return {
+        if self.error is not None:
+            raise self.error
+        return self.response or {
             "choices": [
                 {
                     "message": {
@@ -26,24 +35,31 @@ class RecordingTransport:
 
 
 class DeterministicHttpResponse:
-    def __init__(self, *, status=200, json_body=None):
+    def __init__(self, *, status=200, json_body=None, raw_body=None):
         self.status = status
-        self._body = json.dumps(
-            json_body if json_body is not None else {"choices": []}
-        ).encode("utf-8")
+        self._body = (
+            raw_body
+            if raw_body is not None
+            else json.dumps(
+                json_body if json_body is not None else {"choices": []}
+            ).encode("utf-8")
+        )
 
     def read(self, amount=-1):
         return self._body[:amount]
 
 
 class RecordingHttpConnection:
-    def __init__(self, response):
+    def __init__(self, response, request_error=None):
         self.response = response
+        self.request_error = request_error
         self.requests = []
         self.closed = False
 
     def request(self, method, url, body, headers):
         self.requests.append((method, url, body, headers))
+        if self.request_error is not None:
+            raise self.request_error
 
     def getresponse(self):
         return self.response
@@ -152,13 +168,18 @@ class TestLlamaCppAgentProvider(unittest.TestCase):
             transport=transport,
         )
 
-        with self.assertRaises(AgentProviderError):
+        with self.assertRaises(AgentProviderError) as context:
             provider.generate_response(
                 model_name="qwen2.5-3b-instruct-q4_k_m",
                 system_prompt="12345",
                 input_text="678901",
             )
 
+        self.assertEqual(
+            context.exception.code,
+            AgentProviderFailureCode.INPUT_TOO_LARGE,
+        )
+        self.assertIsNone(context.exception.__cause__)
         self.assertEqual(transport.requests, [])
 
     def test_http_transport_posts_to_revalidated_loopback_endpoint(self):
@@ -208,7 +229,7 @@ class TestLlamaCppAgentProvider(unittest.TestCase):
             connection_factory=lambda *arguments: connection,
         )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(LlamaCppTransportError) as context:
             transport.post_json(
                 url="http://127.0.0.1:8080/v1/chat/completions",
                 headers={"Content-Type": "application/json"},
@@ -219,6 +240,10 @@ class TestLlamaCppAgentProvider(unittest.TestCase):
                 follow_redirects=False,
             )
 
+        self.assertEqual(
+            context.exception.code,
+            AgentProviderFailureCode.REDIRECT_BLOCKED,
+        )
         self.assertTrue(connection.closed)
 
     def test_http_transport_rejects_response_above_bound(self):
@@ -231,7 +256,7 @@ class TestLlamaCppAgentProvider(unittest.TestCase):
             connection_factory=lambda *arguments: connection,
         )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(LlamaCppTransportError) as context:
             transport.post_json(
                 url="http://127.0.0.1:8080/v1/chat/completions",
                 headers={"Content-Type": "application/json"},
@@ -242,6 +267,10 @@ class TestLlamaCppAgentProvider(unittest.TestCase):
                 follow_redirects=False,
             )
 
+        self.assertEqual(
+            context.exception.code,
+            AgentProviderFailureCode.RESPONSE_TOO_LARGE,
+        )
         self.assertTrue(connection.closed)
 
     def test_http_transport_rejects_non_loopback_destination(self):
@@ -251,7 +280,7 @@ class TestLlamaCppAgentProvider(unittest.TestCase):
             ),
         )
 
-        with self.assertRaises(ValueError):
+        with self.assertRaises(LlamaCppTransportError) as context:
             transport.post_json(
                 url="http://192.168.1.10:8080/v1/chat/completions",
                 headers={"Content-Type": "application/json"},
@@ -261,6 +290,151 @@ class TestLlamaCppAgentProvider(unittest.TestCase):
                 max_response_bytes=1024,
                 follow_redirects=False,
             )
+
+        self.assertEqual(
+            context.exception.code,
+            AgentProviderFailureCode.INVALID_REQUEST,
+        )
+
+    def test_runtime_failures_become_safe_stable_codes(self):
+        failure_cases = (
+            (
+                ConnectionRefusedError("secret local detail"),
+                AgentProviderFailureCode.CONNECTION_REFUSED,
+            ),
+            (
+                TimeoutError("secret local detail"),
+                AgentProviderFailureCode.TIMEOUT,
+            ),
+        )
+
+        settings = {
+            "provider": "llama_cpp",
+            "model": "qwen2.5-3b-instruct-q4_k_m",
+            "base_url": "http://127.0.0.1:8080/v1",
+            "api_key": "synthetic-test-key",
+            "connect_timeout_seconds": 2.0,
+            "read_timeout_seconds": 90.0,
+            "max_input_chars": 12000,
+            "max_output_tokens": 256,
+        }
+
+        for request_error, expected_code in failure_cases:
+            with self.subTest(code=expected_code):
+                connection = RecordingHttpConnection(
+                    DeterministicHttpResponse(),
+                    request_error=request_error,
+                )
+                provider = LlamaCppAgentProvider(
+                    settings=settings,
+                    transport=HttpLlamaCppTransport(
+                        connection_factory=lambda *arguments: connection,
+                    ),
+                )
+
+                with self.assertRaises(AgentProviderError) as context:
+                    provider.generate_response(
+                        model_name="qwen2.5-3b-instruct-q4_k_m",
+                        system_prompt="System prompt",
+                        input_text="Input text",
+                    )
+
+                self.assertEqual(
+                    str(context.exception),
+                    SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE,
+                )
+                self.assertEqual(context.exception.code, expected_code)
+                self.assertIsNone(context.exception.__cause__)
+                self.assertEqual(len(connection.requests), 1)
+
+    def test_http_status_failures_become_safe_stable_codes(self):
+        failure_cases = (
+            (401, AgentProviderFailureCode.AUTHENTICATION_FAILED),
+            (403, AgentProviderFailureCode.AUTHENTICATION_FAILED),
+            (429, AgentProviderFailureCode.PROVIDER_BUSY),
+            (503, AgentProviderFailureCode.PROVIDER_LOADING),
+            (500, AgentProviderFailureCode.PROVIDER_SERVER_ERROR),
+        )
+        settings = {
+            "provider": "llama_cpp",
+            "model": "qwen2.5-3b-instruct-q4_k_m",
+            "base_url": "http://127.0.0.1:8080/v1",
+            "api_key": "synthetic-test-key",
+            "connect_timeout_seconds": 2.0,
+            "read_timeout_seconds": 90.0,
+            "max_input_chars": 12000,
+            "max_output_tokens": 256,
+        }
+
+        for status, expected_code in failure_cases:
+            with self.subTest(status=status):
+                connection = RecordingHttpConnection(
+                    DeterministicHttpResponse(status=status)
+                )
+                provider = LlamaCppAgentProvider(
+                    settings=settings,
+                    transport=HttpLlamaCppTransport(
+                        connection_factory=lambda *arguments: connection,
+                    ),
+                )
+
+                with self.assertRaises(AgentProviderError) as context:
+                    provider.generate_response(
+                        model_name="qwen2.5-3b-instruct-q4_k_m",
+                        system_prompt="System prompt",
+                        input_text="Input text",
+                    )
+
+                self.assertEqual(context.exception.code, expected_code)
+                self.assertIsNone(context.exception.__cause__)
+                self.assertEqual(len(connection.requests), 1)
+
+    def test_invalid_local_responses_become_safe_stable_codes(self):
+        settings = {
+            "provider": "llama_cpp",
+            "model": "qwen2.5-3b-instruct-q4_k_m",
+            "base_url": "http://127.0.0.1:8080/v1",
+            "api_key": "synthetic-test-key",
+            "connect_timeout_seconds": 2.0,
+            "read_timeout_seconds": 90.0,
+            "max_input_chars": 12000,
+            "max_output_tokens": 256,
+        }
+        malformed_connection = RecordingHttpConnection(
+            DeterministicHttpResponse(raw_body=b"not JSON")
+        )
+        malformed_provider = LlamaCppAgentProvider(
+            settings=settings,
+            transport=HttpLlamaCppTransport(
+                connection_factory=lambda *arguments: malformed_connection,
+            ),
+        )
+        blank_provider = LlamaCppAgentProvider(
+            settings=settings,
+            transport=RecordingTransport(
+                response={
+                    "choices": [{"message": {"content": "   "}}]
+                }
+            ),
+        )
+
+        for provider, expected_code in (
+            (
+                malformed_provider,
+                AgentProviderFailureCode.MALFORMED_RESPONSE,
+            ),
+            (blank_provider, AgentProviderFailureCode.BLANK_RESPONSE),
+        ):
+            with self.subTest(code=expected_code):
+                with self.assertRaises(AgentProviderError) as context:
+                    provider.generate_response(
+                        model_name="qwen2.5-3b-instruct-q4_k_m",
+                        system_prompt="System prompt",
+                        input_text="Input text",
+                    )
+
+                self.assertEqual(context.exception.code, expected_code)
+                self.assertIsNone(context.exception.__cause__)
 
 
 if __name__ == "__main__":

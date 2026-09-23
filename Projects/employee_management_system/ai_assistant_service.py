@@ -84,6 +84,11 @@ def ask_ai_assistant(
             system_prompt=AI_ASSISTANT_SYSTEM_PROMPT,
             input_text=normalized_question,
         )
+    except AgentProviderError as error:
+        raise AgentProviderError(
+            SAFE_AI_ASSISTANT_ERROR_MESSAGE,
+            error.code,
+        ) from None
     except Exception:
         raise AgentProviderError(
             SAFE_AI_ASSISTANT_ERROR_MESSAGE

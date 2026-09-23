@@ -7,7 +7,10 @@ from collections.abc import Callable, Mapping
 from typing import Any, Protocol
 from urllib.parse import urlsplit
 
-from agent_provider import AgentProviderError
+from agent_provider import (
+    AgentProviderError,
+    AgentProviderFailureCode,
+)
 from agent_provider_config import LocalProviderSettings
 
 
@@ -16,6 +19,14 @@ SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE = (
 )
 MAX_LLAMA_CPP_RESPONSE_BYTES = 65536
 MAX_LLAMA_CPP_REQUEST_BYTES = 131072
+
+
+class LlamaCppTransportError(RuntimeError):
+    """Carry a safe local-provider failure category to the adapter."""
+
+    def __init__(self, code: AgentProviderFailureCode) -> None:
+        super().__init__(code)
+        self.code = code
 
 
 class LlamaCppTransport(Protocol):
@@ -108,7 +119,9 @@ def _loopback_request_path(url: str) -> str:
         parsed = urlsplit(url)
         port = parsed.port
     except ValueError:
-        raise ValueError("Local provider destination is invalid.") from None
+        raise LlamaCppTransportError(
+            AgentProviderFailureCode.INVALID_REQUEST
+        ) from None
 
     if (
         parsed.scheme != "http"
@@ -120,7 +133,9 @@ def _loopback_request_path(url: str) -> str:
         or parsed.query
         or parsed.fragment
     ):
-        raise ValueError("Local provider destination is invalid.")
+        raise LlamaCppTransportError(
+            AgentProviderFailureCode.INVALID_REQUEST
+        )
 
     return parsed.path
 
@@ -149,44 +164,100 @@ class HttpLlamaCppTransport:
     ) -> Mapping[str, Any]:
         """Post one JSON body without redirects and return bounded JSON."""
         if follow_redirects:
-            raise ValueError("Local provider redirects are not permitted.")
+            raise LlamaCppTransportError(
+                AgentProviderFailureCode.REDIRECT_BLOCKED
+            )
 
         request_path = _loopback_request_path(url)
-        body = json.dumps(
-            json_body,
-            ensure_ascii=False,
-            separators=(",", ":"),
-        ).encode("utf-8")
+        try:
+            body = json.dumps(
+                json_body,
+                ensure_ascii=False,
+                separators=(",", ":"),
+            ).encode("utf-8")
+        except (TypeError, ValueError):
+            raise LlamaCppTransportError(
+                AgentProviderFailureCode.INVALID_REQUEST
+            ) from None
 
         if len(body) > MAX_LLAMA_CPP_REQUEST_BYTES:
-            raise ValueError("Local provider request is too large.")
+            raise LlamaCppTransportError(
+                AgentProviderFailureCode.REQUEST_TOO_LARGE
+            )
 
-        connection = self._connection_factory(
-            "127.0.0.1",
-            8080,
-            connect_timeout_seconds,
-            read_timeout_seconds,
-        )
+        connection: LlamaCppConnection | None = None
         try:
+            connection = self._connection_factory(
+                "127.0.0.1",
+                8080,
+                connect_timeout_seconds,
+                read_timeout_seconds,
+            )
             connection.request("POST", request_path, body, headers)
             response = connection.getresponse()
             response_body = response.read(max_response_bytes + 1)
 
             if len(response_body) > max_response_bytes:
-                raise ValueError("Local provider response is too large.")
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.RESPONSE_TOO_LARGE
+                )
+            if 300 <= response.status < 400:
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.REDIRECT_BLOCKED
+                )
+            if response.status in (401, 403):
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.AUTHENTICATION_FAILED
+                )
+            if response.status == 429:
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.PROVIDER_BUSY
+                )
+            if response.status == 503:
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.PROVIDER_LOADING
+                )
+            if 500 <= response.status < 600:
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.PROVIDER_SERVER_ERROR
+                )
             if not 200 <= response.status < 300:
-                raise ValueError("Local provider response was unsuccessful.")
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.REQUEST_REJECTED
+                )
 
             try:
                 decoded = json.loads(response_body.decode("utf-8"))
             except (UnicodeDecodeError, json.JSONDecodeError):
-                raise ValueError("Local provider response is invalid.") from None
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.MALFORMED_RESPONSE
+                ) from None
 
             if not isinstance(decoded, Mapping):
-                raise ValueError("Local provider response is invalid.")
+                raise LlamaCppTransportError(
+                    AgentProviderFailureCode.MALFORMED_RESPONSE
+                )
             return decoded
+        except LlamaCppTransportError:
+            raise
+        except ConnectionRefusedError:
+            raise LlamaCppTransportError(
+                AgentProviderFailureCode.CONNECTION_REFUSED
+            ) from None
+        except (socket.timeout, TimeoutError):
+            raise LlamaCppTransportError(
+                AgentProviderFailureCode.TIMEOUT
+            ) from None
+        except (OSError, http.client.HTTPException):
+            raise LlamaCppTransportError(
+                AgentProviderFailureCode.NETWORK_ERROR
+            ) from None
         finally:
-            connection.close()
+            if connection is not None:
+                try:
+                    connection.close()
+                except OSError:
+                    pass
 
 
 class LlamaCppAgentProvider:
@@ -218,7 +289,8 @@ class LlamaCppAgentProvider:
             or not input_text.strip()
         ):
             raise AgentProviderError(
-                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE
+                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE,
+                AgentProviderFailureCode.INVALID_REQUEST,
             )
 
         system_message = system_prompt.strip()
@@ -229,7 +301,8 @@ class LlamaCppAgentProvider:
             > self._settings["max_input_chars"]
         ):
             raise AgentProviderError(
-                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE
+                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE,
+                AgentProviderFailureCode.INPUT_TOO_LARGE,
             )
 
         try:
@@ -265,6 +338,11 @@ class LlamaCppAgentProvider:
                 max_response_bytes=MAX_LLAMA_CPP_RESPONSE_BYTES,
                 follow_redirects=False,
             )
+        except LlamaCppTransportError as error:
+            raise AgentProviderError(
+                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE,
+                error.code,
+            ) from None
         except Exception:
             raise AgentProviderError(
                 SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE
@@ -274,12 +352,14 @@ class LlamaCppAgentProvider:
             output_text = response["choices"][0]["message"]["content"]
         except (IndexError, KeyError, TypeError):
             raise AgentProviderError(
-                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE
+                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE,
+                AgentProviderFailureCode.MALFORMED_RESPONSE,
             ) from None
 
         if not isinstance(output_text, str) or not output_text.strip():
             raise AgentProviderError(
-                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE
+                SAFE_LLAMA_CPP_PROVIDER_ERROR_MESSAGE,
+                AgentProviderFailureCode.BLANK_RESPONSE,
             )
 
         return output_text.strip()
