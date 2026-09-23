@@ -23,6 +23,9 @@
                     <li><a class="navigation-link{% if active_page == 'leads' %} is-active{% endif %}" href="{{ url_for('lead_directory') }}" {% if active_page == 'leads' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('users') }}</span><span>Leads</span></a></li>
                     <li><a class="navigation-link{% if active_page == 'customers' %} is-active{% endif %}" href="{{ url_for('customer_directory') }}" {% if active_page == 'customers' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('users') }}</span><span>Customers</span></a></li>
                     {% endif %}
+                    {% if user_has_permission(current_user, VIEW_INVOICES) %}
+                    <li><a class="navigation-link{% if active_page == 'invoices' %} is-active{% endif %}" href="{{ url_for('invoice_directory') }}" {% if active_page == 'invoices' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('report') }}</span><span>Invoices</span></a></li>
+                    {% endif %}
                     {% if user_has_permission(current_user, VIEW_AGENT_TEMPLATES) %}
                     <li><a class="navigation-link{% if active_page == 'agent_templates' %} is-active{% endif %}" href="{{ url_for('agent_template_directory') }}" {% if active_page == 'agent_templates' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('agent') }}</span><span>Agent templates</span></a></li>
                     {% endif %}

@@ -47,7 +47,9 @@ from agent_template_service import (
 )
 from authorization import (
     MANAGE_CRM,
+    MANAGE_INVOICES,
     VIEW_CRM,
+    VIEW_INVOICES,
     DELETE_EMPLOYEE,
     EXECUTE_AGENT_TEMPLATES,
     EXPORT_REPORT,
@@ -83,6 +85,8 @@ from database import (
 from data_validation import get_employee_record_errors
 from dashboard_repository import load_dashboard_snapshot
 from crm_web import register_crm_routes
+from document_storage import DocumentStorage, PrivateFileSystemDocumentStorage
+from invoice_web import register_invoice_routes
 from employee_repository import (
     load_employee_records,
     save_employee_records,
@@ -278,6 +282,7 @@ templates.env.globals["VIEW_INTEGRATION_STATUS"] = (
     VIEW_INTEGRATION_STATUS
 )
 templates.env.globals["VIEW_CRM"] = VIEW_CRM
+templates.env.globals["VIEW_INVOICES"] = VIEW_INVOICES
 
 
 async def read_bounded_request_body(
@@ -317,6 +322,7 @@ def create_web_application(
         Callable[[], IntegrationSettings] | None
     ) = None,
     webhook_clock: Callable[[], datetime] | None = None,
+    document_storage: DocumentStorage | None = None,
 ) -> FastAPI:
     selected_agent_provider_factory = (
         agent_provider_factory
@@ -342,6 +348,11 @@ def create_web_application(
         webhook_clock
         if webhook_clock is not None
         else lambda: datetime.now(timezone.utc)
+    )
+    selected_document_storage = (
+        document_storage
+        if document_storage is not None
+        else PrivateFileSystemDocumentStorage()
     )
 
     application = FastAPI(
@@ -896,12 +907,14 @@ def create_web_application(
             VIEW_AGENT_TEMPLATES,
         )
         can_view_crm = user_has_permission(current_user, VIEW_CRM)
+        can_view_invoices = user_has_permission(current_user, VIEW_INVOICES)
         dashboard = load_dashboard_snapshot(
             database_file,
             include_employees=can_view_employees,
             include_workflows=can_view_workflows,
             include_agents=can_view_agents,
             include_crm=can_view_crm,
+            include_invoices=can_view_invoices,
         )
         activity_entries = (
             load_recent_activity_entries()
@@ -932,6 +945,7 @@ def create_web_application(
                     REGISTER_EMPLOYEE,
                 ),
                 "can_manage_crm": user_has_permission(current_user, MANAGE_CRM),
+                "can_manage_invoices": user_has_permission(current_user, MANAGE_INVOICES),
                 "csrf_token": get_or_create_csrf_token(request),
             },
         )
@@ -4567,6 +4581,10 @@ def create_web_application(
 
     register_crm_routes(
         application, templates, database_file,
+        get_or_create_csrf_token, csrf_token_is_valid, log_activity,
+    )
+    register_invoice_routes(
+        application, templates, database_file, selected_document_storage,
         get_or_create_csrf_token, csrf_token_is_valid, log_activity,
     )
 

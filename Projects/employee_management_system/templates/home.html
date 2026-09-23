@@ -24,6 +24,13 @@
     </section>
     {% endif %}
 
+    {% if dashboard.invoice_total is not none %}
+    <section class="dashboard-metrics" aria-label="Invoice summary">
+        <article class="metric-card metric-card--blue"><div><p>Invoices</p><strong>{{ dashboard.invoice_total }}</strong><span>Persisted customer invoices</span></div></article>
+        <article class="metric-card metric-card--green"><div><p>Outstanding invoices</p><strong>USD {{ '%.2f' | format(dashboard.outstanding_invoice_total_cents / 100) }}</strong><span>Sent invoices awaiting payment</span></div></article>
+    </section>
+    {% endif %}
+
     <div class="dashboard-grid dashboard-grid--primary">
         <section class="dashboard-panel dashboard-panel--wide" aria-labelledby="workflow-operations-heading">
             <header class="panel-heading"><div><h2 id="workflow-operations-heading">Workflow operations</h2><p>Recent workflow executions from execution history.</p></div><a href="{{ url_for('workflow_directory') }}">View all</a></header>
@@ -44,6 +51,7 @@
                 {% if can_register_employee %}<a href="{{ url_for('employee_create_form') }}">{{ icon('employees') }}<span>Add employee</span>{{ icon('chevron-right') }}</a>{% endif %}
                 {% if can_manage_workflows %}<a href="{{ url_for('workflow_create_form') }}">{{ icon('workflows') }}<span>Create workflow</span>{{ icon('chevron-right') }}</a>{% endif %}
                 {% if can_manage_crm %}<a href="{{ url_for('lead_create_form') }}">{{ icon('users') }}<span>Create lead</span>{{ icon('chevron-right') }}</a>{% endif %}
+                {% if can_manage_invoices %}<a href="{{ url_for('invoice_create_form') }}">{{ icon('report') }}<span>Create invoice</span>{{ icon('chevron-right') }}</a>{% endif %}
                 {% if user_has_permission(current_user, EXECUTE_AGENT_TEMPLATES) %}<a href="{{ url_for('ai_assistant_page') }}">{{ icon('assistant') }}<span>Open AI Assistant</span>{{ icon('chevron-right') }}</a>{% endif %}
                 <a href="{{ url_for('workforce_report') }}">{{ icon('report') }}<span>View reports</span>{{ icon('chevron-right') }}</a>
             </nav>

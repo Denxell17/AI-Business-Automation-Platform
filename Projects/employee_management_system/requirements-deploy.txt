@@ -38,6 +38,7 @@ python-multipart==0.0.32
 PyYAML==6.0.3
 rich==15.0.0
 rich-toolkit==0.20.5
+reportlab==4.4.10
 rignore==0.8.1
 sentry-sdk==2.69.1
 shellingham==1.5.4

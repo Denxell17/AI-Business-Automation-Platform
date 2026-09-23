@@ -25,6 +25,7 @@ def load_dashboard_snapshot(
     include_workflows: bool,
     include_agents: bool,
     include_crm: bool = False,
+    include_invoices: bool = False,
 ) -> dict:
     """Load the authorized Dashboard data with a bounded query set."""
     initialize_database(database_file)
@@ -43,6 +44,8 @@ def load_dashboard_snapshot(
         "lead_total": None,
         "qualified_lead_total": None,
         "customer_total": None,
+        "invoice_total": None,
+        "outstanding_invoice_total_cents": None,
     }
 
     try:
@@ -171,6 +174,14 @@ def load_dashboard_snapshot(
             snapshot["customer_total"] = connection.execute(
                 "SELECT COUNT(*) AS customer_total FROM customers"
             ).fetchone()["customer_total"]
+        if include_invoices:
+            invoice_summary = connection.execute(
+                """SELECT COUNT(*) AS invoice_total,
+                   COALESCE(SUM(CASE WHEN status = 'sent' THEN total_cents ELSE 0 END), 0)
+                   AS outstanding_invoice_total_cents FROM invoices"""
+            ).fetchone()
+            snapshot["invoice_total"] = invoice_summary["invoice_total"]
+            snapshot["outstanding_invoice_total_cents"] = invoice_summary["outstanding_invoice_total_cents"]
     finally:
         connection.close()
 

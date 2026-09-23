@@ -29,6 +29,24 @@ class Customer(TypedDict):
     updated_at: str
 
 
+INVOICE_STATUSES = frozenset({"draft", "sent", "paid", "void"})
+
+
+class Invoice(TypedDict):
+    invoice_id: str
+    customer_id: str
+    invoice_number: str
+    currency: str
+    status: str
+    due_date: str | None
+    subtotal_cents: int
+    tax_cents: int
+    total_cents: int
+    created_by_user_id: int
+    created_at: str
+    updated_at: str
+
+
 class Employee(TypedDict):
     employee_id: str
     name: str

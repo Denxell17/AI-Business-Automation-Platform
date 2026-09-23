@@ -1,7 +1,7 @@
 """Open a database connection using the selected backend."""
 
 import sqlite3
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Any
 
@@ -30,7 +30,7 @@ class DatabaseRow(dict[str, Any]):
 
 
 def _normalize_postgresql_value(value):
-    if isinstance(value, datetime):
+    if isinstance(value, (datetime, date)):
         return value.isoformat()
     return value
 
