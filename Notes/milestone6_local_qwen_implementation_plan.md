@@ -16,7 +16,7 @@ adapter and configuration selection, not a redesign of the AI Assistant.
 - Model file: `qwen2.5-3b-instruct-q4_k_m.gguf`
 - Quantization: Q4_K_M
 - Approximate model-file size: 2.1 GB
-- Runtime: a pinned Windows CUDA build of llama.cpp
+- Runtime: the pinned llama.cpp Windows Vulkan build 11095
 - Transport: HTTP on the exact loopback address `127.0.0.1`
 - API shape: llama.cpp's OpenAI-compatible chat endpoint
 - Concurrent request slots: one
@@ -38,7 +38,7 @@ Start with these conservative server controls:
 
 | Control | Starting value | Reason |
 | --- | --- | --- |
-| Context size | 4096 tokens | Bounds KV-cache RAM and VRAM use. |
+| Context size | 2048 tokens | Bounds KV-cache RAM and VRAM use. |
 | Maximum generated tokens | 256 | Bounds latency and resource use. |
 | Parallel slots | 1 | Prevents concurrent generations from multiplying memory use. |
 | CPU generation threads | 6 | Uses the physical cores without occupying all 12 logical threads. |
@@ -51,9 +51,14 @@ Start with these conservative server controls:
 | HTTP host | `127.0.0.1` | Prevents LAN exposure. |
 | Web UI | disabled | Exposes only the API needed by ABAP. |
 
+Run the local model server on demand and only when at least 4 GiB of system RAM
+is available before startup. Stop the server after the AI task finishes. The
+verified Q4_K_M baseline used about 2.0 GiB of system RAM and 2.0 GiB of VRAM,
+so unrelated memory-heavy applications should be closed first.
+
 Do not begin with the model's maximum supported context, multiple parallel
 slots, unlimited output, or forced full GPU offload. Measure first. If the
-server reports CUDA allocation failure, reduce GPU layers or run CPU-only. If
+server reports GPU allocation failure, reduce GPU layers or run CPU-only. If
 it remains responsive with safe VRAM headroom, increase GPU offload gradually.
 
 The planned server profile is equivalent to:
@@ -64,7 +69,7 @@ llama-server
   --alias qwen2.5-3b-instruct-q4_k_m
   --host 127.0.0.1
   --port 8080
-  --ctx-size 4096
+  --ctx-size 2048
   --n-predict 256
   --parallel 1
   --threads 6
@@ -136,7 +141,7 @@ The adapter translates failures to fixed internal codes:
 - `rate_limited`
 - `invalid_response`
 
-ABAP never returns the raw llama.cpp response body or exception text to the
+
 browser. Interactive requests are not automatically retried. The user may
 retry later after a safe timeout, loading, busy, or unavailable response.
 
@@ -145,7 +150,7 @@ retry later after a safe timeout, loading, busy, or unavailable response.
 ### Day 167 — Contract and Hardware Baseline
 
 1. Record this provider decision and the permitted data boundary.
-2. Install or unpack a pinned CUDA-enabled llama.cpp Windows release outside
+2. Install or unpack a pinned Vulkan llama.cpp Windows release outside
    the repository.
 3. Download the official Q4_K_M GGUF outside the repository.
 4. Record llama.cpp version, Qwen model revision, filename, license, and file
@@ -184,7 +189,7 @@ errors contain no token or private path.
 5. Reject redirects and revalidate that the destination is loopback when
    connecting.
 6. Inject an in-memory transport in tests; unit tests never require llama.cpp,
-   a model download, CUDA, or a network socket.
+   a model download, a GPU runtime, or a network socket.
 
 Exit: deterministic adapter tests prove request mapping, response parsing,
 model configurability, and provider independence.
