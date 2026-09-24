@@ -32,8 +32,8 @@ print("City               :", city)
 print("Expected Salary    :", expected_salary)
 print("Willing to Relocate:", willing_to_relocate)
 
-email = "deniezbass@gmail.com"
-phone_number = "+63 9686880146"
+email = "student@example.com"
+phone_number = "+63 912 345 6789"
 
 print("Email              :", email)
 print("Phone Number       :", phone_number)
