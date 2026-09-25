@@ -2,7 +2,10 @@ import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from agent_provider import AgentProviderError
+from agent_provider import (
+    AgentProviderError,
+    AgentProviderFailureCode,
+)
 from ai_assistant_service import (
     AI_ASSISTANT_SYSTEM_PROMPT,
     MAX_AI_ASSISTANT_MODEL_NAME_LENGTH,
@@ -252,6 +255,39 @@ class TestAiAssistantService(unittest.TestCase):
             unsafe_detail,
             str(context.exception),
         )
+        self.assertIsNone(context.exception.__cause__)
+        self.assertEqual(
+            context.exception.code,
+            AgentProviderFailureCode.PROVIDER_ERROR,
+        )
+
+    def test_provider_failure_code_is_preserved_without_detail(self):
+        unsafe_detail = "provider timed out with secret test-api-key"
+        provider = DeterministicAssistantProvider(
+            error=AgentProviderError(
+                unsafe_detail,
+                AgentProviderFailureCode.TIMEOUT,
+            )
+        )
+
+        with self.assertRaises(AgentProviderError) as context:
+            ask_ai_assistant(
+                self.administrator,
+                "Help with this workflow.",
+                "test-assistant-model",
+                provider,
+                self.database_file,
+            )
+
+        self.assertEqual(
+            str(context.exception),
+            SAFE_AI_ASSISTANT_ERROR_MESSAGE,
+        )
+        self.assertEqual(
+            context.exception.code,
+            AgentProviderFailureCode.TIMEOUT,
+        )
+        self.assertNotIn(unsafe_detail, str(context.exception))
         self.assertIsNone(context.exception.__cause__)
 
     def test_invalid_provider_responses_become_safe_error(self):

@@ -171,11 +171,14 @@ The repository already provides:
 
 ### Deliverables
 
-- Implement only the connections required by the portfolio flow, starting with
-  n8n and one approved AI or business API.
+- Implement only the connections required by the portfolio flow: the existing
+  private n8n demo and the approved local Qwen2.5 3B Instruct Q4_K_M model
+  served by llama.cpp on loopback.
 - Add provider-independent adapters, connection tests, rate-limit handling,
   timeouts, credential validation, and safe error translation.
 - Add integration health and delivery metrics based on real stored events.
+- Keep the local model alias configurable and use conservative context,
+  generation, concurrency, CPU, and GPU-offload limits for the approved laptop.
 - Prepare a GoHighLevel adapter only after webhook contracts and customer
   ownership are stable.
 
@@ -269,14 +272,16 @@ The completion program is finished only when:
 | 3 — n8n End-to-End Automation | Complete | Day 164 adds the private `n8n-demo` Compose profile, pinned n8n `1.121.3`, persistent n8n data, a version-controlled signed workflow export, and a private deterministic provider with no published host ports. ABAP sends only a minimal schedule execution event after its tracked run is created; n8n verifies that HMAC, performs the deterministic provider action, and sends the fixed signed completion callback. Existing focused sender/callback/retry coverage verifies unavailable/timeout, retry, duplicate, invalid-signature, invalid-payload, provider/HTTP failure, and successful-completion handling. On 2026-09-22, isolated synthetic Compose project `abap_m3_verify` started successfully and completed two enabled scheduled runs. Each produced exactly one completed task, one successful outbound delivery with HTTP 202, and one accepted inbound callback. The Milestone 3 exit gate is met without exposing n8n or using real credentials. |
 | 4 — Leads and Customers Domain | Complete | Day 165 adds normalized SQLite and PostgreSQL lead, customer, note, and CRM audit tables; owner and lifecycle validation; duplicate-safe transactional conversion with an immutable source lead; permission-scoped FastAPI forms, search, detail/history screens, and real dashboard counts. Focused SQLite coverage passed 3 tests. The final full local suite passed 692 tests with 5 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. A separate disposable PostgreSQL 18.6 container applied migration 006 and passed the complete authenticated browser lead creation, edit, note, one-time conversion, customer detail/audit, and immutable-source check. Isolated synthetic Compose project `abap_m4_verify` built the current image, applied migration 006, and reported web readiness. All test containers and disposable volumes were removed. The Milestone 4 exit gate is met. |
 | 5 — Invoices and Documents Domain | Complete | Day 166 adds customer-owned USD invoices with immutable line-item snapshots, due dates, explicit half-up Decimal rounding to integer cents, invoice status transitions, and payment-state history. It also adds a private filesystem document-storage abstraction, metadata integrity hashes, safe generated PDF filenames, permission-checked `attachment` downloads with no-store and nosniff headers, and linked manual workflow runs. The portfolio-safe invoice PDF was visually rendered and reviewed. Focused SQLite invoice coverage passed 3 tests; the final full local suite passed 696 tests with 6 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. A disposable PostgreSQL 18.6 database applied migration 007 and passed invoice creation, protected PDF browser download, and immutable line-item verification. Isolated synthetic Compose project `abap_m5_verify` built the current image with ReportLab, applied migration 007, and reported web readiness. All temporary containers and volumes were removed. The Milestone 5 exit gate is met. |
-| 6 — Selected External Connections | Not started | No provider connection is advertised. |
+| 6 — Selected External Connections | Planned | Qwen2.5 3B Instruct Q4_K_M through a loopback-only llama.cpp server is the approved local AI connection. The provider-independent implementation, deterministic tests, stored metrics, laptop resource verification, repeatable demo, and local-token rotation evidence remain to be completed. |
 | 7 — Production Operations | Not started | Exit gate not evaluated. |
 | 8 — Cloud Deployment and HTTPS | In progress | OCI Always Free capacity retry is active and the pinned deployment package is ready. No cloud deployment, public URL, or TLS configuration is claimed until a VM is available and verified. |
 | 9 — Final Portfolio Release | Not started | Exit gate not evaluated. |
 
 ## Immediate Next Action
 
-Begin Milestone 6: Selected External Connections. First define the specific
-portfolio connection required beyond the existing private n8n demo, then add a
-provider-independent adapter, deterministic test substitute, and documented
-credential-rotation behavior.
+Begin Milestone 6 with Day 167 from
+`Notes/milestone6_local_qwen_implementation_plan.md`: establish the pinned
+llama.cpp and Qwen2.5 3B Instruct Q4_K_M baseline outside Git, verify the
+conservative loopback-only laptop profile, and record its resource evidence.
+Then add the provider-independent adapter, deterministic test substitute,
+stored health metrics, and documented local-token rotation behavior.
