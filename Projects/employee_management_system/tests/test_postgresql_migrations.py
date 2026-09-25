@@ -24,6 +24,8 @@ class TestPostgresqlMigrations(unittest.TestCase):
                 "003_create_agent_templates.sql",
                 "004_create_agent_executions.sql",
                 "005_create_webhook_delivery_state.sql",
+                "006_create_crm_domain.sql",
+                "007_create_invoice_document_domain.sql",
             ],
         )
 

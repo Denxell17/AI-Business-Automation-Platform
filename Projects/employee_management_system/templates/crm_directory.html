@@ -1,0 +1,10 @@
+{% extends "application_base.html" %}
+{% block content %}
+<section class="employee-directory-section" aria-labelledby="crm-heading">
+  <header class="directory-header"><div><p class="section-eyebrow">Customer relationships</p><h1 id="crm-heading" class="section-title">{{ 'Leads' if kind == 'lead' else 'Customers' }}</h1><p class="page-message">Search and manage {{ 'potential' if kind == 'lead' else 'converted' }} customers.</p></div>
+  {% if kind == 'lead' and can_manage_crm %}<a class="ui-button ui-button--primary" href="{{ url_for('lead_create_form') }}">Create lead</a>{% endif %}</header>
+  <form method="get" class="employee-form" action="{{ url_for('lead_directory') if kind == 'lead' else url_for('customer_directory') }}"><div class="form-field"><label for="q">Search by name, email, or company</label><input id="q" name="q" value="{{ query }}" maxlength="120"><button class="ui-button" type="submit">Search</button></div></form>
+  {% if records %}<div class="ui-table-wrapper" role="region" tabindex="0" aria-label="{{ kind | title }} records"><table><thead><tr><th scope="col">Name</th><th scope="col">Email</th><th scope="col">Company</th><th scope="col">{{ 'Stage' if kind == 'lead' else 'Status' }}</th><th scope="col">Details</th></tr></thead><tbody>{% for item in records %}<tr><th scope="row">{{ item.name }}</th><td>{{ item.email or '—' }}</td><td>{{ item.company or '—' }}</td><td>{{ item.stage if kind == 'lead' else item.status }}</td><td><a href="{{ url_for('lead_detail', lead_id=item.lead_id) if kind == 'lead' else url_for('customer_detail', customer_id=item.customer_id) }}">View</a></td></tr>{% endfor %}</tbody></table></div>
+  {% else %}<p class="page-message">No {{ 'leads' if kind == 'lead' else 'customers' }} found.</p>{% endif %}
+</section>
+{% endblock %}

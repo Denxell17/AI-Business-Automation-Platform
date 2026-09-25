@@ -42,6 +42,7 @@ services:
     restart: unless-stopped
     volumes:
       - activity_logs:/app/logs
+      - invoice_documents:/app/data/documents
     depends_on:
       migrate:
         condition: service_completed_successfully
@@ -82,3 +83,4 @@ services:
 volumes:
   database_data:
   activity_logs:
+  invoice_documents:

@@ -1,0 +1,16 @@
+{% extends "application_base.html" %}
+{% block content %}
+<section class="employee-form-section" aria-labelledby="crm-detail-heading">
+  <a class="back-link" href="{{ url_for('lead_directory') if kind == 'lead' else url_for('customer_directory') }}">← Back to {{ 'leads' if kind == 'lead' else 'customers' }}</a>
+  <p class="section-eyebrow">{{ kind | title }} record</p><h1 id="crm-detail-heading" class="section-title">{{ record.name }}</h1>
+  <section class="employee-form-card"><h2>Identity and contact</h2><dl><dt>Email</dt><dd>{{ record.email or '—' }}</dd><dt>Phone</dt><dd>{{ record.phone_number or '—' }}</dd><dt>Company</dt><dd>{{ record.company or '—' }}</dd><dt>{{ 'Stage' if kind == 'lead' else 'Status' }}</dt><dd>{{ record.stage if kind == 'lead' else record.status }}</dd>
+  {% if kind == 'lead' %}<dt>Owner</dt><dd>{{ record.owner_username or 'Unassigned' }}</dd>{% if record.converted_customer_id %}<dt>Customer</dt><dd><a href="{{ url_for('customer_detail', customer_id=record.converted_customer_id) }}">View converted customer</a></dd>{% endif %}
+  {% else %}<dt>Source lead</dt><dd><a href="{{ url_for('lead_detail', lead_id=record.source_lead_id) }}">View original lead</a></dd>{% endif %}</dl>
+  {% if can_manage_crm %}{% if kind == 'customer' %}<a class="ui-button" href="{{ url_for('customer_edit_form', customer_id=record.customer_id) }}">Edit customer</a>{% elif record.stage != 'converted' %}<a class="ui-button" href="{{ url_for('lead_edit_form', lead_id=record.lead_id) }}">Edit lead</a>{% endif %}{% endif %}</section>
+  {% if kind == 'lead' %}
+    {% if can_manage_crm and record.stage == 'qualified' %}<form method="post" action="{{ url_for('lead_convert', lead_id=record.lead_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="ui-button ui-button--primary" type="submit">Convert to customer</button></form>{% endif %}
+    <section class="employee-form-card"><h2>Notes</h2>{% if can_manage_crm and record.stage != 'converted' %}<form method="post" action="{{ url_for('lead_note_create', lead_id=record.lead_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="form-field"><label for="body">New note</label><textarea id="body" name="body" maxlength="2000" required></textarea></div><button class="ui-button" type="submit">Add note</button></form>{% endif %}<ul>{% for note in notes %}<li><strong>{{ note.username }}</strong> · {{ note.created_at }}<p>{{ note.body }}</p></li>{% else %}<li>No notes yet.</li>{% endfor %}</ul></section>
+  {% endif %}
+  <section class="employee-form-card"><h2>Audit history</h2><ul>{% for event in history %}<li>{{ event.event_type | replace('_', ' ') | title }} · {{ event.username }} · {{ event.created_at }}</li>{% else %}<li>No history yet.</li>{% endfor %}</ul></section>
+</section>
+{% endblock %}

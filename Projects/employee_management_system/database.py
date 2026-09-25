@@ -438,6 +438,136 @@ def initialize_database(
                    idx_webhook_deliveries_status_next_attempt
                ON webhook_deliveries (status, next_attempt_at)"""
         )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS leads (
+                lead_id TEXT PRIMARY KEY,
+                name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 120),
+                email TEXT NOT NULL DEFAULT '',
+                phone_number TEXT NOT NULL DEFAULT '',
+                company TEXT NOT NULL DEFAULT '',
+                stage TEXT NOT NULL CHECK (stage IN
+                    ('new', 'contacted', 'qualified', 'unqualified', 'converted')),
+                owner_user_id INTEGER REFERENCES users(user_id),
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS customers (
+                customer_id TEXT PRIMARY KEY,
+                source_lead_id TEXT NOT NULL UNIQUE REFERENCES leads(lead_id),
+                name TEXT NOT NULL CHECK (length(trim(name)) BETWEEN 1 AND 120),
+                email TEXT NOT NULL DEFAULT '',
+                phone_number TEXT NOT NULL DEFAULT '',
+                company TEXT NOT NULL DEFAULT '',
+                status TEXT NOT NULL CHECK (status IN ('active', 'inactive')),
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS lead_notes (
+                note_id TEXT PRIMARY KEY,
+                lead_id TEXT NOT NULL REFERENCES leads(lead_id),
+                body TEXT NOT NULL CHECK (length(trim(body)) BETWEEN 1 AND 2000),
+                created_by_user_id INTEGER NOT NULL REFERENCES users(user_id),
+                created_at TEXT NOT NULL
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS crm_audit_events (
+                event_id TEXT PRIMARY KEY,
+                entity_type TEXT NOT NULL CHECK (entity_type IN ('lead', 'customer')),
+                entity_id TEXT NOT NULL,
+                event_type TEXT NOT NULL CHECK (event_type IN
+                    ('created', 'updated', 'note_added', 'converted')),
+                actor_user_id INTEGER NOT NULL REFERENCES users(user_id),
+                created_at TEXT NOT NULL
+            )"""
+        )
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_leads_stage ON leads(stage)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_leads_owner ON leads(owner_user_id)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_lead_notes_lead ON lead_notes(lead_id, created_at)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_crm_audit_entity ON crm_audit_events(entity_type, entity_id, created_at)")
+        connection.execute(
+            """CREATE TRIGGER IF NOT EXISTS immutable_customer_source
+               BEFORE UPDATE OF source_lead_id ON customers
+               WHEN NEW.source_lead_id <> OLD.source_lead_id
+               BEGIN SELECT RAISE(ABORT, 'customer source is immutable'); END"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS invoices (
+                invoice_id TEXT PRIMARY KEY,
+                customer_id TEXT NOT NULL REFERENCES customers(customer_id),
+                invoice_number TEXT NOT NULL UNIQUE CHECK (length(trim(invoice_number)) BETWEEN 1 AND 40),
+                currency TEXT NOT NULL CHECK (currency = 'USD'),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'sent', 'paid', 'void')),
+                due_date TEXT,
+                subtotal_cents INTEGER NOT NULL CHECK (typeof(subtotal_cents) = 'integer' AND subtotal_cents >= 0),
+                tax_cents INTEGER NOT NULL CHECK (typeof(tax_cents) = 'integer' AND tax_cents >= 0),
+                total_cents INTEGER NOT NULL CHECK (typeof(total_cents) = 'integer' AND total_cents = subtotal_cents + tax_cents),
+                created_by_user_id INTEGER NOT NULL REFERENCES users(user_id),
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS invoice_line_items (
+                line_item_id TEXT PRIMARY KEY,
+                invoice_id TEXT NOT NULL REFERENCES invoices(invoice_id),
+                line_number INTEGER NOT NULL CHECK (typeof(line_number) = 'integer' AND line_number > 0),
+                description TEXT NOT NULL CHECK (length(trim(description)) BETWEEN 1 AND 300),
+                quantity TEXT NOT NULL CHECK (length(quantity) BETWEEN 1 AND 20),
+                unit_price_cents INTEGER NOT NULL CHECK (typeof(unit_price_cents) = 'integer' AND unit_price_cents >= 0),
+                tax_rate_basis_points INTEGER NOT NULL CHECK (typeof(tax_rate_basis_points) = 'integer' AND tax_rate_basis_points BETWEEN 0 AND 10000),
+                line_subtotal_cents INTEGER NOT NULL CHECK (typeof(line_subtotal_cents) = 'integer' AND line_subtotal_cents >= 0),
+                line_tax_cents INTEGER NOT NULL CHECK (typeof(line_tax_cents) = 'integer' AND line_tax_cents >= 0),
+                line_total_cents INTEGER NOT NULL CHECK (typeof(line_total_cents) = 'integer' AND line_total_cents = line_subtotal_cents + line_tax_cents),
+                UNIQUE (invoice_id, line_number)
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS invoice_payment_events (
+                event_id TEXT PRIMARY KEY,
+                invoice_id TEXT NOT NULL REFERENCES invoices(invoice_id),
+                status TEXT NOT NULL CHECK (status IN ('draft', 'sent', 'paid', 'void')),
+                actor_user_id INTEGER NOT NULL REFERENCES users(user_id),
+                created_at TEXT NOT NULL
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS protected_documents (
+                document_id TEXT PRIMARY KEY,
+                invoice_id TEXT NOT NULL REFERENCES invoices(invoice_id),
+                document_type TEXT NOT NULL CHECK (document_type = 'invoice_pdf'),
+                storage_key TEXT NOT NULL UNIQUE,
+                filename TEXT NOT NULL CHECK (length(trim(filename)) BETWEEN 1 AND 120),
+                media_type TEXT NOT NULL CHECK (media_type = 'application/pdf'),
+                byte_size INTEGER NOT NULL CHECK (typeof(byte_size) = 'integer' AND byte_size BETWEEN 1 AND 2097152),
+                content_sha256 TEXT NOT NULL CHECK (length(content_sha256) = 64),
+                created_by_user_id INTEGER NOT NULL REFERENCES users(user_id),
+                created_at TEXT NOT NULL,
+                UNIQUE (invoice_id, document_type)
+            )"""
+        )
+        connection.execute(
+            """CREATE TABLE IF NOT EXISTS invoice_workflow_runs (
+                invoice_id TEXT NOT NULL REFERENCES invoices(invoice_id),
+                execution_id TEXT NOT NULL UNIQUE REFERENCES workflow_executions(execution_id),
+                workflow_id TEXT NOT NULL REFERENCES workflows(workflow_id),
+                created_at TEXT NOT NULL,
+                PRIMARY KEY (invoice_id, execution_id)
+            )"""
+        )
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_invoices_customer_created ON invoices(customer_id, created_at)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_invoices_status_due ON invoices(status, due_date)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_invoice_line_items_invoice ON invoice_line_items(invoice_id, line_number)")
+        connection.execute("CREATE INDEX IF NOT EXISTS idx_invoice_payment_events_invoice ON invoice_payment_events(invoice_id, created_at)")
+        connection.execute(
+            """CREATE TRIGGER IF NOT EXISTS immutable_invoice_line_item_update
+               BEFORE UPDATE ON invoice_line_items
+               BEGIN SELECT RAISE(ABORT, 'invoice line item is immutable'); END"""
+        )
         connection.commit()
     finally:
         connection.close()

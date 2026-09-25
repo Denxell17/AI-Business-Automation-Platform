@@ -1,0 +1,7 @@
+{% extends "application_base.html" %}
+{% block content %}
+<section class="employee-directory-section" aria-labelledby="invoice-heading">
+  <header class="directory-header"><div><p class="section-eyebrow">Customer billing</p><h1 id="invoice-heading" class="section-title">Invoices</h1><p class="page-message">Immutable line snapshots and protected invoice documents.</p></div>{% if can_manage_invoices %}<a class="ui-button ui-button--primary" href="{{ url_for('invoice_create_form') }}">Create invoice</a>{% endif %}</header>
+  {% if invoices %}<div class="ui-table-wrapper" role="region" tabindex="0" aria-label="Invoices"><table><thead><tr><th scope="col">Number</th><th scope="col">Customer</th><th scope="col">Due date</th><th scope="col">Status</th><th scope="col">Total</th></tr></thead><tbody>{% for invoice in invoices %}<tr><th scope="row"><a href="{{ url_for('invoice_detail', invoice_id=invoice.invoice_id) }}">{{ invoice.invoice_number }}</a></th><td>{{ invoice.customer_name }}</td><td>{{ invoice.due_date or 'On receipt' }}</td><td>{{ invoice.status | title }}</td><td>{{ invoice.currency }} {{ '%.2f' | format(invoice.total_cents / 100) }}</td></tr>{% endfor %}</tbody></table></div>{% else %}<p class="page-message">No invoices found.</p>{% endif %}
+</section>
+{% endblock %}

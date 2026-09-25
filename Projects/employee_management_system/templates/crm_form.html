@@ -1,0 +1,21 @@
+{% extends "application_base.html" %}
+{% block content %}
+<section class="employee-form-section" aria-labelledby="crm-form-heading">
+  <a class="back-link" href="{{ url_for('lead_directory') if kind == 'lead' else url_for('customer_directory') }}">← Back to {{ 'leads' if kind == 'lead' else 'customers' }}</a>
+  <h1 id="crm-form-heading" class="section-title">{{ page_title }}</h1>
+  {% if error_message %}<p class="directory-message directory-message-error" role="alert">{{ error_message }}</p>{% endif %}
+  <form class="employee-form" method="post" action="{{ url_for('lead_create') if kind == 'lead' and not record.get('lead_id') else url_for('lead_edit', lead_id=record.lead_id) if kind == 'lead' else url_for('customer_edit', customer_id=record.customer_id) }}">
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <section class="employee-form-card"><h2>Contact details</h2><div class="employee-form-grid">
+      <div class="form-field"><label for="name">Name</label><input id="name" name="name" value="{{ record.get('name', '') }}" maxlength="120" required></div>
+      <div class="form-field"><label for="email">Email</label><input id="email" name="email" type="email" value="{{ record.get('email', '') }}" maxlength="254"></div>
+      <div class="form-field"><label for="phone_number">Phone number</label><input id="phone_number" name="phone_number" value="{{ record.get('phone_number', '') }}" maxlength="40"></div>
+      <div class="form-field"><label for="company">Company</label><input id="company" name="company" value="{{ record.get('company', '') }}" maxlength="120"></div>
+      {% if kind == 'lead' %}
+      <div class="form-field"><label for="owner_user_id">Owner</label><select id="owner_user_id" name="owner_user_id"><option value="">Unassigned</option>{% for owner in owners %}<option value="{{ owner.user_id }}" {% if record.get('owner_user_id') | string == owner.user_id | string %}selected{% endif %}>{{ owner.username }}</option>{% endfor %}</select></div>
+      {% if record.get('lead_id') %}<div class="form-field"><label for="stage">Stage</label><select id="stage" name="stage">{% for stage in stages %}<option value="{{ stage }}" {% if record.stage == stage %}selected{% endif %}>{{ stage | title }}</option>{% endfor %}</select></div>{% endif %}
+      {% else %}<div class="form-field"><label for="status">Status</label><select id="status" name="status">{% for status in stages %}<option value="{{ status }}" {% if record.status == status %}selected{% endif %}>{{ status | title }}</option>{% endfor %}</select></div>{% endif %}
+    </div></section><button class="ui-button ui-button--primary" type="submit">Save {{ kind }}</button>
+  </form>
+</section>
+{% endblock %}
