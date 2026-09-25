@@ -107,7 +107,8 @@ Day 155 is the target for the complete ABAP portfolio MVP.
 - Agent execution history/details and employee/workflow-task destructive confirmations now use semantic states, protected payload panels, focused target summaries, explicit consequence messaging, and responsive action layouts while retaining escaping, authorization, and CSRF safeguards.
 - The release-candidate accessibility and responsive review is complete. The login and application shell expose skip navigation, labeled controls, visible focus, reduced-motion handling, keyboard-safe mobile navigation, and responsive layouts. Scrollable data tables now have named keyboard-focusable regions, captions, and scoped headers; decorative chart bars are hidden from assistive technology.
 - The approved ABAP UI implementation milestone is complete, with automated foundation checks protecting its accessibility and responsive requirements.
-- Next: resume the existing roadmap at Phase 3 — Master GoHighLevel, beginning with funnels and pipeline fundamentals before implementing any new integration features.
+- Dennis approved completing the remaining ABAP platform scope before moving to broader portfolio study. The implementation sequence and acceptance gates are documented in `Notes/abap_full_platform_completion_roadmap.md`.
+- Next: begin Milestone 0 of the ABAP Full Platform Completion Roadmap, then implement the autonomous scheduler/worker before webhook and n8n integration.
 
 ## Phase 3 — Master GoHighLevel
 
