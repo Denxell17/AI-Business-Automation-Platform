@@ -35,7 +35,7 @@ jobs:
       ABAP_OCI_SUBNET_OCID: ${{ secrets.ABAP_OCI_SUBNET_OCID }}
       ABAP_OCI_IMAGE_OCID: ${{ secrets.ABAP_OCI_IMAGE_OCID }}
       ABAP_SSH_PUBLIC_KEY: ${{ secrets.ABAP_SSH_PUBLIC_KEY }}
-      ABAP_SSH_PUBLIC_KEY_FILE: ${{ runner.temp }}/abap_ssh_public_key.pub
+      ABAP_SSH_PUBLIC_KEY_FILE: ${{ github.workspace }}/.abap_ssh_public_key.pub
       ABAP_MAX_ATTEMPTS: "1"
       ABAP_RETRY_SECONDS: "3600"
 
