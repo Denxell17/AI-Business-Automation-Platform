@@ -11,6 +11,7 @@ from ai_assistant_service import (
     MAX_AI_ASSISTANT_MODEL_NAME_LENGTH,
     MAX_AI_ASSISTANT_QUESTION_LENGTH,
     MAX_AI_ASSISTANT_RESPONSE_LENGTH,
+    PLATFORM_IDENTITY_RESPONSE,
     SAFE_AI_ASSISTANT_ERROR_MESSAGE,
     ask_ai_assistant,
 )
@@ -131,6 +132,22 @@ class TestAiAssistantService(unittest.TestCase):
                 }
             ],
         )
+
+    def test_platform_identity_question_uses_verified_answer(self):
+        provider = DeterministicAssistantProvider(
+            output="Incorrect model answer."
+        )
+
+        response = ask_ai_assistant(
+            self.administrator,
+            "What is ABAP?",
+            "test-assistant-model",
+            provider,
+            self.database_file,
+        )
+
+        self.assertEqual(response, PLATFORM_IDENTITY_RESPONSE)
+        self.assertEqual(provider.calls, [])
 
     def test_viewer_cannot_use_ai_assistant(self):
         provider = DeterministicAssistantProvider()
