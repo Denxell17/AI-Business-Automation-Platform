@@ -1,0 +1,43 @@
+{% extends "application_base.html" %}
+{% from "ui_macros.html" import icon with context %}
+
+{% block content %}
+<section class="data-page audit-page" aria-labelledby="webhook-deliveries-heading">
+    <header class="data-page-heading">
+        <div>
+            <p class="section-eyebrow">Integration operations</p>
+            <h1 id="webhook-deliveries-heading" class="section-title">Webhook deliveries</h1>
+            <p class="data-page-description">Review recent signed webhook outcomes. Request and response contents are never displayed.</p>
+        </div>
+        <span class="audit-access-state">{{ icon('health') }}<span>{{ integration_state }}</span></span>
+    </header>
+
+    {% if error_message %}
+    <div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<div><h2>Delivery history unavailable</h2><p>{{ error_message }}</p></div></div>
+    {% elif delivery_list %}
+    <section class="audit-card" aria-labelledby="recent-webhook-deliveries-heading">
+        <header class="data-table-heading"><div><h2 id="recent-webhook-deliveries-heading">Recent delivery records</h2><p>Newest records first; limited to the latest 100 records.</p></div><p><strong>{{ delivery_list | length }}</strong> records</p></header>
+        <div class="employee-table-wrapper" role="region" aria-label="Webhook delivery records" tabindex="0">
+            <table class="employee-table">
+                <thead><tr><th scope="col">Direction</th><th scope="col">Event</th><th scope="col">Correlation</th><th scope="col">Status</th><th scope="col">Attempts</th><th scope="col">HTTP result</th><th scope="col">Updated</th></tr></thead>
+                <tbody>
+                    {% for delivery in delivery_list %}
+                    <tr>
+                        <td>{{ delivery["direction"] | title }}</td>
+                        <td><span title="{{ delivery['event_id'] }}">{{ delivery["event_type"] }}</span></td>
+                        <td>{{ delivery["correlation_id"] }}</td>
+                        <td>{{ delivery["status"] | title }}</td>
+                        <td>{{ delivery["attempt_count"] }}</td>
+                        <td>{% if delivery["response_status"] is not none %}{{ delivery["response_status"] }}{% else %}—{% endif %}</td>
+                        <td><time datetime="{{ delivery['updated_at'] }}" data-local-datetime>{{ delivery["updated_at"] }}</time></td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </section>
+    {% else %}
+    <div class="ui-empty-state audit-empty-state">{{ icon('activity-log') }}<div><h2>No webhook deliveries recorded</h2><p>Verified inbound callbacks and outbound delivery attempts will appear here.</p></div></div>
+    {% endif %}
+</section>
+{% endblock %}

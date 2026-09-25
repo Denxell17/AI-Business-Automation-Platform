@@ -136,8 +136,10 @@ class WorkflowExecution(TypedDict):
     execution_id: str
     workflow_id: str
     workflow_name: str
+    trigger_type: str
+    schedule_occurrence_id: str | None
     status: str
-    started_by_user_id: int
+    started_by_user_id: int | None
     started_at: str
     finished_at: str | None
     result_summary: str
@@ -197,6 +199,28 @@ class WorkflowScheduleOccurrence(TypedDict):
     workflow_id: str
     scheduled_for_utc: str
     claimed_at: str
+
+
+class WebhookReplayEvent(TypedDict):
+    event_id: str
+    received_at: str
+    expires_at: str
+
+
+class WebhookDelivery(TypedDict):
+    delivery_id: str
+    direction: str
+    event_id: str
+    correlation_id: str
+    event_type: str
+    status: str
+    attempt_count: int
+    next_attempt_at: str | None
+    response_status: int | None
+    failure_code: str
+    created_at: str
+    updated_at: str
+    completed_at: str | None
 
 
 class PayrollSummary(TypedDict):

@@ -20,6 +20,8 @@ from models import (
     WorkflowTask,
     WorkflowSchedule,
     WorkflowScheduleOccurrence,
+    WebhookDelivery,
+    WebhookReplayEvent,
 )
 
 DATA_DIRECTORY = Path(__file__).with_name("data")
@@ -262,15 +264,26 @@ def initialize_database(
                 ),
                 workflow_id TEXT NOT NULL,
                 workflow_name TEXT NOT NULL CHECK (length(trim(workflow_name)) > 0),
+                trigger_type TEXT NOT NULL DEFAULT 'manual' CHECK (
+                    trigger_type IN ('manual', 'schedule')
+                ),
+                schedule_occurrence_id TEXT UNIQUE,
                 status TEXT NOT NULL CHECK (
                     status IN ('running', 'completed', 'failed')
                 ),
-                started_by_user_id INTEGER NOT NULL,
+                started_by_user_id INTEGER,
                 started_at TEXT NOT NULL,
                 finished_at TEXT,
                 result_summary TEXT NOT NULL DEFAULT '',
                 FOREIGN KEY (workflow_id) REFERENCES workflows(workflow_id),
-                FOREIGN KEY (started_by_user_id) REFERENCES users(user_id)
+                FOREIGN KEY (started_by_user_id) REFERENCES users(user_id),
+                FOREIGN KEY (schedule_occurrence_id)
+                    REFERENCES workflow_schedule_occurrences(occurrence_id),
+                CHECK (
+                    (trigger_type = 'manual' AND started_by_user_id IS NOT NULL
+                     AND schedule_occurrence_id IS NULL)
+                    OR (trigger_type = 'schedule' AND schedule_occurrence_id IS NOT NULL)
+                )
             )
             """
         )
@@ -340,6 +353,90 @@ def initialize_database(
                ON workflow_schedule_occurrences (
                    workflow_id, scheduled_for_utc
                )"""
+        )
+        execution_columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(workflow_executions)"
+            ).fetchall()
+        }
+        if "trigger_type" not in execution_columns:
+            connection.execute(
+                "ALTER TABLE workflow_executions "
+                "ADD COLUMN trigger_type TEXT NOT NULL DEFAULT 'manual'"
+            )
+        if "schedule_occurrence_id" not in execution_columns:
+            connection.execute(
+                "ALTER TABLE workflow_executions "
+                "ADD COLUMN schedule_occurrence_id TEXT"
+            )
+        connection.execute(
+            """CREATE UNIQUE INDEX IF NOT EXISTS
+                   idx_workflow_executions_schedule_occurrence
+               ON workflow_executions (schedule_occurrence_id)
+               WHERE schedule_occurrence_id IS NOT NULL"""
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS webhook_replay_events (
+                event_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(event_id)) = 36
+                ),
+                received_at TEXT NOT NULL,
+                expires_at TEXT NOT NULL
+            )
+            """
+        )
+        connection.execute(
+            """CREATE INDEX IF NOT EXISTS
+                   idx_webhook_replay_events_expiry
+               ON webhook_replay_events (expires_at)"""
+        )
+        connection.execute(
+            """
+            CREATE TABLE IF NOT EXISTS webhook_deliveries (
+                delivery_id TEXT PRIMARY KEY NOT NULL CHECK (
+                    length(trim(delivery_id)) > 0
+                ),
+                direction TEXT NOT NULL CHECK (
+                    direction IN ('inbound', 'outbound')
+                ),
+                event_id TEXT NOT NULL CHECK (length(trim(event_id)) = 36),
+                correlation_id TEXT NOT NULL CHECK (
+                    length(trim(correlation_id)) > 0
+                ),
+                event_type TEXT NOT NULL CHECK (length(trim(event_type)) > 0),
+                status TEXT NOT NULL CHECK (
+                    status IN ('pending', 'retrying', 'accepted', 'succeeded', 'failed')
+                ),
+                attempt_count INTEGER NOT NULL CHECK (
+                    typeof(attempt_count) = 'integer' AND attempt_count >= 0
+                ),
+                next_attempt_at TEXT,
+                response_status INTEGER CHECK (
+                    response_status IS NULL
+                    OR (response_status BETWEEN 100 AND 599)
+                ),
+                failure_code TEXT NOT NULL DEFAULT '' CHECK (
+                    length(failure_code) <= 64
+                ),
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL,
+                completed_at TEXT,
+                UNIQUE (direction, event_id),
+                CHECK (
+                    (direction = 'inbound' AND status = 'accepted'
+                     AND attempt_count = 1 AND next_attempt_at IS NULL)
+                    OR (direction = 'outbound'
+                        AND status IN ('pending', 'retrying', 'succeeded', 'failed'))
+                )
+            )
+            """
+        )
+        connection.execute(
+            """CREATE INDEX IF NOT EXISTS
+                   idx_webhook_deliveries_status_next_attempt
+               ON webhook_deliveries (status, next_attempt_at)"""
         )
         connection.commit()
     finally:
@@ -1195,13 +1292,15 @@ def insert_workflow_execution(
         connection.execute(
             """
             INSERT INTO workflow_executions (
-                execution_id, workflow_id, workflow_name, status,
+                execution_id, workflow_id, workflow_name, trigger_type,
+                schedule_occurrence_id, status,
                 started_by_user_id, started_at, finished_at, result_summary
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 execution["execution_id"], execution["workflow_id"],
-                execution["workflow_name"], execution["status"],
+                execution["workflow_name"], execution.get("trigger_type", "manual"),
+                execution.get("schedule_occurrence_id"), execution["status"],
                 execution["started_by_user_id"], execution["started_at"],
                 execution["finished_at"], execution["result_summary"],
             ),
@@ -1211,6 +1310,73 @@ def insert_workflow_execution(
     except (sqlite3.IntegrityError, psycopg.IntegrityError):
         connection.rollback()
         return False
+    finally:
+        connection.close()
+
+
+def create_scheduled_workflow_execution(
+    execution: WorkflowExecution,
+    task_records: list[WorkflowTaskExecution],
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically create one occurrence-bound run and its task snapshots."""
+    if (
+        execution.get("trigger_type") != "schedule"
+        or not execution.get("schedule_occurrence_id")
+    ):
+        return False
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        occurrence = connection.execute(
+            """SELECT occurrence_id
+               FROM workflow_schedule_occurrences
+               WHERE occurrence_id = ? AND workflow_id = ?""",
+            (execution["schedule_occurrence_id"], execution["workflow_id"]),
+        ).fetchone()
+        if occurrence is None:
+            connection.rollback()
+            return False
+        connection.execute(
+            """INSERT INTO workflow_executions (
+                   execution_id, workflow_id, workflow_name, trigger_type,
+                   schedule_occurrence_id, status, started_by_user_id,
+                   started_at, finished_at, result_summary
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                execution["execution_id"], execution["workflow_id"],
+                execution["workflow_name"], execution["trigger_type"],
+                execution["schedule_occurrence_id"], execution["status"],
+                execution["started_by_user_id"], execution["started_at"],
+                execution["finished_at"], execution["result_summary"],
+            ),
+        )
+        if task_records:
+            connection.executemany(
+                """INSERT INTO workflow_task_executions (
+                       task_execution_id, execution_id, task_id, sequence_number,
+                       task_title, status, started_at, finished_at, result_summary
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                [
+                    (
+                        record["task_execution_id"], record["execution_id"],
+                        record["task_id"], record["sequence_number"],
+                        record["task_title"], record["status"],
+                        record["started_at"], record["finished_at"],
+                        record["result_summary"],
+                    )
+                    for record in task_records
+                ],
+            )
+        connection.commit()
+        return True
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return False
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
     finally:
         connection.close()
 
@@ -1225,7 +1391,8 @@ def load_workflow_executions(
     try:
         rows = connection.execute(
             """
-            SELECT execution_id, workflow_id, workflow_name, status,
+            SELECT execution_id, workflow_id, workflow_name, trigger_type,
+                   schedule_occurrence_id, status,
                    started_by_user_id, started_at, finished_at, result_summary
             FROM workflow_executions
             WHERE workflow_id = ?
@@ -1240,6 +1407,8 @@ def load_workflow_executions(
             "execution_id": row["execution_id"],
             "workflow_id": row["workflow_id"],
             "workflow_name": row["workflow_name"],
+            "trigger_type": row["trigger_type"],
+            "schedule_occurrence_id": row["schedule_occurrence_id"],
             "status": row["status"],
             "started_by_user_id": row["started_by_user_id"],
             "started_at": row["started_at"],
@@ -1248,6 +1417,450 @@ def load_workflow_executions(
         }
         for row in rows
     ]
+
+
+def load_workflow_execution_by_id(
+    execution_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> WorkflowExecution | None:
+    """Load one persisted workflow execution for safe webhook reconstruction."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        row = connection.execute(
+            """SELECT execution_id, workflow_id, workflow_name, trigger_type,
+                      schedule_occurrence_id, status, started_by_user_id,
+                      started_at, finished_at, result_summary
+               FROM workflow_executions
+               WHERE execution_id = ?""",
+            (execution_id,),
+        ).fetchone()
+    finally:
+        connection.close()
+    if row is None:
+        return None
+    return dict(row)
+
+
+def load_unstarted_workflow_schedule_occurrences(
+    limit: int,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowScheduleOccurrence]:
+    """Load claimed occurrences that have no execution for safe recovery."""
+    if type(limit) is not int or limit <= 0:
+        raise ValueError("The occurrence limit must be a positive integer.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT occurrence.occurrence_id, occurrence.schedule_id,
+                      occurrence.workflow_id, occurrence.scheduled_for_utc,
+                      occurrence.claimed_at
+               FROM workflow_schedule_occurrences AS occurrence
+               LEFT JOIN workflow_executions AS execution
+                 ON execution.schedule_occurrence_id = occurrence.occurrence_id
+               WHERE execution.execution_id IS NULL
+               ORDER BY occurrence.claimed_at, occurrence.occurrence_id
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def workflow_schedule_occurrence_is_started(
+    occurrence_id: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Return whether another worker has already created this occurrence's run."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        row = connection.execute(
+            """SELECT 1 FROM workflow_executions
+               WHERE schedule_occurrence_id = ? LIMIT 1""",
+            (occurrence_id,),
+        ).fetchone()
+        return row is not None
+    finally:
+        connection.close()
+
+
+def record_verified_inbound_webhook(
+    replay_event: WebhookReplayEvent,
+    delivery: WebhookDelivery,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically claim an inbound event and retain only safe metadata."""
+    if (
+        delivery["direction"] != "inbound"
+        or delivery["status"] != "accepted"
+        or delivery["event_id"] != replay_event["event_id"]
+    ):
+        raise ValueError("Inbound webhook replay and delivery records disagree.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """INSERT INTO webhook_replay_events (
+                   event_id, received_at, expires_at
+               ) VALUES (?, ?, ?)""",
+            (
+                replay_event["event_id"], replay_event["received_at"],
+                replay_event["expires_at"],
+            ),
+        )
+        connection.execute(
+            """INSERT INTO webhook_deliveries (
+                   delivery_id, direction, event_id, correlation_id, event_type,
+                   status, attempt_count, next_attempt_at, response_status,
+                   failure_code, created_at, updated_at, completed_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                delivery["delivery_id"], delivery["direction"],
+                delivery["event_id"], delivery["correlation_id"],
+                delivery["event_type"], delivery["status"],
+                delivery["attempt_count"], delivery["next_attempt_at"],
+                delivery["response_status"], delivery["failure_code"],
+                delivery["created_at"], delivery["updated_at"],
+                delivery["completed_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return False
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def record_verified_inbound_workflow_result(
+    replay_event: WebhookReplayEvent,
+    delivery: WebhookDelivery,
+    execution_id: str,
+    result_status: str,
+    finished_at: str,
+    result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> str:
+    """Atomically claim a callback and finish one scheduled workflow run."""
+    if (
+        delivery["direction"] != "inbound"
+        or delivery["status"] != "accepted"
+        or delivery["event_id"] != replay_event["event_id"]
+        or delivery["correlation_id"] != execution_id
+        or result_status not in {"completed", "failed"}
+    ):
+        raise ValueError("Inbound workflow result records disagree.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        connection.execute(
+            """INSERT INTO webhook_replay_events (
+                   event_id, received_at, expires_at
+               ) VALUES (?, ?, ?)""",
+            (
+                replay_event["event_id"], replay_event["received_at"],
+                replay_event["expires_at"],
+            ),
+        )
+        updated = connection.execute(
+            """UPDATE workflow_executions
+               SET status = ?, finished_at = ?, result_summary = ?
+               WHERE execution_id = ?
+                 AND trigger_type = 'schedule'
+                 AND status = 'running'""",
+            (result_status, finished_at, result_summary, execution_id),
+        )
+        if updated.rowcount != 1:
+            connection.rollback()
+            return "not_applicable"
+        connection.execute(
+            """UPDATE workflow_task_executions
+               SET status = ?, finished_at = ?, result_summary = ?
+               WHERE execution_id = ? AND status = 'running'""",
+            (result_status, finished_at, result_summary, execution_id),
+        )
+        connection.execute(
+            """INSERT INTO webhook_deliveries (
+                   delivery_id, direction, event_id, correlation_id, event_type,
+                   status, attempt_count, next_attempt_at, response_status,
+                   failure_code, created_at, updated_at, completed_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                delivery["delivery_id"], delivery["direction"],
+                delivery["event_id"], delivery["correlation_id"],
+                delivery["event_type"], delivery["status"],
+                delivery["attempt_count"], delivery["next_attempt_at"],
+                delivery["response_status"], delivery["failure_code"],
+                delivery["created_at"], delivery["updated_at"],
+                delivery["completed_at"],
+            ),
+        )
+        connection.commit()
+        return "applied"
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return "duplicate"
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def insert_outbound_webhook_delivery(
+    delivery: WebhookDelivery,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Create an outbound delivery record without persisting its payload."""
+    if delivery["direction"] != "outbound" or delivery["status"] != "pending":
+        raise ValueError("Outbound webhook delivery must start pending.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute(
+            """INSERT INTO webhook_deliveries (
+                   delivery_id, direction, event_id, correlation_id, event_type,
+                   status, attempt_count, next_attempt_at, response_status,
+                   failure_code, created_at, updated_at, completed_at
+               ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+            (
+                delivery["delivery_id"], delivery["direction"],
+                delivery["event_id"], delivery["correlation_id"],
+                delivery["event_type"], delivery["status"],
+                delivery["attempt_count"], delivery["next_attempt_at"],
+                delivery["response_status"], delivery["failure_code"],
+                delivery["created_at"], delivery["updated_at"],
+                delivery["completed_at"],
+            ),
+        )
+        connection.commit()
+        return True
+    except (sqlite3.IntegrityError, psycopg.IntegrityError):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def load_webhook_deliveries(
+    limit: int = 100,
+    database_file: Path = DATABASE_FILE,
+) -> list[WebhookDelivery]:
+    """Load operational metadata only, newest first."""
+    if type(limit) is not int or not 1 <= limit <= 500:
+        raise ValueError("Webhook delivery limit must be between 1 and 500.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT delivery_id, direction, event_id, correlation_id,
+                      event_type, status, attempt_count, next_attempt_at,
+                      response_status, failure_code, created_at, updated_at,
+                      completed_at
+               FROM webhook_deliveries
+               ORDER BY created_at DESC, delivery_id DESC
+               LIMIT ?""",
+            (limit,),
+        ).fetchall()
+    finally:
+        connection.close()
+    return [dict(row) for row in rows]
+
+
+def claim_due_outbound_webhook_deliveries(
+    now: str,
+    lease_until: str,
+    limit: int,
+    database_file: Path = DATABASE_FILE,
+) -> list[WebhookDelivery]:
+    """Lease due outbound records so one retry worker sends each attempt."""
+    if type(limit) is not int or not 1 <= limit <= 100:
+        raise ValueError("Webhook delivery claim limit must be between 1 and 100.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        candidates = connection.execute(
+            """SELECT delivery_id, direction, event_id, correlation_id,
+                      event_type, status, attempt_count, next_attempt_at,
+                      response_status, failure_code, created_at, updated_at,
+                      completed_at
+               FROM webhook_deliveries
+               WHERE direction = 'outbound'
+                 AND status IN ('pending', 'retrying')
+                 AND next_attempt_at <= ?
+               ORDER BY next_attempt_at, delivery_id
+               LIMIT ?""",
+            (now, limit),
+        ).fetchall()
+        claimed: list[WebhookDelivery] = []
+        for candidate in candidates:
+            update = connection.execute(
+                """UPDATE webhook_deliveries
+                   SET status = 'retrying', next_attempt_at = ?, updated_at = ?
+                   WHERE delivery_id = ?
+                     AND direction = 'outbound'
+                     AND status IN ('pending', 'retrying')
+                     AND next_attempt_at <= ?""",
+                (lease_until, now, candidate["delivery_id"], now),
+            )
+            if update.rowcount != 1:
+                continue
+            delivery = dict(candidate)
+            delivery["status"] = "retrying"
+            delivery["next_attempt_at"] = lease_until
+            delivery["updated_at"] = now
+            claimed.append(delivery)
+        connection.commit()
+        return claimed
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
+
+
+def record_outbound_webhook_attempt(
+    delivery_id: str,
+    status: str,
+    attempt_at: str,
+    response_status: int | None,
+    failure_code: str,
+    next_attempt_at: str | None,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Advance one outbound record without storing its request or response body."""
+    if status not in {"retrying", "succeeded", "failed"}:
+        raise ValueError("Outbound webhook status is invalid.")
+    if not isinstance(failure_code, str) or len(failure_code) > 64:
+        raise ValueError("Outbound webhook failure code is invalid.")
+    if status == "retrying" and next_attempt_at is None:
+        raise ValueError("Retrying webhook deliveries need a next attempt time.")
+    if status != "retrying" and next_attempt_at is not None:
+        raise ValueError("Terminal webhook deliveries cannot have a next attempt time.")
+    if status == "succeeded" and failure_code:
+        raise ValueError("Successful webhook deliveries cannot have a failure code.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    completed_at = attempt_at if status in {"succeeded", "failed"} else None
+    try:
+        result = connection.execute(
+            """UPDATE webhook_deliveries
+               SET status = ?,
+                   attempt_count = attempt_count + 1,
+                   next_attempt_at = ?,
+                   response_status = ?,
+                   failure_code = ?,
+                   updated_at = ?,
+                   completed_at = ?
+               WHERE delivery_id = ?
+                 AND direction = 'outbound'
+                 AND status IN ('pending', 'retrying')""",
+            (
+                status, next_attempt_at, response_status, failure_code,
+                attempt_at, completed_at, delivery_id,
+            ),
+        )
+        connection.commit()
+        return result.rowcount == 1
+    finally:
+        connection.close()
+
+
+def purge_expired_webhook_replay_events(
+    expires_before: str,
+    database_file: Path = DATABASE_FILE,
+) -> int:
+    """Remove only event IDs whose configured replay window has expired."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        result = connection.execute(
+            "DELETE FROM webhook_replay_events WHERE expires_at < ?",
+            (expires_before,),
+        )
+        connection.commit()
+        return result.rowcount
+    finally:
+        connection.close()
+
+
+def load_stale_scheduled_workflow_executions(
+    stale_before: str,
+    database_file: Path = DATABASE_FILE,
+) -> list[WorkflowExecution]:
+    """Load scheduled runs still active beyond the configured recovery age."""
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    connection.row_factory = sqlite3.Row
+    try:
+        rows = connection.execute(
+            """SELECT execution_id, workflow_id, workflow_name, trigger_type,
+                      schedule_occurrence_id, status, started_by_user_id,
+                      started_at, finished_at, result_summary
+               FROM workflow_executions
+               WHERE trigger_type = 'schedule' AND status = 'running'
+                 AND started_at < ?
+               ORDER BY started_at, execution_id""",
+            (stale_before,),
+        ).fetchall()
+        return [dict(row) for row in rows]
+    finally:
+        connection.close()
+
+
+def fail_stale_scheduled_workflow_execution(
+    execution_id: str,
+    stale_before: str,
+    finished_at: str,
+    result_summary: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Atomically finish a stale scheduled run and every running task as failed."""
+    if not all(isinstance(value, str) and value.strip() for value in (
+        execution_id, stale_before, finished_at, result_summary,
+    )):
+        return False
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        connection.execute("BEGIN IMMEDIATE")
+        cursor = connection.execute(
+            """UPDATE workflow_executions
+               SET status = 'failed', finished_at = ?, result_summary = ?
+               WHERE execution_id = ? AND trigger_type = 'schedule'
+                 AND status = 'running' AND started_at < ?""",
+            (finished_at, result_summary, execution_id, stale_before),
+        )
+        if cursor.rowcount != 1:
+            connection.rollback()
+            return False
+        connection.execute(
+            """UPDATE workflow_task_executions
+               SET status = 'failed', finished_at = ?, result_summary = ?
+               WHERE execution_id = ? AND status = 'running'""",
+            (finished_at, result_summary, execution_id),
+        )
+        connection.commit()
+        return True
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
+    finally:
+        connection.close()
 
 
 def finish_workflow_execution(

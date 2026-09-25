@@ -1,0 +1,83 @@
+name: abap-n8n-demo
+
+# Development and isolated integration-test overlay. Use with compose.deploy.yaml.
+# It intentionally publishes no n8n or provider port to the host.
+services:
+  web:
+    environment: &n8n_demo_integration
+      ABAP_ENVIRONMENT: integration-test
+      ABAP_INTEGRATIONS_ENABLED: "true"
+      ABAP_N8N_PRIVATE_DEVELOPMENT_NETWORK: "true"
+      ABAP_N8N_BASE_URL: http://n8n:5678
+      ABAP_N8N_WORKFLOW_PATH: /webhook/abap-workflow
+      ABAP_INTEGRATION_ALLOWED_HOSTS: n8n
+      ABAP_OUTBOUND_WEBHOOK_SECRET: ${ABAP_OUTBOUND_WEBHOOK_SECRET:?Set an isolated demo outbound secret}
+      ABAP_INBOUND_WEBHOOK_SECRET: ${ABAP_INBOUND_WEBHOOK_SECRET:?Set a different isolated demo inbound secret}
+
+  worker:
+    environment: *n8n_demo_integration
+
+  webhook-retry-worker:
+    build: .
+    command: ["python", "-m", "webhook_retry_worker"]
+    restart: unless-stopped
+    environment:
+      DATABASE_BACKEND: postgresql
+      DATABASE_URL: ${DATABASE_URL:?Set the isolated demo PostgreSQL URL with host database}
+      <<: *n8n_demo_integration
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "webhook_retry_worker", "--check"]
+      interval: 15s
+      timeout: 6s
+      retries: 3
+      start_period: 20s
+
+  n8n:
+    image: n8nio/n8n:1.121.3
+    profiles: ["n8n-demo"]
+    restart: unless-stopped
+    environment:
+      N8N_DIAGNOSTICS_ENABLED: "false"
+      N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_SECURE_COOKIE: "false"
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_RUNNERS_ENABLED: "true"
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_GIT_NODE_DISABLE_BARE_REPOS: "true"
+      DB_SQLITE_POOL_SIZE: "2"
+      NODE_FUNCTION_ALLOW_BUILTIN: crypto
+      N8N_ENCRYPTION_KEY: ${ABAP_N8N_ENCRYPTION_KEY:?Set an isolated n8n encryption key}
+      ABAP_OUTBOUND_WEBHOOK_SECRET: ${ABAP_OUTBOUND_WEBHOOK_SECRET:?Set an isolated demo outbound secret}
+      ABAP_INBOUND_WEBHOOK_SECRET: ${ABAP_INBOUND_WEBHOOK_SECRET:?Set a different isolated demo inbound secret}
+      ABAP_CALLBACK_URL: http://web:8000/integrations/webhooks/callback
+    volumes:
+      - n8n_demo_data:/home/node/.n8n
+      - ./Notes/n8n:/workflows:ro
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        if ! n8n list:workflow --onlyId | grep -Fxq abapM3Demo000001; then
+          n8n import:workflow --input=/workflows/abap-signed-workflow.json;
+        fi && n8n update:workflow --id=abapM3Demo000001 --active=true && n8n start
+    depends_on:
+      web:
+        condition: service_healthy
+      demo-provider:
+        condition: service_started
+
+  demo-provider:
+    build: .
+    command: ["python", "-m", "n8n_demo_provider"]
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=5)"]
+      interval: 15s
+      timeout: 6s
+      retries: 3
+      start_period: 5s
+
+volumes:
+  n8n_demo_data:

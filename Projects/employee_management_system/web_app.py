@@ -57,6 +57,7 @@ from authorization import (
     VIEW_EMPLOYEE,
     VIEW_ACTIVITY_LOG,
     VIEW_AGENT_TEMPLATES,
+    VIEW_INTEGRATION_STATUS,
     VIEW_PAYROLL,
     VIEW_WORKFLOWS,
     user_has_permission,
@@ -67,6 +68,7 @@ from database import (
     load_agent_executions_for_template,
     load_agent_template_by_id,
     load_agent_templates_from_database,
+    load_webhook_deliveries,
     load_workflow_executions,
     load_workflow_task_executions,
     load_workflow_by_id,
@@ -101,6 +103,10 @@ from models import (
     VALID_AGENT_TEMPLATE_STATUSES,
     VALID_WORKFLOW_STATUSES,
 )
+from integration_config import (
+    IntegrationSettings,
+    load_integration_settings,
+)
 from openai_agent_provider import OpenAIAgentProvider
 from reports import calculate_workforce_summary
 from user_service import (
@@ -131,6 +137,9 @@ from schedule_service import (
     DEFAULT_WORKFLOW_TIME_ZONE,
     evaluate_workflow_schedule_list,
 )
+from webhook_delivery_service import accept_inbound_webhook
+from webhook_delivery_service import apply_verified_inbound_workflow_result
+from webhook_contract import verify_inbound_webhook
 
 
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
@@ -262,6 +271,29 @@ templates.env.globals["EXECUTE_AGENT_TEMPLATES"] = (
 templates.env.globals["MANAGE_USER_ACCOUNTS"] = (
     MANAGE_USER_ACCOUNTS
 )
+templates.env.globals["VIEW_INTEGRATION_STATUS"] = (
+    VIEW_INTEGRATION_STATUS
+)
+
+
+async def read_bounded_request_body(
+    request: Request,
+    maximum_bytes: int,
+) -> bytes | None:
+    """Read a request body without buffering beyond the configured limit."""
+    content_length = request.headers.get("content-length")
+    if content_length is not None:
+        if not content_length.isdecimal() or int(content_length) > maximum_bytes:
+            return None
+
+    chunks: list[bytes] = []
+    total_bytes = 0
+    async for chunk in request.stream():
+        total_bytes += len(chunk)
+        if total_bytes > maximum_bytes:
+            return None
+        chunks.append(chunk)
+    return b"".join(chunks)
 
 
 def create_web_application(
@@ -277,6 +309,10 @@ def create_web_application(
     database_readiness_checker: (
         Callable[[Path], bool] | None
     ) = None,
+    integration_settings_loader: (
+        Callable[[], IntegrationSettings] | None
+    ) = None,
+    webhook_clock: Callable[[], datetime] | None = None,
 ) -> FastAPI:
     selected_agent_provider_factory = (
         agent_provider_factory
@@ -292,6 +328,16 @@ def create_web_application(
         database_readiness_checker
         if database_readiness_checker is not None
         else database_is_ready
+    )
+    selected_integration_settings_loader = (
+        integration_settings_loader
+        if integration_settings_loader is not None
+        else load_integration_settings
+    )
+    selected_webhook_clock = (
+        webhook_clock
+        if webhook_clock is not None
+        else lambda: datetime.now(timezone.utc)
     )
 
     application = FastAPI(
@@ -321,6 +367,108 @@ def create_web_application(
         StaticFiles(directory=STATIC_DIRECTORY),
         name="static",
     )
+
+    @application.post("/integrations/webhooks/callback")
+    async def inbound_webhook_callback(request: Request) -> Response:
+        """Accept one signed external callback without browser authentication."""
+        try:
+            settings = selected_integration_settings_loader()
+        except ValueError:
+            return JSONResponse(
+                content={"detail": "Webhook integration is unavailable."},
+                status_code=503,
+            )
+
+        inbound_secret = settings["inbound_secret"]
+        if not settings["enabled"] or not inbound_secret:
+            return JSONResponse(
+                content={"detail": "Webhook integration is unavailable."},
+                status_code=503,
+            )
+
+        body = await read_bounded_request_body(
+            request,
+            settings["max_request_bytes"],
+        )
+        if body is None:
+            return JSONResponse(
+                content={"detail": "Webhook request is too large."},
+                status_code=413,
+            )
+
+        headers = {
+            "content_type": request.headers.get("content-type"),
+            "timestamp": request.headers.get("x-abap-timestamp"),
+            "event_id": request.headers.get("x-abap-event-id"),
+            "signature": request.headers.get("x-abap-signature"),
+        }
+        try:
+            current_time = selected_webhook_clock()
+            envelope = verify_inbound_webhook(
+                headers,
+                body,
+                inbound_secret,
+                current_time,
+                settings["signature_ttl_seconds"],
+                settings["max_request_bytes"],
+            )
+        except ValueError:
+            return JSONResponse(
+                content={"detail": "Webhook signature could not be verified."},
+                status_code=401,
+            )
+
+        if envelope["event_type"] == "workflow.execution.result":
+            try:
+                result = apply_verified_inbound_workflow_result(
+                    envelope,
+                    current_time,
+                    settings["signature_ttl_seconds"],
+                    database_file,
+                )
+            except ValueError:
+                return JSONResponse(
+                    content={"detail": "Webhook result could not be applied."},
+                    status_code=422,
+                )
+            except (sqlite3.Error, psycopg.Error):
+                return JSONResponse(
+                    content={"detail": "Webhook delivery is unavailable."},
+                    status_code=503,
+                )
+            if result["duplicate"]:
+                return JSONResponse(content={"status": "duplicate"}, status_code=200)
+            if result["not_applicable"]:
+                return JSONResponse(
+                    content={"detail": "Webhook result could not be applied."},
+                    status_code=409,
+                )
+            return JSONResponse(content={"status": "applied"}, status_code=202)
+
+        try:
+            acceptance = accept_inbound_webhook(
+                headers,
+                body,
+                inbound_secret,
+                current_time,
+                settings["signature_ttl_seconds"],
+                settings["max_request_bytes"],
+                database_file,
+            )
+        except ValueError:
+            return JSONResponse(
+                content={"detail": "Webhook signature could not be verified."},
+                status_code=401,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return JSONResponse(
+                content={"detail": "Webhook delivery is unavailable."},
+                status_code=503,
+            )
+
+        if acceptance["duplicate"]:
+            return JSONResponse(content={"status": "duplicate"}, status_code=200)
+        return JSONResponse(content={"status": "accepted"}, status_code=202)
 
     @application.get(
         "/users/new",
@@ -3575,6 +3723,79 @@ def create_web_application(
                 "active_page": "activity_log",
                 "current_user": current_user,
                 "activity_entries": activity_entries,
+                "error_message": None,
+            },
+        )
+
+    @application.get(
+        "/integrations/webhooks",
+        response_class=HTMLResponse,
+    )
+    def webhook_delivery_history(request: Request) -> Response:
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+
+        if current_user is None:
+            return RedirectResponse(
+                url=request.url_for("login_page"),
+                status_code=303,
+            )
+
+        if not user_has_permission(
+            current_user,
+            VIEW_INTEGRATION_STATUS,
+        ):
+            log_activity(
+                f"Web webhook-delivery access denied "
+                f"for user {current_user['username']}."
+            )
+            return HTMLResponse(
+                content="Access denied.",
+                status_code=403,
+            )
+
+        try:
+            deliveries = load_webhook_deliveries(
+                database_file=database_file,
+            )
+        except (sqlite3.Error, psycopg.Error):
+            return templates.TemplateResponse(
+                request=request,
+                name="webhook_deliveries.html",
+                context={
+                    "page_title": "Webhook deliveries",
+                    "active_page": "webhook_deliveries",
+                    "current_user": current_user,
+                    "integration_state": "Unavailable",
+                    "delivery_list": [],
+                    "error_message": (
+                        "Webhook delivery records could not be loaded."
+                    ),
+                },
+                status_code=500,
+            )
+
+        try:
+            integration_enabled = (
+                selected_integration_settings_loader()["enabled"]
+            )
+            integration_state = (
+                "Enabled" if integration_enabled else "Disabled"
+            )
+        except ValueError:
+            integration_state = "Configuration unavailable"
+
+        return templates.TemplateResponse(
+            request=request,
+            name="webhook_deliveries.html",
+            context={
+                "page_title": "Webhook deliveries",
+                "active_page": "webhook_deliveries",
+                "current_user": current_user,
+                "integration_state": integration_state,
+                "delivery_list": deliveries,
                 "error_message": None,
             },
         )

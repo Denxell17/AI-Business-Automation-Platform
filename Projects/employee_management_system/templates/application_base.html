@@ -29,7 +29,7 @@
                 </ul>
             </section>
 
-            {% if user_has_permission(current_user, VIEW_ACTIVITY_LOG) or user_has_permission(current_user, MANAGE_USER_ACCOUNTS) %}
+            {% if user_has_permission(current_user, VIEW_ACTIVITY_LOG) or user_has_permission(current_user, MANAGE_USER_ACCOUNTS) or user_has_permission(current_user, VIEW_INTEGRATION_STATUS) %}
             <section class="navigation-section" aria-labelledby="administration-navigation-heading">
                 <h2 id="administration-navigation-heading" class="navigation-heading">Administration</h2>
                 <ul class="navigation-list">
@@ -38,6 +38,9 @@
                     {% endif %}
                     {% if user_has_permission(current_user, MANAGE_USER_ACCOUNTS) %}
                     <li><a class="navigation-link{% if active_page == 'users' %} is-active{% endif %}" href="{{ url_for('user_account_directory') }}" {% if active_page == 'users' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('users') }}</span><span>User accounts</span></a></li>
+                    {% endif %}
+                    {% if user_has_permission(current_user, VIEW_INTEGRATION_STATUS) %}
+                    <li><a class="navigation-link{% if active_page == 'webhook_deliveries' %} is-active{% endif %}" href="{{ url_for('webhook_delivery_history') }}" {% if active_page == 'webhook_deliveries' %}aria-current="page"{% endif %}><span class="navigation-icon" aria-hidden="true">{{ icon('activity-log') }}</span><span>Webhook deliveries</span></a></li>
                     {% endif %}
                 </ul>
             </section>
