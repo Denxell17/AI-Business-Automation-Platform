@@ -40,6 +40,7 @@ from agent_execution_service import (
     execute_agent_template,
 )
 from agent_provider import AgentProvider, AgentProviderError
+from agent_provider_factory import create_agent_provider
 from agent_template_service import (
     ALLOWED_AGENT_TEMPLATE_STATUS_TRANSITIONS,
     create_agent_template,
@@ -114,7 +115,6 @@ from integration_config import (
     IntegrationSettings,
     load_integration_settings,
 )
-from openai_agent_provider import OpenAIAgentProvider
 from reports import calculate_workforce_summary
 from user_service import (
     authenticate_user_account,
@@ -327,7 +327,7 @@ def create_web_application(
     selected_agent_provider_factory = (
         agent_provider_factory
         if agent_provider_factory is not None
-        else OpenAIAgentProvider
+        else create_agent_provider
     )
     selected_ai_assistant_settings_loader = (
         ai_assistant_settings_loader
@@ -1093,6 +1093,8 @@ def create_web_application(
                 selected_ai_assistant_settings_loader()
             )
             provider = selected_agent_provider_factory()
+            if provider is None:
+                raise ValueError("AI provider is disabled.")
         except Exception:
             log_activity(
                 f"Web AI Assistant configuration was unavailable "
@@ -1813,6 +1815,8 @@ def create_web_application(
 
         try:
             provider = selected_agent_provider_factory()
+            if provider is None:
+                raise ValueError("AI provider is disabled.")
         except Exception:
             log_activity(
                 f"Web Agent Execution provider configuration "

@@ -371,6 +371,27 @@ class TestAiAssistantWeb(unittest.TestCase):
         self.assertEqual(self.settings_loader.call_count, 1)
         self.assertEqual(self.provider_factory.call_count, 0)
 
+    def test_disabled_provider_is_reported_as_not_configured(self):
+        self.provider_factory.provider = None
+        self.sign_in_as_admin()
+        csrf_token = self.get_csrf_token()
+
+        response = self.client.post(
+            "/ai-assistant",
+            data={
+                "csrf_token": csrf_token,
+                "question": "Help with this workflow.",
+            },
+        )
+
+        self.assertEqual(response.status_code, 503)
+        self.assertIn(
+            "The AI Assistant is not configured.",
+            response.text,
+        )
+        self.assertEqual(self.settings_loader.call_count, 1)
+        self.assertEqual(self.provider_factory.call_count, 1)
+
     def test_successful_question_displays_escaped_response(self):
         hostile_question = (
             "<script>summarize customer request</script>"
