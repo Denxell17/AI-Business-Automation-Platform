@@ -133,7 +133,7 @@ real network endpoint.
 Day 164 completes the Milestone 3 private portfolio demo. The
 `compose.n8n-demo.yaml` overlay pins n8n `1.121.3`, retains its data in the
 `n8n_demo_data` volume, starts only on the `n8n-demo` profile, and publishes no
-n8n or deterministic-provider host port. `Notes/n8n/abap-signed-workflow.json`
+n8n or deterministic-provider host port. `../../examples/n8n/abap-signed-workflow.json`
 is the version-controlled import: it verifies ABAP's outbound HMAC before
 calling the private deterministic provider, then sends the allowed fixed result
 through ABAP's separate inbound HMAC callback. The profile is restricted to

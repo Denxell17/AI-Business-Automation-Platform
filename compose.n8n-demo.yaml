@@ -55,7 +55,7 @@ services:
       ABAP_CALLBACK_URL: http://web:8000/integrations/webhooks/callback
     volumes:
       - n8n_demo_data:/home/node/.n8n
-      - ./Notes/n8n:/workflows:ro
+      - ./examples/n8n:/workflows:ro
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-

@@ -5,7 +5,7 @@ from pathlib import Path
 
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 COMPOSE_FILE = PROJECT_ROOT / "compose.n8n-demo.yaml"
-WORKFLOW_FILE = PROJECT_ROOT / "Notes" / "n8n" / "abap-signed-workflow.json"
+WORKFLOW_FILE = PROJECT_ROOT / "examples" / "n8n" / "abap-signed-workflow.json"
 
 
 class TestN8nDemoDeployment(unittest.TestCase):

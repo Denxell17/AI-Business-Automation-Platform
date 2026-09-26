@@ -9,9 +9,9 @@
 - **Status treatment:** B — Shape-coded outline
 - **Approval state:** Approved for phased implementation by the project owner
 - **Canonical dashboard reference:**
-  `Notes/design/abap-final-dashboard-proposal.png`
+  `assets/abap-final-dashboard-proposal.png`
 - **Approved logo concept reference:**
-  `Notes/design/abap-approved-logo-reference.png`
+  `assets/abap-approved-logo-reference.png`
 
 The dashboard reference is a design target, not implemented application code.
 Values shown as em dashes are runtime placeholders and must never be replaced
