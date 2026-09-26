@@ -192,8 +192,6 @@ AI-Business-Automation-Platform/
 ├── LEARNING_HISTORY.md
 ├── Projects/
 │   └── employee_management_system/
-│       ├── archive/
-│       │   └── main_original.py
 │       ├── data/
 │       ├── exports/
 │       ├── logs/
