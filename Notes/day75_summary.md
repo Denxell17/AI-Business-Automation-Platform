@@ -186,7 +186,7 @@ For example:
 ```python
 {
     "user_id": 1,
-    "username": "Dennis",
+    "username": "Example User",
     "password_hash": "protected_hash",
     "role": "admin",
     "is_active": True,

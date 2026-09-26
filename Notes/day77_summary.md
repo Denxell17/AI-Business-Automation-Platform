@@ -351,7 +351,7 @@ The user-service test count increased from 19 to 27.
 The complete automated test suite was run from the main project folder:
 
 ```powershell
-& C:\Users\user\AppData\Local\Python\pythoncore-3.14-64\python.exe -m unittest discover -s Projects\employee_management_system\tests -t Projects\employee_management_system -v
+python -m unittest discover -s Projects\employee_management_system\tests -t Projects\employee_management_system -v
 ```
 
 Result:

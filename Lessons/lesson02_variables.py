@@ -2,7 +2,7 @@
 # Lesson 2 - Variables
 # ============================
 
-developer = "Dennis Bernard Basadre"
+developer = "Example User"
 country = "Philippines"
 dream_countries = ["Canada", "Australia", "New Zealand"]
 salary = 50000

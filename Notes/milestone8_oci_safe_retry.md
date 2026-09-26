@@ -35,7 +35,7 @@ Before running the script, create the following through the OCI Console:
 1. A VCN named `abap-production-vcn` in Singapore.
 2. A regional public subnet named `abap-production-public-subnet`.
 3. An internet gateway and a `0.0.0.0/0` route from that public subnet.
-4. A security rule that permits SSH only from Dennis's current public IP.
+4. A security rule that permits SSH only from the project owner's current public IP.
 5. The downloaded SSH public-key file (`.pub`). Keep the private key outside
    the repository and never upload it to Cloud Shell.
 

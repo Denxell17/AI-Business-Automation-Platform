@@ -112,7 +112,7 @@ A successful result contains information such as:
 ```python
 {
     "user_id": 1,
-    "username": "Dennis",
+    "username": "Example User",
     "password_hash": "protected_hash",
     "role": "admin",
     "is_active": True,
@@ -150,13 +150,13 @@ username = input("Username: ").strip()
 For example:
 
 ```python
-"  dennis  "
+"  example user  "
 ```
 
 becomes:
 
 ```python
-"dennis"
+"example user"
 ```
 
 The authentication system also retrieves usernames without treating uppercase and lowercase as different accounts.
@@ -164,9 +164,9 @@ The authentication system also retrieves usernames without treating uppercase an
 Therefore:
 
 ```text
-Dennis
-dennis
-DENNIS
+Example User
+example user
+EXAMPLE USER
 ```
 
 can identify the same stored user account.
@@ -204,7 +204,7 @@ print(
 A real administrator login produced:
 
 ```text
-Signed in as Dennis (admin).
+Signed in as Example User (admin).
 ```
 
 This confirms both the account identity and assigned role.
@@ -348,7 +348,7 @@ The test uses an example authenticated account:
 ```python
 user_account = {
     "user_id": 1,
-    "username": "Dennis",
+    "username": "Example User",
     "password_hash": "protected_hash",
     "role": "admin",
     "is_active": True,
@@ -358,13 +358,13 @@ user_account = {
 The mocked username contains spaces:
 
 ```python
-return_value="  dennis  "
+return_value="  example user  "
 ```
 
 The expected service call uses:
 
 ```python
-"dennis"
+"example user"
 ```
 
 This confirms that `.strip()` cleaned the username before authentication.
@@ -421,7 +421,7 @@ def setUp(self):
     self.mock_login_user = self.login_patcher.start()
     self.mock_login_user.return_value = {
         "user_id": 1,
-        "username": "Dennis",
+        "username": "Example User",
         "password_hash": "protected_hash",
         "role": "admin",
         "is_active": True,
@@ -468,7 +468,7 @@ This result simulates a successful administrator login:
 ```python
 self.mock_login_user.return_value = {
     "user_id": 1,
-    "username": "Dennis",
+    "username": "Example User",
     "password_hash": "protected_hash",
     "role": "admin",
     "is_active": True,
@@ -623,7 +623,7 @@ The real interactive application was started with `main.py`.
 The administrator entered:
 
 ```text
-Username: Dennis
+Username: Example User
 ```
 
 The password remained hidden.
@@ -631,7 +631,7 @@ The password remained hidden.
 The application displayed:
 
 ```text
-Signed in as Dennis (admin).
+Signed in as Example User (admin).
 ```
 
 Only after successful authentication did the employee menu appear.
@@ -675,7 +675,7 @@ The successful-login sequence included:
 
 ```text
 Application started.
-User Dennis logged in.
+User Example User logged in.
 Application closed.
 ```
 

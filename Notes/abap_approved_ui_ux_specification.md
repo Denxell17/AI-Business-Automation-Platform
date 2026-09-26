@@ -7,7 +7,7 @@
 - **Design system:** B — Quiet Precision
 - **Dark background:** Original Soft Graphite achievable-dashboard treatment
 - **Status treatment:** B — Shape-coded outline
-- **Approval state:** Approved for phased implementation by Dennis
+- **Approval state:** Approved for phased implementation by the project owner
 - **Canonical dashboard reference:**
   `Notes/design/abap-final-dashboard-proposal.png`
 - **Approved logo concept reference:**
@@ -365,10 +365,10 @@ This specification authorizes planning and estimation only. It does not itself
 authorize changes to application templates, CSS, JavaScript, Python, database
 schemas, or production assets.
 
-Implementation begins only after Dennis explicitly approves this specification
+Implementation begins only after the project owner explicitly approves this specification
 and asks Codex to begin implementation.
 
-Dennis gave that approval on September 12, 2026. Phase 2 design foundations
+the project owner gave that approval on September 12, 2026. Phase 2 design foundations
 were completed on September 13, 2026: approved dark/light tokens, reusable
 buttons, panels, alerts, empty states, tables, accessible shape-coded statuses,
 local SVG icons, and production-oriented ABAP logo assets.

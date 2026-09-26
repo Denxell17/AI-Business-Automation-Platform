@@ -29,7 +29,7 @@ It includes:
 - An active-account flag.
 - A case-insensitive unique username index.
 
-The unique index prevents usernames such as `Dennis` and `dennis` from being stored as separate accounts.
+The unique index prevents usernames such as `Example User` and `example user` from being stored as separate accounts.
 
 ### Employees
 

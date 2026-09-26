@@ -52,9 +52,9 @@ This makes username comparisons case-insensitive.
 
 For example:
 
-- `Dennis`
-- `dennis`
-- `DENNIS`
+- `Example User`
+- `example user`
+- `EXAMPLE USER`
 
 are treated as the same username.
 
@@ -84,7 +84,7 @@ This function:
 7. Converts SQLite’s integer `is_active` value into a Python Boolean.
 8. Always closes the connection.
 
-Because the username column uses `COLLATE NOCASE`, searching for `dennis` can retrieve an account stored as `Dennis`.
+Because the username column uses `COLLATE NOCASE`, searching for `example user` can retrieve an account stored as `Example User`.
 
 ### User-Service Layer
 

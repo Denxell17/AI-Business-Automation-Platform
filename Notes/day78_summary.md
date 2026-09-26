@@ -227,7 +227,7 @@ The console logs the reset only when the command helper returns `True`.
 The log message is:
 
 ```text
-User Dennis reset password for viewer account ReportViewer.
+User Example User reset password for viewer account ReportViewer.
 ```
 
 The new password and password hash are not included in the activity log.
@@ -407,7 +407,7 @@ OK
 The complete automated test suite was run:
 
 ```powershell
-& C:\Users\user\AppData\Local\Python\pythoncore-3.14-64\python.exe -m unittest discover -s Projects\employee_management_system\tests -t Projects\employee_management_system -v
+python -m unittest discover -s Projects\employee_management_system\tests -t Projects\employee_management_system -v
 ```
 
 Result:
@@ -440,7 +440,7 @@ This provided a recovery point before changing the real viewer credential.
 
 ## Manual Administrator Reset Verification
 
-Administrator Dennis signed in and selected:
+Administrator Example User signed in and selected:
 
 ```text
 16. Reset Viewer Account Password
@@ -460,7 +460,7 @@ The application reported:
 Viewer account password reset successfully.
 ```
 
-Dennis then exited through option 17.
+Example User then exited through option 17.
 
 ## Old Password Rejection
 
@@ -511,8 +511,8 @@ This confirmed that menu authorization stops a viewer before the reset workflow 
 The activity log recorded:
 
 - Application startup
-- Dennis signing in
-- Dennis resetting `ReportViewer`'s password
+- Example User signing in
+- Example User resetting `ReportViewer`'s password
 - Application closure
 - The failed old-password login
 - Application access denial

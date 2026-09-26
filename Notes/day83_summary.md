@@ -18,7 +18,7 @@ The roadmap defines:
 - Focused AI automation portfolio projects
 - Python + AI + GoHighLevel career positioning
 
-The roadmap remains unchanged unless Dennis explicitly requests a change.
+The roadmap remains unchanged unless Example User explicitly requests a change.
 
 ### Reusable Base Template
 

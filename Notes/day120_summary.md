@@ -64,7 +64,7 @@ service-layer authorization.
 - Existing Employee Management and Workflow Automation behavior remained
   covered by full regression testing.
 
-## What Dennis Should Be Able to Explain
+## What Example User Should Be Able to Explain
 
 - Why task details and task order use separate operations.
 - Why services recheck saved account permissions.

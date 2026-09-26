@@ -33,7 +33,7 @@ def determine_performance(performance_score):
 # Main program: all function calls
 
 display_welcome_message()
-greet_employee("Dennis")
+greet_employee("Example User")
 
 yearly_salary = calculate_annual_salary(60000)
 performance_rating, bonus_rate = determine_performance(88)

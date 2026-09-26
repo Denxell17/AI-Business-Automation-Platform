@@ -21,7 +21,7 @@ Make the Employee Management System interactive by allowing users to enter emplo
 Before Day 3, employee information was written directly in the code:
 
 ```python
-name = "Dennis"
+name = "Example User"
 salary = 60000
 ```
 
@@ -47,13 +47,13 @@ When Python reaches this line, it:
 Example:
 
 ```text
-Enter Employee Name: Dennis
+Enter Employee Name: Example User
 ```
 
 The variable now contains:
 
 ```python
-name = "Dennis"
+name = "Example User"
 ```
 
 ## Interactive Applications
@@ -173,7 +173,7 @@ At this stage, the program expected correct numeric input. Input-validation and 
 An f-string inserts variable values into text:
 
 ```python
-name = "Dennis"
+name = "Example User"
 
 print(f"Welcome, {name}!")
 ```
@@ -181,7 +181,7 @@ print(f"Welcome, {name}!")
 Output:
 
 ```text
-Welcome, Dennis!
+Welcome, Example User!
 ```
 
 An f-string begins with:
@@ -325,7 +325,7 @@ Example:
 
 ```text
 Enter Employee ID: EMP001
-Enter Employee Name: Dennis
+Enter Employee Name: Example User
 Enter Department: AI Automation
 ```
 

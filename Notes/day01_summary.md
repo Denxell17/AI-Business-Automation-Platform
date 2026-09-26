@@ -50,7 +50,7 @@ The terminal accepts commands and displays program output.
 The prompt identifies the current folder:
 
 ```text
-PS C:\Users\user\OneDrive\Documents\Projects\AI-Business-Automation-Platform>
+PS <project-root>
 ```
 
 Commands entered at this location run relative to the main project folder.
@@ -145,7 +145,7 @@ print("=" * 40)
 
 print()
 
-print("Developer: Dennis")
+print("Developer: Example User")
 print("Version: 1.0")
 print("Mission: Become an AI Automation Engineer")
 ```

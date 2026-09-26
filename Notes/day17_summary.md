@@ -15,7 +15,7 @@ def setUp(self):
     self.employees = [
         {
             "employee_id": "EMP001",
-            "name": "Dennis",
+            "name": "Example User",
         },
         {
             "employee_id": "EMP002",

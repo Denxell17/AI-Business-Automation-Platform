@@ -24,7 +24,7 @@ A variable is a named place for storing a value.
 Example:
 
 ```python
-name = "Dennis"
+name = "Example User"
 salary = 60000
 ```
 
@@ -32,7 +32,7 @@ Here:
 
 ```text
 name       → variable name
-"Dennis"   → stored value
+"Example User"   → stored value
 
 salary     → variable name
 60000      → stored value
@@ -67,7 +67,7 @@ A data type describes what kind of value a variable contains.
 A string stores text. It is surrounded by quotation marks:
 
 ```python
-employee_name = "Dennis"
+employee_name = "Example User"
 department = "AI Automation"
 employee_id = "EMP001"
 ```
@@ -173,12 +173,12 @@ The employee profile used variables such as:
 
 ```python
 employee_id = "EMP001"
-name = "Dennis Bernard Basadre"
+name = "Example User"
 department = "AI Automation"
 position = "Junior Python Developer"
 country = "Philippines"
 salary = 60000
-email = "example@email.com"
+email = "user@example.com"
 phone_number = "+639123456789"
 years_of_experience = 3
 company = "Looking for Opportunities"
@@ -260,13 +260,13 @@ Snake case uses:
 Avoid spaces:
 
 ```python
-employee name = "Dennis"  # Invalid
+employee name = "Example User"  # Invalid
 ```
 
 Use:
 
 ```python
-employee_name = "Dennis"
+employee_name = "Example User"
 ```
 
 ## Displaying Variables
@@ -274,7 +274,7 @@ employee_name = "Dennis"
 A variable can be passed to `print()`:
 
 ```python
-name = "Dennis"
+name = "Example User"
 
 print(name)
 ```
@@ -282,7 +282,7 @@ print(name)
 Output:
 
 ```text
-Dennis
+Example User
 ```
 
 A label can make the output easier to understand:
@@ -295,7 +295,7 @@ print("Salary:", salary)
 Output:
 
 ```text
-Name: Dennis
+Name: Example User
 Salary: 60000
 ```
 
@@ -343,7 +343,7 @@ print("EMPLOYEE MANAGEMENT SYSTEM".center(40))
 print("=" * 40)
 
 employee_id = "EMP001"
-name = "Dennis Bernard Basadre"
+name = "Example User"
 department = "AI Automation"
 position = "Junior Python Developer"
 country = "Philippines"
@@ -391,7 +391,7 @@ snake_case           → Python naming style
 Examples:
 
 ```python
-name = "Dennis"                    # str
+name = "Example User"                    # str
 salary = 60000                     # int
 tax_rate = 0.05                    # float
 is_learning = True                 # bool

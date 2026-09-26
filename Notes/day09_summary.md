@@ -207,13 +207,13 @@ It accepts actual text.
 `.strip()` removes spaces from the beginning and end of a string.
 
 ```text
-"   Dennis   "
+"   Example User   "
 ```
 
 becomes:
 
 ```text
-"Dennis"
+"Example User"
 ```
 
 A string containing only spaces becomes empty:

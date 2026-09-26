@@ -45,7 +45,7 @@ administrator can complete a running record, the stored summary and finish time
 are retained, and a second terminal update is rejected. The complete regression
 suite remains the final protection against unrelated regressions.
 
-## What Dennis Should Be Able to Explain
+## What Example User Should Be Able to Explain
 
 - Why `running`, `completed`, and `failed` are separate states.
 - Why an execution needs a finished timestamp only after it reaches an outcome.

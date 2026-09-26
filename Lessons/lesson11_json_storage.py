@@ -13,7 +13,7 @@ def load_employees(file_path):
 employees = [
     {
         "employee_id": "EMP001",
-        "name": "Dennis",
+        "name": "Example User",
         "department": "Automation",
     },
     {

@@ -362,11 +362,11 @@ This is the account whose status may be changed.
 Example:
 
 ```text
-Current user: Dennis
+Current user: Example User
 Target user : ReportViewer
 ```
 
-Dennis performs the action.
+Example User performs the action.
 
 `ReportViewer` receives the status change.
 
@@ -903,8 +903,8 @@ is true.
 Successful entries use:
 
 ```text
-User Dennis activated viewer account ReportViewer.
-User Dennis deactivated viewer account ReportViewer.
+User Example User activated viewer account ReportViewer.
+User Example User deactivated viewer account ReportViewer.
 ```
 
 Rejected or unchanged operations are not recorded as successful changes.
@@ -1082,7 +1082,7 @@ Complete suite               : 179
 
 A fresh SQLite database backup was created before manual testing.
 
-Administrator Dennis then:
+Administrator Example User then:
 
 1. Logged in successfully
 2. Opened option 15
@@ -1105,7 +1105,7 @@ Employee Management System access denied.
 
 This proved that the inactive status blocks authentication.
 
-Dennis then:
+Example User then:
 
 1. Logged in again
 2. Opened option 15
@@ -1124,10 +1124,10 @@ After reactivation, `ReportViewer` logged in successfully and exited normally.
 The activity log recorded:
 
 ```text
-User Dennis deactivated viewer account ReportViewer.
+User Example User deactivated viewer account ReportViewer.
 Failed login attempt.
 Application access denied.
-User Dennis activated viewer account ReportViewer.
+User Example User activated viewer account ReportViewer.
 User ReportViewer logged in.
 ```
 

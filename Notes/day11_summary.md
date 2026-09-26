@@ -65,7 +65,7 @@ A Python list containing dictionaries:
 employees = [
     {
         "employee_id": "EMP001",
-        "name": "Dennis",
+        "name": "Example User",
         "department": "Automation",
     }
 ]
@@ -77,7 +77,7 @@ can be represented in JSON:
 [
     {
         "employee_id": "EMP001",
-        "name": "Dennis",
+        "name": "Example User",
         "department": "Automation"
     }
 ]

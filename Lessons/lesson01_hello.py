@@ -4,7 +4,7 @@ print("=" * 40)
 
 print()
 
-print("Developer: Dennis Bernard Basadre")
+print("Developer: Example User")
 print("Version  : 1.0")
 print("Sprint   : 1")
 print("Day      : 1")

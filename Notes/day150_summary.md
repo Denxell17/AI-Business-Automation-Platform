@@ -28,7 +28,7 @@ lifecycle, safe persistence, and deterministic no-cost testing.
   persistence, history, detail display, and cleanup.
 - Updated the README with the completed execution workflow.
 - Removed the outdated Day 106 through Day 131 consolidated smoke-test note at
-  Dennis's request.
+  Example User's request.
 
 ## Files Changed
 

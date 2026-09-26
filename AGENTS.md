@@ -24,7 +24,7 @@ For each task:
 4. Fix problems caused by the change.
 5. Stop when the requested task is complete.
 
-Do not automatically implement future roadmap features unless Dennis specifically asks to continue.
+Do not automatically implement future roadmap features unless the project owner specifically asks to continue.
 
 ## 3. Model Strategy
 
@@ -110,7 +110,7 @@ Do not rewrite large sections merely to make the code stylistically different.
 
 ## 7. Teach While Building
 
-Dennis is learning while building ABAP.
+the project owner is learning while building ABAP.
 
 When introducing an important concept:
 
@@ -120,7 +120,7 @@ When introducing an important concept:
 - Keep explanations practical and connected to the project.
 - Do not overwhelm with unnecessary theory.
 
-The teaching process should gradually help Dennis explain the project independently.
+The teaching process should gradually help the project owner explain the project independently.
 
 ## 8. End-of-Task Summary
 

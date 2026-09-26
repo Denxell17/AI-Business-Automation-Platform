@@ -70,7 +70,7 @@ Example:
 ```python
 employee: Employee = {
     "employee_id": "EMP001",
-    "name": "Dennis",
+    "name": "Example User",
     "department": "Automation",
     "position": "Developer",
     "country": "Philippines",

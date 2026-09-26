@@ -106,7 +106,7 @@ The connections begin as `None`, and `is not None` checks prevent the program fr
 
 The backup function can use an existing backup path again.
 
-A test first backed up an employee named `"Dennis"`, updated the primary database to contain `"Dennis Updated"`, and ran the backup again.
+A test first backed up an employee named `"Example User"`, updated the primary database to contain `"Example User Updated"`, and ran the backup again.
 
 Reading the backup returned the updated employee, proving that a new backup refreshes the previous backup contents.
 

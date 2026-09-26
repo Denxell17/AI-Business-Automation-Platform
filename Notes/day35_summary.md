@@ -58,7 +58,7 @@ The following names are compared consistently:
 
 ```text
 aki
-Dennis
+Example User
 Ruth
 ```
 

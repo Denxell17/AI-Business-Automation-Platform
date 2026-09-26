@@ -43,7 +43,7 @@ Updated `initialize_database()` to create a `users` table with:
 Important SQLite rules:
 
 ```text
-COLLATE NOCASE → Dennis and dennis are treated as equal
+COLLATE NOCASE → Example User and example user are treated as equal
 UNIQUE         → duplicate usernames are rejected
 CHECK          → only approved role and status values are accepted
 DEFAULT 1      → new accounts begin active

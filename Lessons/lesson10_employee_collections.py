@@ -2,7 +2,7 @@ employees = []
 
 employee_one = {
     "employee_id": "EMP001",
-    "name": "Dennis",
+    "name": "Example User",
     "department": "Automation",
 }
 

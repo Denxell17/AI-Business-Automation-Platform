@@ -89,13 +89,13 @@ Because the username column uses `COLLATE NOCASE`, usernames are matched without
 For example, a login using:
 
 ```text
-dennis
+example user
 ```
 
 can retrieve an account stored as:
 
 ```text
-Dennis
+Example User
 ```
 
 ### Reject a Missing Account
@@ -270,7 +270,7 @@ WHERE username = ?
 The update uses a parameterized username value:
 
 ```python
-("Dennis",)
+("Example User",)
 ```
 
 The connection is managed with:
@@ -326,7 +326,7 @@ The call was corrected to use the exact three authentication arguments:
 
 ```python
 authenticated_user = authenticate_user_account(
-    "Dennis",
+    "Example User",
     "WrongPassword123!",
     database_file,
 )

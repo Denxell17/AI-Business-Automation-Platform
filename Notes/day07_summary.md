@@ -119,26 +119,26 @@ It is a variable available inside the function.
 An argument is the actual value passed into a function:
 
 ```python
-greet_employee("Dennis")
+greet_employee("Example User")
 ```
 
 Here:
 
 ```text
-"Dennis" → argument
+"Example User" → argument
 ```
 
 The matching is:
 
 ```text
 Parameter: name
-Argument:  "Dennis"
+Argument:  "Example User"
 ```
 
 The function can be reused with different arguments:
 
 ```python
-greet_employee("Dennis")
+greet_employee("Example User")
 greet_employee("Maria")
 greet_employee("John")
 ```
@@ -340,7 +340,7 @@ Function calls were placed afterward:
 
 ```python
 display_welcome_message()
-greet_employee("Dennis")
+greet_employee("Example User")
 ```
 
 This separates reusable tools from the instructions that run the program.
@@ -452,7 +452,7 @@ A dictionary stores multiple labeled values together:
 ```python
 employee = {
     "employee_id": "0001",
-    "name": "Dennis",
+    "name": "Example User",
     "salary": 60000,
 }
 ```
@@ -466,7 +466,7 @@ key → value
 Examples:
 
 ```text
-"name"   → "Dennis"
+"name"   → "Example User"
 "salary" → 60000
 ```
 

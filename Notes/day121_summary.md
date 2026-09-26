@@ -81,7 +81,7 @@ Verification completed successfully:
 - **29 focused workflow maintenance and browser tests passed.**
 - **422 total automated tests passed.**
 
-## What Dennis Should Be Able to Explain
+## What Example User Should Be Able to Explain
 
 - Why deleting and resequencing must share one SQLite transaction.
 - How an immediate transaction prevents another writer from changing the task
