@@ -141,8 +141,8 @@ until the planned business modules and operational gaps above are delivered.
   `/ready` returned a safe HTTP 503, then recovered to HTTP 200
 - No real or paid OpenAI request was made during verification
 
-Detailed verification is recorded in
-[`Notes/day154_summary.md`](Notes/day154_summary.md). Test commands and deployment
+The detailed daily build record is preserved separately in
+[`LEARNING_HISTORY.md`](LEARNING_HISTORY.md). Test commands and deployment
 operations are documented in [`README.md`](README.md).
 
 ## Suggested Demonstration

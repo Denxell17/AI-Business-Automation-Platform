@@ -188,7 +188,7 @@ The current Employee Management System can:
 AI-Business-Automation-Platform/
 ├── .env.example
 ├── Assets/
-├── Lessons/
+├── LEARNING_HISTORY.md
 ├── Notes/
 ├── Projects/
 │   └── employee_management_system/
