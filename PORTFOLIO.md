@@ -142,8 +142,9 @@ until the planned business modules and operational gaps above are delivered.
 - No real or paid OpenAI request was made during verification
 
 The detailed daily build record is preserved separately in
-[`LEARNING_HISTORY.md`](LEARNING_HISTORY.md). Test commands and deployment
-operations are documented in [`README.md`](README.md).
+[`LEARNING_HISTORY.md`](LEARNING_HISTORY.md). Local run and test instructions
+are in [`README.md`](README.md); detailed Compose operations are in the
+[deployment runbook](docs/deployment/compose-deployment-runbook.md).
 
 ## Suggested Demonstration
 
