@@ -93,7 +93,10 @@ python run_tests.py
 The repository includes unit coverage for application services and focused
 deployment/integration boundaries. Live PostgreSQL checks require a disposable
 database and are intentionally separate from ordinary local tests. Continuous
-integration coverage is assessed separately from the application itself.
+integration runs the same suite on Python 3.12 after installing the declared
+requirements. It supplies no credentials, Docker services, or external
+infrastructure, so live PostgreSQL and real-provider verification remain out
+of scope for that workflow.
 
 ## Deployment status
 
