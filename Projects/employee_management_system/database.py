@@ -93,10 +93,25 @@ def initialize_database(
                 ),
                 is_active INTEGER NOT NULL DEFAULT 1 CHECK (
                     is_active IN (0, 1)
+                ),
+                session_version INTEGER NOT NULL DEFAULT 1 CHECK (
+                    typeof(session_version) = 'integer'
+                    AND session_version > 0
                 )
             )
             """
         )
+        user_columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(users)"
+            ).fetchall()
+        }
+        if "session_version" not in user_columns:
+            connection.execute(
+                "ALTER TABLE users ADD COLUMN "
+                "session_version INTEGER NOT NULL DEFAULT 1"
+            )
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS agent_templates (
@@ -2678,7 +2693,8 @@ def load_user_account_by_username(
                 username,
                 password_hash,
                 role,
-                is_active
+                is_active,
+                session_version
             FROM users
             WHERE username = ?
             """,
@@ -2694,6 +2710,7 @@ def load_user_account_by_username(
             "password_hash": stored_user["password_hash"],
             "role": stored_user["role"],
             "is_active": bool(stored_user["is_active"]),
+            "session_version": stored_user["session_version"],
         }
     finally:
         connection.close()
@@ -2749,7 +2766,8 @@ def update_user_account_active_status(
         update_result = connection.execute(
             """
             UPDATE users
-            SET is_active = ?
+            SET is_active = ?,
+                session_version = session_version + 1
             WHERE username = ?
             """,
             (
@@ -2778,7 +2796,8 @@ def update_user_account_password_hash(
         update_result = connection.execute(
             """
             UPDATE users
-            SET password_hash = ?
+            SET password_hash = ?,
+                session_version = session_version + 1
             WHERE username = ?
             """,
             (

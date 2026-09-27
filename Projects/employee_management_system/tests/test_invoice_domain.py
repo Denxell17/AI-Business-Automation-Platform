@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in, sign_out
 
 from crm_service import convert_lead, create_lead, update_lead
 from dashboard_repository import load_dashboard_snapshot
@@ -48,7 +49,7 @@ class TestInvoiceDomain(unittest.TestCase):
         return convert_lead(self.admin, lead_id, self.database_file)
 
     def sign_in(self, username="InvoiceAdmin", password="SecureAdminPassword123!"):
-        self.client.post("/login", data={"username": username, "password": password})
+        sign_in(self.client, username, password)
 
     def csrf(self, path):
         response = self.client.get(path)
@@ -116,7 +117,7 @@ class TestInvoiceDomain(unittest.TestCase):
             "csrf_token": token, "workflow_id": "WF-INVOICE",
         }, follow_redirects=False)
         self.assertEqual(run.status_code, 303, run.text)
-        self.client.post("/logout")
+        sign_out(self.client)
         self.sign_in("InvoiceViewer", "SecureViewerPassword123!")
         self.assertEqual(self.client.get("/invoices").status_code, 200)
         self.assertEqual(self.client.get(f"/documents/{document['document_id']}/download").status_code, 200)

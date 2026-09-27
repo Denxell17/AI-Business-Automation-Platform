@@ -68,6 +68,7 @@ class UserAccount(TypedDict):
     password_hash: str
     role: str
     is_active: bool
+    session_version: int
 
 
 class UserAccountSummary(TypedDict):

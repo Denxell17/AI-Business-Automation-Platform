@@ -7,6 +7,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from database import (
     load_user_account_by_username,
@@ -66,10 +67,7 @@ class TestWorkflowSchedules(unittest.TestCase):
         )
 
     def sign_in(self, username="admin"):
-        self.client.post(
-            "/login",
-            data={"username": username, "password": "SecurePassword123!"},
-        )
+        sign_in(self.client, username, "SecurePassword123!")
         self.log.reset_mock()
 
     def csrf_token(self):

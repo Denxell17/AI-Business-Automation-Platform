@@ -6,6 +6,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in, sign_out
 from database import (
     insert_workflow_task,
     load_user_account_by_username,
@@ -64,18 +65,14 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
                 self.database_file,
             )
         )
-        self.client.post("/logout")
+        sign_out(self.client)
 
     def tearDown(self):
         self.client.close()
         self.temporary_directory.cleanup()
 
     def sign_in(self, username: str, password: str):
-        return self.client.post(
-            "/login",
-            data={"username": username, "password": password},
-            follow_redirects=False,
-        )
+        return sign_in(self.client, username, password)
 
     def get_edit_csrf_token(self) -> str:
         response = self.client.get(
@@ -198,7 +195,7 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
             data={"csrf_token": "invalid"}, follow_redirects=False,
         )
         self.assertEqual(response.status_code, 403)
-        self.client.post("/logout")
+        sign_out(self.client)
         self.sign_in(self.viewer_username, self.viewer_password)
         self.assertNotIn("Start execution", self.client.get(
             "/workflows/WF-WEB-LIFECYCLE"
@@ -244,7 +241,7 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
             "/workflows/WF-WEB-LIFECYCLE"
         ).text)
 
-        self.client.post("/logout")
+        sign_out(self.client)
         self.sign_in(self.viewer_username, self.viewer_password)
         self.assertEqual(self.client.get(
             "/workflows/WF-WEB-LIFECYCLE/tasks/TASK-PROTECTED/delete"
@@ -377,7 +374,7 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
                 self.assertIn("&lt;script&gt;", response.text)
                 self.assertIn("&lt;b&gt;Review documents&lt;/b&gt;", response.text)
                 self.assertNotIn("<script>alert(1)</script>", response.text)
-                self.client.post("/logout")
+                sign_out(self.client)
 
     def test_empty_task_message(self):
         self.sign_in(self.viewer_username, self.viewer_password)

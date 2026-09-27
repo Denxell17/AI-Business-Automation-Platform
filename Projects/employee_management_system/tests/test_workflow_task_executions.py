@@ -8,6 +8,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from database import load_user_account_by_username, load_workflow_task_executions
 from user_service import register_user_account
@@ -60,7 +61,7 @@ class TestWorkflowTaskExecutions(unittest.TestCase):
         return finish_workflow_task_execution_record(**arguments)
 
     def sign_in(self, username="admin"):
-        self.client.post("/login", data={"username": username, "password": "SecurePassword123!"})
+        sign_in(self.client, username, "SecurePassword123!")
         page = self.client.get("/workflows/WF")
         self.log.reset_mock()
         match = re.search(r'name="csrf_token"\s+value="([^"]+)"', page.text)

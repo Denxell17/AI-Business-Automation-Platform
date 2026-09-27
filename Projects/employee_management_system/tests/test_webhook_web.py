@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in, sign_out
 
 from database import load_webhook_deliveries
 from integration_config import load_integration_settings
@@ -79,10 +80,7 @@ class TestWebhookWebBoundary(unittest.TestCase):
         )
 
     def sign_in(self, username):
-        return self.client.post(
-            "/login",
-            data={"username": username, "password": "SecurePassword123!"},
-        )
+        return sign_in(self.client, username, "SecurePassword123!")
 
     def test_signed_callback_is_accepted_once_without_a_session_or_payload_storage(self):
         message = self.message()
@@ -147,7 +145,7 @@ class TestWebhookWebBoundary(unittest.TestCase):
         self.assertNotIn("never display this webhook payload", response.text)
         self.assertNotIn(INBOUND_SECRET, response.text)
 
-        self.client.post("/logout")
+        sign_out(self.client)
         self.sign_in("viewer")
         denied = self.client.get("/integrations/webhooks")
         self.assertEqual(denied.status_code, 403)

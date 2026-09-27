@@ -30,6 +30,7 @@ class TestPostgresqlRepositoryAdapter(unittest.TestCase):
             "password_hash": "protected_hash",
             "role": "admin",
             "is_active": True,
+            "session_version": 1,
         }
         raw_connection.execute.return_value = cursor
         connect.return_value = raw_connection

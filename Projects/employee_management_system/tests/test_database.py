@@ -970,6 +970,7 @@ class TestEmployeeDatabase(unittest.TestCase):
                     "password_hash": "protected_hash",
                     "role": "admin",
                     "is_active": True,
+                    "session_version": 1,
                 },
             )
 
@@ -1540,6 +1541,7 @@ class TestEmployeeDatabase(unittest.TestCase):
                 self.fail("The updated user account was not found.")
 
             self.assertFalse(stored_user["is_active"])
+            self.assertEqual(stored_user["session_version"], 2)
 
     def test_update_user_account_active_status_reactivates_account(
         self,
@@ -1583,6 +1585,7 @@ class TestEmployeeDatabase(unittest.TestCase):
                 self.fail("The reactivated user account was not found.")
 
             self.assertTrue(stored_user["is_active"])
+            self.assertEqual(stored_user["session_version"], 3)
 
     def test_update_user_account_active_status_returns_false_when_missing(
         self,
@@ -1645,6 +1648,7 @@ class TestEmployeeDatabase(unittest.TestCase):
                 "viewer",
             )
             self.assertTrue(stored_user["is_active"])
+            self.assertEqual(stored_user["session_version"], 2)
 
     def test_update_user_account_password_hash_returns_false_when_missing(
         self,

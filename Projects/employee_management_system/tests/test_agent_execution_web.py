@@ -5,6 +5,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from database import (
     insert_agent_execution,
@@ -190,23 +191,13 @@ class TestAgentExecutionWeb(unittest.TestCase):
         self.assertTrue(inserted)
 
     def sign_in_as_admin(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.admin_username,
-                "password": self.admin_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.admin_username, self.admin_password,
         )
 
     def sign_in_as_viewer(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.viewer_username,
-                "password": self.viewer_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.viewer_username, self.viewer_password,
         )
 
     def history_url(self):

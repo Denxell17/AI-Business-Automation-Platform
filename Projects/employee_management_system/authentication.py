@@ -6,6 +6,7 @@ import secrets
 HASH_NAME = "sha256"
 HASH_ITERATIONS = 600_000
 SALT_BYTES = 16
+DUMMY_PASSWORD = "ABAP bounded dummy authentication password"
 
 
 def hash_password(password: str) -> str:
@@ -61,3 +62,6 @@ def verify_password(
         calculated_hash,
         expected_hash,
     )
+
+
+DUMMY_PASSWORD_HASH = hash_password(DUMMY_PASSWORD)

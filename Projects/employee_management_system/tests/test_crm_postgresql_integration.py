@@ -8,6 +8,7 @@ from uuid import uuid4
 
 import psycopg
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from crm_repository import list_crm_history, list_leads, load_customer, load_lead
 from database import load_user_account_by_username
@@ -42,7 +43,7 @@ class TestCrmPostgresqlIntegration(unittest.TestCase):
             self.assertTrue(register_user_account(username, password, "admin"))
             actor = load_user_account_by_username(username)
             with TestClient(create_web_application(session_secret="synthetic-m4-session")) as client:
-                client.post("/login", data={"username": username, "password": password})
+                sign_in(client, username, password)
                 new_form = client.get("/leads/new")
                 token_match = re.search(r'name="csrf_token"\s+value="([^"]+)"', new_form.text)
                 self.assertIsNotNone(token_match)

@@ -6,6 +6,7 @@ from uuid import uuid4
 
 import psycopg
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from agent_execution_service import execute_agent_template
 from ai_assistant_service import (
@@ -214,13 +215,8 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
                 },
             )
 
-            login_response = client.post(
-                "/login",
-                data={
-                    "username": self.username,
-                    "password": password,
-                },
-                follow_redirects=False,
+            login_response = sign_in(
+                client, self.username, password,
             )
 
             self.assertEqual(
@@ -599,13 +595,8 @@ class TestLivePostgresqlIntegration(unittest.TestCase):
         )
 
         with TestClient(application) as client:
-            login_response = client.post(
-                "/login",
-                data={
-                    "username": self.username,
-                    "password": password,
-                },
-                follow_redirects=False,
+            login_response = sign_in(
+                client, self.username, password,
             )
 
             self.assertEqual(

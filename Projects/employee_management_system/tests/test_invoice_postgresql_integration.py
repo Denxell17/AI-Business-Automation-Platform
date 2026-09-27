@@ -10,6 +10,7 @@ from uuid import uuid4
 
 import psycopg
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from crm_service import convert_lead, create_lead, update_lead
 from document_storage import PrivateFileSystemDocumentStorage
@@ -58,7 +59,7 @@ class TestInvoicePostgresqlIntegration(unittest.TestCase):
                 self.assertEqual(load_invoice(invoice_id)["total_cents"], 1659)
                 storage = PrivateFileSystemDocumentStorage(Path(temporary_directory) / "private")
                 with TestClient(create_web_application(session_secret="synthetic-m5-session", document_storage=storage)) as client:
-                    client.post("/login", data={"username": username, "password": "SyntheticM5Password123!"})
+                    sign_in(client, username, "SyntheticM5Password123!")
                     detail = client.get(f"/invoices/{invoice_id}")
                     token = re.search(r'name="csrf_token"\s+value="([^"]+)"', detail.text).group(1)
                     generated = client.post(f"/invoices/{invoice_id}/document", data={"csrf_token": token}, follow_redirects=False)

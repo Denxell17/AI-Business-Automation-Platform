@@ -5,6 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in, sign_out
 
 from crm_repository import list_crm_history, load_customer, load_lead
 from crm_service import add_lead_note, convert_lead, create_lead, update_customer, update_lead
@@ -30,7 +31,7 @@ class TestCrmDomain(unittest.TestCase):
         self.temporary_directory.cleanup()
 
     def sign_in(self, username="CrmAdmin", password="SecureAdminPassword123!"):
-        return self.client.post("/login", data={"username": username, "password": password})
+        return sign_in(self.client, username, password)
 
     def csrf(self, path):
         response = self.client.get(path)
@@ -75,7 +76,7 @@ class TestCrmDomain(unittest.TestCase):
         self.assertEqual(self.client.get("/leads").status_code, 200)
         self.assertEqual(self.client.get("/leads/new").status_code, 403)
         self.assertEqual(self.client.post("/leads/new", data={}).status_code, 403)
-        self.client.post("/logout")
+        sign_out(self.client)
         self.sign_in()
         self.assertEqual(self.client.post("/leads/new", data={"name": "No token"}).status_code, 403)
         token = self.csrf("/leads/new")

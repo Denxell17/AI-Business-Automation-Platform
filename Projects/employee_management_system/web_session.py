@@ -11,6 +11,7 @@ from models import UserAccount
 
 SESSION_USER_ID = "user_id"
 SESSION_USERNAME = "username"
+SESSION_VERSION = "session_version"
 
 
 def begin_authenticated_session(
@@ -23,6 +24,9 @@ def begin_authenticated_session(
     )
     request.session[SESSION_USERNAME] = (
         user_account["username"]
+    )
+    request.session[SESSION_VERSION] = (
+        user_account["session_version"]
     )
 
 
@@ -42,11 +46,17 @@ def load_authenticated_session_user(
     session_username = request.session.get(
         SESSION_USERNAME
     )
+    session_version = request.session.get(
+        SESSION_VERSION
+    )
 
     if (
         not isinstance(session_user_id, int)
         or not isinstance(session_username, str)
         or not session_username
+        or not isinstance(session_version, int)
+        or isinstance(session_version, bool)
+        or session_version <= 0
     ):
         clear_authenticated_session(request)
         return None
@@ -65,6 +75,10 @@ def load_authenticated_session_user(
         return None
 
     if stored_user["user_id"] != session_user_id:
+        clear_authenticated_session(request)
+        return None
+
+    if stored_user["session_version"] != session_version:
         clear_authenticated_session(request)
         return None
 

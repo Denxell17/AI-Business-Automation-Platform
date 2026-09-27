@@ -8,6 +8,7 @@ from unittest.mock import patch
 from uuid import uuid4
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from agent_template_service import (
     create_agent_template,
@@ -109,23 +110,13 @@ class TestAgentTemplateWebLifecycle(unittest.TestCase):
         self.client.close()
 
     def sign_in_as_admin(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.admin_username,
-                "password": self.admin_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.admin_username, self.admin_password,
         )
 
     def sign_in_as_viewer(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.viewer_username,
-                "password": self.viewer_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.viewer_username, self.viewer_password,
         )
 
     def get_edit_csrf_token(self) -> str:

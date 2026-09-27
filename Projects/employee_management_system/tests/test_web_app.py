@@ -7,11 +7,15 @@ from unittest.mock import patch
 from urllib import response
 
 from fastapi.testclient import TestClient
+from login_rate_limiter import LoginRateLimiter
+from tests.web_auth import csrf_token_from_page, sign_out
 from database import (
     insert_employee,
     load_user_account_by_username,
     update_user_account_active_status,
+    update_user_account_password_hash,
 )
+from authentication import hash_password
 from user_service import (
     register_user_account,
     set_viewer_account_active_status,
@@ -99,11 +103,11 @@ class TestWebApplication(unittest.TestCase):
         cls.temporary_directory.cleanup()
 
     def setUp(self):
-        application = create_web_application(
+        self.application = create_web_application(
             database_file=self.database_file,
             session_secret="day-84-test-session-secret",
         )
-        self.client = TestClient(application)
+        self.client = TestClient(self.application)
 
     def tearDown(self):
         self.client.close()
@@ -125,6 +129,10 @@ class TestWebApplication(unittest.TestCase):
                     self.password
                     if password is None
                     else password
+                ),
+                "csrf_token": csrf_token_from_page(
+                    self.client,
+                    "/login",
                 ),
             },
             follow_redirects=False,
@@ -449,6 +457,8 @@ class TestWebApplication(unittest.TestCase):
             'autocomplete="current-password"',
             response.text,
         )
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn('maxlength="128"', response.text)
 
     def test_home_page_redirects_unauthenticated_user(self):
         response = self.client.get(
@@ -505,6 +515,61 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
 
+    def test_login_rejects_missing_and_foreign_csrf_tokens(self):
+        missing = self.client.post(
+            "/login",
+            data={"username": self.username, "password": self.password},
+        )
+        self.assertEqual(missing.status_code, 403)
+
+        with TestClient(self.application) as other_client:
+            foreign_token = csrf_token_from_page(other_client, "/login")
+        foreign = self.client.post(
+            "/login",
+            data={
+                "username": self.username,
+                "password": self.password,
+                "csrf_token": foreign_token,
+            },
+        )
+        self.assertEqual(foreign.status_code, 403)
+
+    def test_login_rate_limit_preserves_generic_failure(self):
+        limiter = LoginRateLimiter(
+            "rate-limit-test-secret",
+            source_failure_limit=2,
+            account_failure_limit=50,
+            cooldown_seconds=60,
+        )
+        application = create_web_application(
+            database_file=self.database_file,
+            session_secret="rate-limit-web-session-secret",
+            login_rate_limiter=limiter,
+        )
+        with TestClient(application) as client:
+            token = csrf_token_from_page(client, "/login")
+            data = {
+                "username": self.username,
+                "password": "WrongPassword123!",
+                "csrf_token": token,
+            }
+            first = client.post(
+                "/login",
+                data=data,
+                headers={"X-Forwarded-For": "198.51.100.10"},
+            )
+            limited = client.post(
+                "/login",
+                data=data,
+                headers={"X-Forwarded-For": "203.0.113.20"},
+            )
+
+        self.assertEqual(first.status_code, 401)
+        self.assertEqual(limited.status_code, 429)
+        self.assertEqual(limited.headers["retry-after"], "60")
+        self.assertIn("Username or password is incorrect.", limited.text)
+        self.assertNotIn("WrongPassword123!", limited.text)
+
     def test_authenticated_home_displays_current_user(self):
         self.sign_in()
 
@@ -535,6 +600,51 @@ class TestWebApplication(unittest.TestCase):
         self.assertEqual(response.status_code, 405)
         self.assertEqual(self.client.get("/").status_code, 200)
 
+    def test_logout_rejects_invalid_csrf_without_clearing_session(self):
+        self.sign_in()
+        response = self.client.post(
+            "/logout",
+            data={"csrf_token": "forged-token"},
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.client.get("/").status_code, 200)
+
+    def test_password_update_invalidates_existing_browser_session(self):
+        username = "CredentialVersionViewer"
+        original_password = "OriginalCredentialPassword123!"
+        self.assertTrue(register_user_account(
+            username, original_password, "viewer", self.database_file,
+        ))
+        self.assertEqual(
+            self.sign_in(username, original_password).status_code,
+            303,
+        )
+        self.assertTrue(update_user_account_password_hash(
+            username,
+            hash_password("ReplacementCredentialPassword123!"),
+            self.database_file,
+        ))
+        response = self.client.get("/", follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "http://testserver/login")
+
+    def test_reactivation_does_not_revive_existing_browser_session(self):
+        username = "ReactivatedSessionViewer"
+        password = "ReactivatedSessionPassword123!"
+        self.assertTrue(register_user_account(
+            username, password, "viewer", self.database_file,
+        ))
+        self.assertEqual(self.sign_in(username, password).status_code, 303)
+        self.assertTrue(update_user_account_active_status(
+            username, False, self.database_file,
+        ))
+        self.assertTrue(update_user_account_active_status(
+            username, True, self.database_file,
+        ))
+        response = self.client.get("/", follow_redirects=False)
+        self.assertEqual(response.status_code, 303)
+
     @patch("web_app.log_activity")
     def test_logout_clears_session_and_records_username(
         self,
@@ -543,10 +653,7 @@ class TestWebApplication(unittest.TestCase):
         self.sign_in()
         mock_log_activity.reset_mock()
 
-        response = self.client.post(
-            "/logout",
-            follow_redirects=False,
-        )
+        response = sign_out(self.client)
 
         self.assertEqual(response.status_code, 303)
         self.assertEqual(
@@ -576,8 +683,10 @@ class TestWebApplication(unittest.TestCase):
         self,
         mock_log_activity,
     ):
+        login_token = csrf_token_from_page(self.client, "/login")
         response = self.client.post(
             "/logout",
+            data={"csrf_token": login_token},
             follow_redirects=False,
         )
 
@@ -2637,7 +2746,7 @@ class TestWebApplication(unittest.TestCase):
         )
         self.assertIn("Add employee", administrator_response.text)
 
-        self.client.post("/logout", follow_redirects=False)
+        sign_out(self.client)
         self.sign_in(
             username=self.viewer_username,
             password=self.viewer_password,

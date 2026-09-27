@@ -115,6 +115,8 @@ from integration_config import (
     IntegrationSettings,
     load_integration_settings,
 )
+from login_rate_limiter import LoginRateLimiter
+from password_policy import MAXIMUM_PASSWORD_LENGTH
 from reports import calculate_workforce_summary
 from user_service import (
     authenticate_user_account,
@@ -283,6 +285,7 @@ templates.env.globals["VIEW_INTEGRATION_STATUS"] = (
 )
 templates.env.globals["VIEW_CRM"] = VIEW_CRM
 templates.env.globals["VIEW_INVOICES"] = VIEW_INVOICES
+templates.env.globals["csrf_token_for"] = get_or_create_csrf_token
 
 
 async def read_bounded_request_body(
@@ -323,7 +326,18 @@ def create_web_application(
     ) = None,
     webhook_clock: Callable[[], datetime] | None = None,
     document_storage: DocumentStorage | None = None,
+    login_rate_limiter: LoginRateLimiter | None = None,
 ) -> FastAPI:
+    selected_session_secret = (
+        session_secret
+        if session_secret is not None
+        else secrets.token_urlsafe(32)
+    )
+    selected_login_rate_limiter = (
+        login_rate_limiter
+        if login_rate_limiter is not None
+        else LoginRateLimiter(selected_session_secret)
+    )
     selected_agent_provider_factory = (
         agent_provider_factory
         if agent_provider_factory is not None
@@ -366,11 +380,7 @@ def create_web_application(
 
     application.add_middleware(
         SessionMiddleware,
-        secret_key=(
-            session_secret
-            if session_secret is not None
-            else secrets.token_urlsafe(32)
-        ),
+        secret_key=selected_session_secret,
         session_cookie=SESSION_COOKIE_NAME,
         max_age=SESSION_MAX_AGE_SECONDS,
         same_site="lax",
@@ -809,6 +819,8 @@ def create_web_application(
             context={
                 "page_title": "Sign in",
                 "entered_username": "",
+                "csrf_token": get_or_create_csrf_token(request),
+                "maximum_password_length": MAXIMUM_PASSWORD_LENGTH,
                 "error_message": None,
             },
         )
@@ -821,8 +833,41 @@ def create_web_application(
         request: Request,
         username: Annotated[str, Form()],
         password: Annotated[str, Form()],
+        csrf_token: Annotated[str, Form()] = "",
     ) -> Response:
         entered_username = username.strip()
+
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity("Web login CSRF validation failed.")
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
+        source = (
+            request.client.host
+            if request.client is not None
+            else "unknown"
+        )
+        retry_after = selected_login_rate_limiter.retry_after(
+            source,
+            entered_username,
+        )
+        if retry_after:
+            log_activity("Web login attempt was rate limited.")
+            return templates.TemplateResponse(
+                request=request,
+                name="login.html",
+                context={
+                    "page_title": "Sign in",
+                    "entered_username": entered_username,
+                    "csrf_token": get_or_create_csrf_token(request),
+                    "maximum_password_length": MAXIMUM_PASSWORD_LENGTH,
+                    "error_message": LOGIN_FAILURE_MESSAGE,
+                },
+                status_code=429,
+                headers={"Retry-After": str(retry_after)},
+            )
 
         user_account = authenticate_user_account(
             entered_username,
@@ -832,6 +877,10 @@ def create_web_application(
 
         if user_account is None:
             log_activity("Failed web login attempt.")
+            retry_after = selected_login_rate_limiter.record_failure(
+                source,
+                entered_username,
+            )
 
             return templates.TemplateResponse(
                 request=request,
@@ -839,11 +888,19 @@ def create_web_application(
                 context={
                     "page_title": "Sign in",
                     "entered_username": entered_username,
+                    "csrf_token": get_or_create_csrf_token(request),
+                    "maximum_password_length": MAXIMUM_PASSWORD_LENGTH,
                     "error_message": LOGIN_FAILURE_MESSAGE,
                 },
-                status_code=401,
+                status_code=429 if retry_after else 401,
+                headers=(
+                    {"Retry-After": str(retry_after)}
+                    if retry_after
+                    else None
+                ),
             )
 
+        selected_login_rate_limiter.record_success(entered_username)
         begin_authenticated_session(
             request,
             user_account,
@@ -859,7 +916,17 @@ def create_web_application(
         )
 
     @application.post("/logout")
-    def logout(request: Request) -> Response:
+    def logout(
+        request: Request,
+        csrf_token: Annotated[str, Form()] = "",
+    ) -> Response:
+        if not csrf_token_is_valid(request, csrf_token):
+            log_activity("Web logout CSRF validation failed.")
+            return HTMLResponse(
+                content="Your form could not be verified.",
+                status_code=403,
+            )
+
         current_user = load_authenticated_session_user(
             request,
             database_file,

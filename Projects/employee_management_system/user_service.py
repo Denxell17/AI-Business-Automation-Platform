@@ -5,6 +5,8 @@ from authorization import (
     user_has_permission,
 )
 from authentication import (
+    DUMMY_PASSWORD,
+    DUMMY_PASSWORD_HASH,
     hash_password,
     verify_password,
 )
@@ -17,6 +19,10 @@ from database import (
     update_user_account_password_hash,
 )
 from models import UserAccount
+from password_policy import (
+    password_is_safe_to_verify,
+    password_meets_policy,
+)
 
 
 def register_user_account(
@@ -25,6 +31,8 @@ def register_user_account(
     role: str,
     database_file: Path = DATABASE_FILE,
 ) -> bool:
+    if not password_meets_policy(username, password):
+        return False
     password_hash = hash_password(password)
 
     return insert_user_account(
@@ -45,21 +53,25 @@ def authenticate_user_account(
         database_file,
     )
 
-    if user_account is None:
-        return None
-
-    if not user_account["is_active"]:
-        return None
-
+    active_user = (
+        user_account
+        if user_account is not None and user_account["is_active"]
+        else None
+    )
+    password_is_bounded = password_is_safe_to_verify(password)
     password_is_correct = verify_password(
-        password,
-        user_account["password_hash"],
+        password if password_is_bounded else DUMMY_PASSWORD,
+        (
+            active_user["password_hash"]
+            if active_user is not None and password_is_bounded
+            else DUMMY_PASSWORD_HASH
+        ),
     )
 
-    if not password_is_correct:
+    if active_user is None or not password_is_bounded or not password_is_correct:
         return None
 
-    return user_account
+    return active_user
 
 
 def register_initial_administrator(
@@ -162,7 +174,7 @@ def reset_viewer_account_password(
     ):
         return False
 
-    if not new_password.strip():
+    if not password_meets_policy(target_username, new_password):
         return False
 
     target_user = load_user_account_by_username(
@@ -200,10 +212,7 @@ def change_current_user_password(
     if not current_user["is_active"]:
         return False
 
-    if (
-        not current_password.strip()
-        or not new_password.strip()
-    ):
+    if not current_password.strip():
         return False
 
     stored_user = load_user_account_by_username(
@@ -218,6 +227,9 @@ def change_current_user_password(
         return False
 
     if stored_user["user_id"] != current_user["user_id"]:
+        return False
+
+    if not password_meets_policy(stored_user["username"], new_password):
         return False
 
     if not verify_password(

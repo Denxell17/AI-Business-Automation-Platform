@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from agent_execution_service import (
     MAX_AGENT_EXECUTION_INPUT_LENGTH,
@@ -164,23 +165,13 @@ class TestAgentExecutionFormWeb(unittest.TestCase):
         self.assertTrue(inserted)
 
     def sign_in_as_admin(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.admin_username,
-                "password": self.admin_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.admin_username, self.admin_password,
         )
 
     def sign_in_as_viewer(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.viewer_username,
-                "password": self.viewer_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.viewer_username, self.viewer_password,
         )
 
     def template_url(self, template_id=None):

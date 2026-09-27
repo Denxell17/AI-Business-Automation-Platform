@@ -58,6 +58,11 @@
             method="post"
             action="{{ url_for('login_submission') }}"
         >
+            <input
+                type="hidden"
+                name="csrf_token"
+                value="{{ csrf_token }}"
+            >
             <div class="form-field">
                 <label for="username">Username</label>
                 <input
@@ -79,6 +84,7 @@
                     name="password"
                     type="password"
                     autocomplete="current-password"
+                    maxlength="{{ maximum_password_length }}"
                     required
                     {% if error_message %}aria-describedby="login-error"{% endif %}
                 >

@@ -1,8 +1,9 @@
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
-from authentication import verify_password
+from authentication import DUMMY_PASSWORD_HASH, verify_password
 from database import (
     get_database_connection,
     load_user_account_by_username,
@@ -226,6 +227,97 @@ class TestUserService(unittest.TestCase):
 
             self.assertTrue(registration_result)
             self.assertIsNone(authenticated_user)
+
+    @patch("user_service.verify_password", return_value=False)
+    def test_missing_account_performs_one_dummy_password_verification(
+        self,
+        mock_verify_password,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = Path(temporary_directory) / "employees.db"
+
+            authenticated_user = authenticate_user_account(
+                "UnknownUser",
+                "SubmittedPassword123!",
+                database_file,
+            )
+
+        self.assertIsNone(authenticated_user)
+        mock_verify_password.assert_called_once_with(
+            "SubmittedPassword123!",
+            DUMMY_PASSWORD_HASH,
+        )
+
+    @patch("user_service.verify_password", return_value=False)
+    def test_inactive_account_performs_one_dummy_password_verification(
+        self,
+        mock_verify_password,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = Path(temporary_directory) / "employees.db"
+            self.assertTrue(
+                register_user_account(
+                    "Dennis",
+                    "SecurePassword123!",
+                    "admin",
+                    database_file,
+                )
+            )
+            connection = get_database_connection(database_file)
+            try:
+                connection.execute(
+                    "UPDATE users SET is_active = 0 WHERE username = ?",
+                    ("Dennis",),
+                )
+                connection.commit()
+            finally:
+                connection.close()
+
+            authenticated_user = authenticate_user_account(
+                "Dennis",
+                "SubmittedPassword123!",
+                database_file,
+            )
+
+        self.assertIsNone(authenticated_user)
+        mock_verify_password.assert_called_once_with(
+            "SubmittedPassword123!",
+            DUMMY_PASSWORD_HASH,
+        )
+
+    @patch("user_service.verify_password", return_value=False)
+    def test_overlong_login_password_uses_bounded_dummy_verification(
+        self,
+        mock_verify_password,
+    ):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = Path(temporary_directory) / "employees.db"
+            authenticated_user = authenticate_user_account(
+                "UnknownUser",
+                "x" * 129,
+                database_file,
+            )
+
+        self.assertIsNone(authenticated_user)
+        mock_verify_password.assert_called_once()
+        verified_password, verified_hash = mock_verify_password.call_args.args
+        self.assertLessEqual(len(verified_password), 128)
+        self.assertEqual(verified_hash, DUMMY_PASSWORD_HASH)
+
+    def test_registration_rejects_password_that_fails_policy(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = Path(temporary_directory) / "employees.db"
+            self.assertFalse(
+                register_user_account(
+                    "Dennis",
+                    "short-password",
+                    "admin",
+                    database_file,
+                )
+            )
+            self.assertIsNone(
+                load_user_account_by_username("Dennis", database_file)
+            )
 
     def test_register_initial_administrator_creates_first_account(
         self,
@@ -1781,6 +1873,74 @@ class TestUserService(unittest.TestCase):
                     stored_user["password_hash"],
                 )
             )
+
+    def test_administrator_password_reset_rejects_weak_new_password(self):
+        administrator = {
+            "user_id": 1,
+            "username": "Dennis",
+            "password_hash": "protected_hash",
+            "role": "admin",
+            "is_active": True,
+        }
+        with TemporaryDirectory() as temporary_directory:
+            database_file = Path(temporary_directory) / "employees.db"
+            self.assertTrue(
+                register_user_account(
+                    "ReportViewer",
+                    "OriginalPassword123!",
+                    "viewer",
+                    database_file,
+                )
+            )
+            before = load_user_account_by_username(
+                "ReportViewer", database_file
+            )
+
+            changed = reset_viewer_account_password(
+                administrator,
+                "ReportViewer",
+                "short-password",
+                database_file,
+            )
+            after = load_user_account_by_username(
+                "ReportViewer", database_file
+            )
+
+        self.assertFalse(changed)
+        self.assertEqual(before["password_hash"], after["password_hash"])
+        self.assertEqual(before["session_version"], after["session_version"])
+
+    def test_self_service_password_change_rejects_weak_new_password(self):
+        with TemporaryDirectory() as temporary_directory:
+            database_file = Path(temporary_directory) / "employees.db"
+            current_password = "OriginalPassword123!"
+            self.assertTrue(
+                register_user_account(
+                    "ReportViewer",
+                    current_password,
+                    "viewer",
+                    database_file,
+                )
+            )
+            current_user = authenticate_user_account(
+                "ReportViewer", current_password, database_file
+            )
+
+            changed = change_current_user_password(
+                current_user,
+                current_password,
+                "short-password",
+                database_file,
+            )
+            stored_user = load_user_account_by_username(
+                "ReportViewer", database_file
+            )
+
+        self.assertFalse(changed)
+        self.assertTrue(
+            verify_password(current_password, stored_user["password_hash"])
+        )
+        self.assertEqual(stored_user["session_version"], 1)
 
 
 if __name__ == "__main__":

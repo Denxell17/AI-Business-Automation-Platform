@@ -6,6 +6,7 @@ from tempfile import TemporaryDirectory
 from unittest.mock import patch
 
 from fastapi.testclient import TestClient
+from tests.web_auth import sign_in
 
 from agent_provider import AgentProviderError
 from ai_assistant_service import (
@@ -145,23 +146,13 @@ class TestAiAssistantWeb(unittest.TestCase):
         self.temporary_directory.cleanup()
 
     def sign_in_as_admin(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.admin_username,
-                "password": self.admin_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.admin_username, self.admin_password,
         )
 
     def sign_in_as_viewer(self):
-        return self.client.post(
-            "/login",
-            data={
-                "username": self.viewer_username,
-                "password": self.viewer_password,
-            },
-            follow_redirects=False,
+        return sign_in(
+            self.client, self.viewer_username, self.viewer_password,
         )
 
     def get_csrf_token(self):

@@ -26,6 +26,7 @@ class TestPostgresqlMigrations(unittest.TestCase):
                 "005_create_webhook_delivery_state.sql",
                 "006_create_crm_domain.sql",
                 "007_create_invoice_document_domain.sql",
+                "008_add_user_session_version.sql",
             ],
         )
 
@@ -65,6 +66,23 @@ class TestPostgresqlMigrations(unittest.TestCase):
         self.assertIn(
             "UNIQUE (execution_id, task_id)",
             correction_sql,
+        )
+
+    def test_session_version_migration_contains_expected_contract(self):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        session_version_sql = migration_files[7].read_text(
+            encoding="utf-8-sig"
+        )
+
+        self.assertIn(
+            "ADD COLUMN session_version BIGINT NOT NULL DEFAULT 1",
+            session_version_sql,
+        )
+        self.assertIn(
+            "CHECK (session_version > 0)",
+            session_version_sql,
         )
 
     def test_agent_template_migration_contains_expected_contract(
