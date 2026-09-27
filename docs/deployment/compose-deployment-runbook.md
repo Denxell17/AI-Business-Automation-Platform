@@ -78,6 +78,13 @@ Production cookies use `Secure`, `HttpOnly`, and `SameSite=Lax`. Forwarded
 headers are disabled by default; if an ingress needs them, configure
 `--proxy-headers` and `--forwarded-allow-ips` for its exact trusted addresses.
 
+The production application factory disables `/docs`, `/redoc`, and
+`/openapi.json`. Development and test factories retain them. ABAP emits its
+application-level CSP, framing, content-type, referrer, and browser-permission
+headers itself. Configure HSTS only at the public TLS terminator after the
+HTTPS-only host and any intended subdomains have been verified; the internal
+HTTP application deliberately does not emit HSTS.
+
 - `GET /health` is a database-independent liveness check.
 - `GET /ready` returns `200` only with a usable core schema; otherwise it
   returns a safe `503`.

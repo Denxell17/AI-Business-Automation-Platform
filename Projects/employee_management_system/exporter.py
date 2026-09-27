@@ -1,4 +1,5 @@
 import csv
+import unicodedata
 from io import StringIO
 from pathlib import Path
 
@@ -16,6 +17,26 @@ CSV_FIELDNAMES = [
     "salary",
 ]
 
+CSV_TEXT_FIELDNAMES = (
+    "employee_id",
+    "name",
+    "department",
+    "position",
+)
+
+DANGEROUS_FORMULA_PREFIXES = frozenset("=+-@")
+
+
+def neutralize_spreadsheet_text(value: str) -> str:
+    """Keep exported text from being interpreted as a spreadsheet formula."""
+    for character in value:
+        if character.isspace() or unicodedata.category(character) == "Cc":
+            continue
+        if character in DANGEROUS_FORMULA_PREFIXES:
+            return "'" + value
+        break
+    return value
+
 
 def build_employee_csv_content(
     employee_list: list[Employee],
@@ -28,7 +49,15 @@ def build_employee_csv_content(
     )
 
     writer.writeheader()
-    writer.writerows(employee_list)
+    for employee in employee_list:
+        export_row = employee.copy()
+        for field_name in CSV_TEXT_FIELDNAMES:
+            value = export_row.get(field_name)
+            if isinstance(value, str):
+                export_row[field_name] = neutralize_spreadsheet_text(
+                    value
+                )
+        writer.writerow(export_row)
 
     return output.getvalue()
 

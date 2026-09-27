@@ -108,6 +108,7 @@ class TestInvoiceDomain(unittest.TestCase):
         self.assertEqual(download.headers["content-type"], "application/pdf")
         self.assertIn('attachment; filename="invoice-INV-1002.pdf"', download.headers["content-disposition"])
         self.assertEqual(download.headers["cache-control"], "private, no-store")
+        self.assertEqual(download.headers["x-content-type-options"], "nosniff")
         self.assertEqual(self.client.get(f"/static/documents/{document['storage_key']}").status_code, 404)
         self.assertTrue(create_workflow(self.admin, "WF-INVOICE", "Invoice follow-up", "Synthetic", "draft", self.database_file))
         self.assertTrue(create_workflow_task(self.admin, "TASK-INVOICE", "WF-INVOICE", 1,

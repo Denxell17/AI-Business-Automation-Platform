@@ -203,6 +203,15 @@ class TestUiFoundations(unittest.TestCase):
         self.assertIn("navigation.inert = isUnavailable", navigation)
         self.assertIn('event.key === "Escape"', navigation)
 
+    def test_theme_color_scheme_is_defined_by_static_css(self):
+        theme_script = (
+            STATIC_DIRECTORY / "theme.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("color-scheme: dark", self.stylesheet)
+        self.assertIn("color-scheme: light", self.stylesheet)
+        self.assertNotIn("style.colorScheme", theme_script)
+
     def test_responsive_and_reduced_motion_rules_are_present(self):
         self.assertIn("@media (max-width: 760px)", self.stylesheet)
         self.assertIn("@media (max-width: 640px)", self.stylesheet)

@@ -128,6 +128,10 @@ from web_session import (
     clear_authenticated_session,
     load_authenticated_session_user,
 )
+from web_security import (
+    BrowserSecurityMiddleware,
+    mark_response_sensitive,
+)
 from workflow_service import (
     create_workflow,
     create_workflow_task,
@@ -165,6 +169,7 @@ CSRF_SESSION_KEY = "csrf_token"
 
 
 def get_or_create_csrf_token(request: Request) -> str:
+    mark_response_sensitive(request)
     csrf_token = request.session.get(CSRF_SESSION_KEY)
 
     if not isinstance(csrf_token, str):
@@ -327,6 +332,7 @@ def create_web_application(
     webhook_clock: Callable[[], datetime] | None = None,
     document_storage: DocumentStorage | None = None,
     login_rate_limiter: LoginRateLimiter | None = None,
+    expose_api_documentation: bool = True,
 ) -> FastAPI:
     selected_session_secret = (
         session_secret
@@ -376,6 +382,11 @@ def create_web_application(
             "employee and user-account information."
         ),
         version="1.0.0",
+        docs_url=("/docs" if expose_api_documentation else None),
+        redoc_url=("/redoc" if expose_api_documentation else None),
+        openapi_url=(
+            "/openapi.json" if expose_api_documentation else None
+        ),
     )
 
     application.add_middleware(
@@ -385,6 +396,10 @@ def create_web_application(
         max_age=SESSION_MAX_AGE_SECONDS,
         same_site="lax",
         https_only=secure_cookies,
+    )
+    application.add_middleware(
+        BrowserSecurityMiddleware,
+        development_documentation=expose_api_documentation,
     )
 
     application.mount(

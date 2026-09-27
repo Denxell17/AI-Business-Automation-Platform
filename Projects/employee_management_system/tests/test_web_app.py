@@ -1,6 +1,8 @@
+import csv
 import sqlite3
 import re
 import unittest
+from io import StringIO
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from unittest.mock import patch
@@ -1060,6 +1062,10 @@ class TestWebApplication(unittest.TestCase):
             response.headers["content-disposition"],
             'attachment; filename="employee_report.csv"',
         )
+        self.assertEqual(
+            response.headers["cache-control"],
+            "private, no-store",
+        )
         self.assertTrue(response.content.startswith(b"\xef\xbb\xbf"))
         self.assertIn(
             "employee_id,name,department,position,salary",
@@ -1074,6 +1080,39 @@ class TestWebApplication(unittest.TestCase):
             f"User {self.username} downloaded "
             "the web employee report."
         )
+
+    @patch("web_app.log_activity")
+    @patch("web_app.load_employee_records")
+    def test_employee_report_neutralizes_formula_cells(
+        self,
+        mock_load_employee_records,
+        mock_log_activity,
+    ):
+        mock_load_employee_records.return_value = [
+            {
+                "employee_id": "EMP-FORMULA",
+                "name": "\t=HYPERLINK(\"https://example.test\",\"Open\")",
+                "department": "+Finance",
+                "position": "Developer",
+                "salary": 85000,
+            }
+        ]
+        self.sign_in()
+        mock_log_activity.reset_mock()
+
+        response = self.client.get("/reports/employees.csv")
+        exported_row = next(
+            csv.DictReader(StringIO(response.text.lstrip("\ufeff")))
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            exported_row["name"],
+            "'\t=HYPERLINK(\"https://example.test\",\"Open\")",
+        )
+        self.assertEqual(exported_row["department"], "'+Finance")
+        self.assertEqual(exported_row["position"], "Developer")
+        self.assertEqual(exported_row["salary"], "85000")
 
     def test_viewer_can_download_employee_report(self):
         self.sign_in(

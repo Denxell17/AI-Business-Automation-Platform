@@ -23,7 +23,11 @@ def production_settings():
 def create_application():
     """Keep signed sessions stable across restarts and require HTTPS cookies."""
     _, secret = production_settings()
-    return create_web_application(session_secret=secret, secure_cookies=True)
+    return create_web_application(
+        session_secret=secret,
+        secure_cookies=True,
+        expose_api_documentation=False,
+    )
 
 
 def migrate():

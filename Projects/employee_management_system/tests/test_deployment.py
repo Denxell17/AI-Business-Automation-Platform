@@ -69,6 +69,17 @@ class TestDeployment(unittest.TestCase):
                 self.assertEqual(repeated.status_code, 200)
                 self.assertEqual(second.get("/health").status_code, 200)
 
+    def test_production_disables_api_documentation(self):
+        application = create_application()
+
+        with TestClient(application) as client:
+            for path in ("/docs", "/redoc", "/openapi.json"):
+                with self.subTest(path=path):
+                    response = client.get(path)
+                    self.assertEqual(response.status_code, 404)
+
+            self.assertEqual(client.get("/health").status_code, 200)
+
     def test_explicit_migration_uses_configured_database(self):
         with patch("deployment.apply_postgresql_migrations") as apply:
             migrate()

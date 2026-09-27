@@ -7,6 +7,7 @@ from database import (
     load_user_account_by_username,
 )
 from models import UserAccount
+from web_security import mark_response_sensitive
 
 
 SESSION_USER_ID = "user_id"
@@ -18,6 +19,7 @@ def begin_authenticated_session(
     request: Request,
     user_account: UserAccount,
 ) -> None:
+    mark_response_sensitive(request)
     request.session.clear()
     request.session[SESSION_USER_ID] = (
         user_account["user_id"]
@@ -82,4 +84,5 @@ def load_authenticated_session_user(
         clear_authenticated_session(request)
         return None
 
+    mark_response_sensitive(request)
     return stored_user

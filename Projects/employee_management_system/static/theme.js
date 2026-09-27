@@ -52,7 +52,6 @@
 
     function applyTheme(theme, persist = false) {
         root.dataset.theme = theme;
-        root.style.colorScheme = theme;
 
         if (persist) {
             try {
