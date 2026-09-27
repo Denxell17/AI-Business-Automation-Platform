@@ -39,6 +39,7 @@ class OpenAIAgentProvider:
                 max_retries=0,
             )
         )
+        self._max_output_tokens = selected_settings["max_output_tokens"]
 
     def generate_response(
         self,
@@ -66,6 +67,7 @@ class OpenAIAgentProvider:
                 instructions=system_prompt.strip(),
                 input=input_text.strip(),
                 store=False,
+                max_output_tokens=self._max_output_tokens,
             )
         except OpenAIError as error:
             raise AgentProviderError(

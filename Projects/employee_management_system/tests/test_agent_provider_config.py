@@ -1,6 +1,7 @@
 import unittest
 
 from agent_provider_config import (
+    DEFAULT_OPENAI_MAX_OUTPUT_TOKENS,
     DEFAULT_OPENAI_TIMEOUT_SECONDS,
     load_agent_provider_settings,
     load_openai_provider_settings,
@@ -160,17 +161,37 @@ class TestOpenAIProviderConfig(unittest.TestCase):
             settings["timeout_seconds"],
             DEFAULT_OPENAI_TIMEOUT_SECONDS,
         )
+        self.assertEqual(
+            settings["max_output_tokens"],
+            DEFAULT_OPENAI_MAX_OUTPUT_TOKENS,
+        )
 
     def test_values_are_trimmed_and_explicit_timeout_is_loaded(self):
         settings = load_openai_provider_settings(
             {
                 "OPENAI_API_KEY": "  test-api-key  ",
                 "OPENAI_TIMEOUT_SECONDS": " 12.5 ",
+                "OPENAI_MAX_OUTPUT_TOKENS": "256",
             }
         )
 
         self.assertEqual(settings["api_key"], "test-api-key")
         self.assertEqual(settings["timeout_seconds"], 12.5)
+        self.assertEqual(settings["max_output_tokens"], 256)
+
+    def test_invalid_output_token_limit_is_rejected(self):
+        for value in ("0", "4097", "12.5", " 256 ", "many"):
+            with self.subTest(value=value):
+                with self.assertRaisesRegex(
+                    ValueError,
+                    "OPENAI_MAX_OUTPUT_TOKENS",
+                ):
+                    load_openai_provider_settings(
+                        {
+                            "OPENAI_API_KEY": "test-api-key",
+                            "OPENAI_MAX_OUTPUT_TOKENS": value,
+                        }
+                    )
 
     def test_missing_api_key_is_rejected(self):
         with self.assertRaisesRegex(

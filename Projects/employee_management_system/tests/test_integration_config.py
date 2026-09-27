@@ -8,8 +8,8 @@ VALID = {
     "ABAP_N8N_BASE_URL": "https://automation.example.test",
     "ABAP_N8N_WORKFLOW_PATH": "/webhook/v1/workflow",
     "ABAP_INTEGRATION_ALLOWED_HOSTS": "automation.example.test",
-    "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-test-secret-1234567890",
-    "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-test-secret-1234567890",
+    "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-test-only-secret-1234567890abcdef",
+    "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-test-only-secret-1234567890abcdef",
 }
 
 
@@ -55,6 +55,37 @@ class TestIntegrationConfig(unittest.TestCase):
         with self.assertRaises(ValueError) as captured:
             load_integration_settings(config)
         self.assertNotIn(config["ABAP_OUTBOUND_WEBHOOK_SECRET"], str(captured.exception))
+
+    def test_webhook_secret_policy_rejects_unsafe_values_without_echoing(self):
+        unsafe_values = (
+            "short-secret",
+            "x" * 4097,
+            "replace_with_a_random_webhook_secret_1234567890",
+            " strong-test-only-secret-1234567890abcdef",
+            "strong-test-only-secret-1234567890abcdef ",
+            "strong-test-only-secret-1234567890\nabcdef",
+            "strong-test-only-secret-1234567890\x7fabcdef",
+            "strong-test-only-secret-1234567890\x85abcdef",
+        )
+
+        for name in (
+            "ABAP_OUTBOUND_WEBHOOK_SECRET",
+            "ABAP_INBOUND_WEBHOOK_SECRET",
+        ):
+            for value in unsafe_values:
+                with self.subTest(name=name, value=repr(value)):
+                    config = dict(VALID)
+                    config[name] = value
+                    with self.assertRaises(ValueError) as captured:
+                        load_integration_settings(config)
+                    self.assertNotIn(value, str(captured.exception))
+
+    def test_webhook_secret_maximum_uses_utf8_bytes(self):
+        config = dict(VALID)
+        config["ABAP_INBOUND_WEBHOOK_SECRET"] = "界" * 1400
+
+        with self.assertRaises(ValueError):
+            load_integration_settings(config)
 
     def test_unsafe_urls_are_rejected(self):
         for url in (

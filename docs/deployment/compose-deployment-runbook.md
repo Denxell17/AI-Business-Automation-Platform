@@ -85,6 +85,20 @@ headers itself. Configure HSTS only at the public TLS terminator after the
 HTTPS-only host and any intended subdomains have been verified; the internal
 HTTP application deliberately does not emit HSTS.
 
+The application webhook circuit breaker allows 60 requests per visible peer
+and 300 requests process-wide per rolling 60-second window. It is only a final
+single-process safety boundary: it uses the direct application-server peer and
+does not trust forwarded client-address headers. The production reverse proxy
+or ingress must enforce authoritative per-client limits, endpoint/global
+connection ceilings, request/body/header timeouts, upstream concurrency
+limits, and body-size rejection before forwarding.
+
+AI Assistant and Agent Template execution share a process-local allowance of
+10 provider requests per authenticated user per rolling 60 seconds and four
+concurrent provider operations process-wide. These limits reset on restart and
+are not multi-instance quotas. Introduce reviewed shared limiter state before
+running multiple application instances.
+
 - `GET /health` is a database-independent liveness check.
 - `GET /ready` returns `200` only with a usable core schema; otherwise it
   returns a safe `503`.

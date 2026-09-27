@@ -7,12 +7,15 @@ network destination and any redirect again immediately before connecting.
 import ipaddress
 import os
 import re
+import unicodedata
 from collections.abc import Mapping
 from typing import TypedDict
 from urllib.parse import urlsplit
 
 
 _HOST_LABEL = re.compile(r"^[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?$")
+MIN_WEBHOOK_SECRET_CHARACTERS = 32
+MAX_WEBHOOK_SECRET_BYTES = 4096
 
 
 class IntegrationSettings(TypedDict):
@@ -75,6 +78,22 @@ def _allowed_hosts(value: str) -> tuple[str, ...]:
     if len(set(hosts)) != len(hosts):
         raise ValueError("ABAP_INTEGRATION_ALLOWED_HOSTS contains duplicates.")
     return hosts
+
+
+def _webhook_secret(environment: Mapping[str, str], name: str) -> str:
+    """Validate one opaque signing secret without exposing it in errors."""
+    value = environment.get(name, "")
+    if not isinstance(value, str) or not value:
+        raise ValueError(f"{name} is required.")
+    if (
+        value != value.strip()
+        or len(value) < MIN_WEBHOOK_SECRET_CHARACTERS
+        or len(value.encode("utf-8")) > MAX_WEBHOOK_SECRET_BYTES
+        or value.casefold().startswith("replace_")
+        or any(unicodedata.category(character) == "Cc" for character in value)
+    ):
+        raise ValueError(f"{name} does not meet the webhook secret policy.")
+    return value
 
 
 def _base_url(value: str, allowed_hosts: tuple[str, ...]) -> str:
@@ -209,12 +228,8 @@ def load_integration_settings(
         or any(ord(character) < 33 or ord(character) == 127 for character in path)
     ):
         raise ValueError("ABAP_N8N_WORKFLOW_PATH must be a clean absolute path.")
-    outbound = selected.get("ABAP_OUTBOUND_WEBHOOK_SECRET", "").strip()
-    inbound = selected.get("ABAP_INBOUND_WEBHOOK_SECRET", "").strip()
-    if not outbound:
-        raise ValueError("ABAP_OUTBOUND_WEBHOOK_SECRET is required.")
-    if not inbound:
-        raise ValueError("ABAP_INBOUND_WEBHOOK_SECRET is required.")
+    outbound = _webhook_secret(selected, "ABAP_OUTBOUND_WEBHOOK_SECRET")
+    inbound = _webhook_secret(selected, "ABAP_INBOUND_WEBHOOK_SECRET")
     if inbound == outbound:
         raise ValueError("Inbound and outbound webhook secrets must differ.")
     return {

@@ -128,8 +128,8 @@ class TestWorkflowWorker(unittest.TestCase):
             "ABAP_N8N_BASE_URL": "https://automation.example.test",
             "ABAP_N8N_WORKFLOW_PATH": "/webhook/v1/workflow",
             "ABAP_INTEGRATION_ALLOWED_HOSTS": "automation.example.test",
-            "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-worker-test-secret",
-            "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-worker-test-secret",
+            "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-worker-test-only-secret-1234567890",
+            "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-worker-test-only-secret-1234567890",
         })
         with patch("workflow_worker.deliver_outbound_webhook") as deliver:
             deliver.return_value = {

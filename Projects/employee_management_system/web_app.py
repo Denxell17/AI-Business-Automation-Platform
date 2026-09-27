@@ -26,6 +26,10 @@ from activity_logger import (
     load_recent_activity_entries,
     log_activity,
 )
+from abuse_protection import (
+    ProviderAbuseProtection,
+    WebhookCircuitBreaker,
+)
 from ai_assistant_config import (
     AiAssistantSettings,
     load_ai_assistant_settings,
@@ -332,6 +336,8 @@ def create_web_application(
     webhook_clock: Callable[[], datetime] | None = None,
     document_storage: DocumentStorage | None = None,
     login_rate_limiter: LoginRateLimiter | None = None,
+    webhook_circuit_breaker: WebhookCircuitBreaker | None = None,
+    provider_abuse_protection: ProviderAbuseProtection | None = None,
     expose_api_documentation: bool = True,
 ) -> FastAPI:
     selected_session_secret = (
@@ -343,6 +349,16 @@ def create_web_application(
         login_rate_limiter
         if login_rate_limiter is not None
         else LoginRateLimiter(selected_session_secret)
+    )
+    selected_webhook_circuit_breaker = (
+        webhook_circuit_breaker
+        if webhook_circuit_breaker is not None
+        else WebhookCircuitBreaker()
+    )
+    selected_provider_abuse_protection = (
+        provider_abuse_protection
+        if provider_abuse_protection is not None
+        else ProviderAbuseProtection(selected_session_secret)
     )
     selected_agent_provider_factory = (
         agent_provider_factory
@@ -411,6 +427,15 @@ def create_web_application(
     @application.post("/integrations/webhooks/callback")
     async def inbound_webhook_callback(request: Request) -> Response:
         """Accept one signed external callback without browser authentication."""
+        peer = request.client.host if request.client is not None else "unknown"
+        limit = selected_webhook_circuit_breaker.check(peer)
+        if not limit.allowed:
+            return JSONResponse(
+                content={"detail": "Too many webhook requests."},
+                status_code=429,
+                headers={"Retry-After": str(limit.retry_after)},
+            )
+
         try:
             settings = selected_integration_settings_loader()
         except ValueError:
@@ -1191,6 +1216,18 @@ def create_web_application(
 
         model_name = assistant_settings["model_name"]
 
+        limit = selected_provider_abuse_protection.acquire(
+            current_user["user_id"]
+        )
+        if not limit.allowed:
+            response = render_ai_assistant(
+                error_message="Too many AI requests. Try again shortly.",
+                model_name=model_name,
+                status_code=429,
+            )
+            response.headers["Retry-After"] = str(limit.retry_after)
+            return response
+
         try:
             assistant_response = ask_ai_assistant(
                 current_user,
@@ -1213,6 +1250,8 @@ def create_web_application(
                 ),
                 status_code=500,
             )
+        finally:
+            selected_provider_abuse_protection.release()
 
         if assistant_response is None:
             log_activity(
@@ -1913,6 +1952,17 @@ def create_web_application(
                 503,
             )
 
+        limit = selected_provider_abuse_protection.acquire(
+            current_user["user_id"]
+        )
+        if not limit.allowed:
+            response = render_execution_error(
+                "Too many AI requests. Try again shortly.",
+                429,
+            )
+            response.headers["Retry-After"] = str(limit.retry_after)
+            return response
+
         try:
             agent_execution = execute_agent_template(
                 current_user,
@@ -1929,6 +1979,8 @@ def create_web_application(
                 ),
                 500,
             )
+        finally:
+            selected_provider_abuse_protection.release()
 
         if agent_execution is None:
             return render_execution_error(

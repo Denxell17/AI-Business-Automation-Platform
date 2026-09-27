@@ -47,6 +47,7 @@ class TestOpenAIAgentProvider(unittest.TestCase):
         self.settings = {
             "api_key": "test-api-key",
             "timeout_seconds": 12.5,
+            "max_output_tokens": 384,
         }
 
     def test_constructor_configures_safe_timeout_and_no_retries(self):
@@ -88,6 +89,7 @@ class TestOpenAIAgentProvider(unittest.TestCase):
                     "instructions": "Protect customer data.",
                     "input": "Summarize this request.",
                     "store": False,
+                    "max_output_tokens": 384,
                 }
             ],
         )

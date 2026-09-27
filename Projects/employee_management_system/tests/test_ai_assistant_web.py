@@ -9,6 +9,7 @@ from fastapi.testclient import TestClient
 from tests.web_auth import sign_in
 
 from agent_provider import AgentProviderError
+from abuse_protection import ProviderAbuseProtection
 from ai_assistant_service import (
     AI_ASSISTANT_SYSTEM_PROMPT,
     MAX_AI_ASSISTANT_QUESTION_LENGTH,
@@ -130,6 +131,9 @@ class TestAiAssistantWeb(unittest.TestCase):
         self.settings_loader = (
             DeterministicAssistantSettingsLoader()
         )
+        self.provider_limiter = ProviderAbuseProtection(
+            "ai-assistant-web-limiter-secret"
+        )
 
         application = create_web_application(
             database_file=self.database_file,
@@ -138,6 +142,7 @@ class TestAiAssistantWeb(unittest.TestCase):
             ai_assistant_settings_loader=(
                 self.settings_loader
             ),
+            provider_abuse_protection=self.provider_limiter,
         )
         self.client = TestClient(application)
 
@@ -427,6 +432,46 @@ class TestAiAssistantWeb(unittest.TestCase):
                 }
             ],
         )
+        self.assertEqual(self.provider_limiter.active_request_count, 0)
+
+    def test_per_user_limit_rejects_without_invoking_provider(self):
+        limiter = ProviderAbuseProtection(
+            "ai-rate-limit-test-secret",
+            user_limit=1,
+            window_seconds=60,
+            concurrency_limit=2,
+            max_users=4,
+            clock=lambda: 1000.0,
+        )
+        application = create_web_application(
+            database_file=self.database_file,
+            session_secret="ai-rate-limit-web-session-secret",
+            agent_provider_factory=self.provider_factory,
+            ai_assistant_settings_loader=self.settings_loader,
+            provider_abuse_protection=limiter,
+        )
+        client = TestClient(application)
+        self.addCleanup(client.close)
+        sign_in(client, self.admin_username, self.admin_password)
+        page = client.get("/ai-assistant")
+        token = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"', page.text
+        ).group(1)
+
+        first = client.post(
+            "/ai-assistant",
+            data={"csrf_token": token, "question": "First request."},
+        )
+        rejected = client.post(
+            "/ai-assistant",
+            data={"csrf_token": token, "question": "Second request."},
+        )
+
+        self.assertEqual(first.status_code, 200)
+        self.assertEqual(rejected.status_code, 429)
+        self.assertEqual(rejected.headers["retry-after"], "60")
+        self.assertIn("Too many AI requests", rejected.text)
+        self.assertEqual(len(self.provider.calls), 1)
 
     def test_provider_failure_displays_only_safe_error(self):
         unsafe_detail = (
@@ -454,6 +499,7 @@ class TestAiAssistantWeb(unittest.TestCase):
         self.assertNotIn(unsafe_detail, response.text)
         self.assertEqual(self.settings_loader.call_count, 1)
         self.assertEqual(self.provider_factory.call_count, 1)
+        self.assertEqual(self.provider_limiter.active_request_count, 0)
 
     @patch(
         "web_app.ask_ai_assistant",

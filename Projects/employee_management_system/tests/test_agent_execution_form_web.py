@@ -12,6 +12,7 @@ from agent_execution_service import (
     MAX_AGENT_EXECUTION_INPUT_LENGTH,
     SAFE_AGENT_PROVIDER_ERROR_MESSAGE,
 )
+from abuse_protection import ProviderAbuseProtection
 from agent_provider import AgentProviderError
 from database import (
     insert_agent_template,
@@ -475,6 +476,66 @@ class TestAgentExecutionFormWeb(unittest.TestCase):
         self.assertIn(
             "Deterministic browser response.",
             detail_response.text,
+        )
+
+    def test_assistant_and_agent_execution_share_user_allowance(self):
+        limiter = ProviderAbuseProtection(
+            "shared-ai-agent-limiter-secret",
+            user_limit=1,
+            window_seconds=60,
+            concurrency_limit=2,
+            max_users=4,
+            clock=lambda: 1000.0,
+        )
+        application = create_web_application(
+            database_file=self.database_file,
+            session_secret="shared-ai-agent-web-session-secret",
+            agent_provider_factory=self.provider_factory,
+            ai_assistant_settings_loader=lambda: {
+                "model_name": "test-assistant-model"
+            },
+            provider_abuse_protection=limiter,
+        )
+        client = TestClient(application)
+        self.addCleanup(client.close)
+        sign_in(client, self.admin_username, self.admin_password)
+
+        assistant_page = client.get("/ai-assistant")
+        assistant_token = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"',
+            assistant_page.text,
+        ).group(1)
+        assistant = client.post(
+            "/ai-assistant",
+            data={
+                "csrf_token": assistant_token,
+                "question": "Use the shared allowance.",
+            },
+        )
+
+        detail = client.get(self.template_url())
+        execution_token = re.search(
+            r'name="csrf_token"\s+value="([^"]+)"', detail.text
+        ).group(1)
+        rejected = client.post(
+            self.execution_submit_url(),
+            data={
+                "csrf_token": execution_token,
+                "input_text": "Attempt endpoint switching.",
+            },
+        )
+
+        self.assertEqual(assistant.status_code, 200)
+        self.assertEqual(rejected.status_code, 429)
+        self.assertEqual(rejected.headers["retry-after"], "60")
+        self.assertIn("Too many AI requests", rejected.text)
+        self.assertEqual(len(self.provider.calls), 1)
+        self.assertEqual(
+            load_agent_executions_for_template(
+                self.agent_template_id,
+                self.database_file,
+            ),
+            [],
         )
 
     def test_provider_failure_redirects_to_safe_failed_detail(self):

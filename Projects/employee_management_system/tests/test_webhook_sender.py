@@ -20,8 +20,8 @@ def settings(**overrides):
         "ABAP_N8N_BASE_URL": "https://automation.example.test",
         "ABAP_N8N_WORKFLOW_PATH": "/webhook/v1/workflow",
         "ABAP_INTEGRATION_ALLOWED_HOSTS": "automation.example.test",
-        "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-test-secret-1234567890",
-        "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-test-secret-1234567890",
+        "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-sender-test-only-secret-1234567890",
+        "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-sender-test-only-secret-1234567890",
         "ABAP_WEBHOOK_MAX_ATTEMPTS": "3",
     }
     values.update(overrides)

@@ -3,11 +3,13 @@ from datetime import datetime, timezone
 from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from tests.web_auth import sign_in, sign_out
 
 from database import load_webhook_deliveries
+from abuse_protection import WebhookCircuitBreaker
 from integration_config import load_integration_settings
 from user_service import register_user_account
 from web_app import create_web_application
@@ -126,6 +128,57 @@ class TestWebhookWebBoundary(unittest.TestCase):
         response = self.submit_callback()
 
         self.assertEqual(response.status_code, 503)
+        self.assertEqual(
+            load_webhook_deliveries(database_file=self.database_file),
+            [],
+        )
+
+    def test_callback_circuit_breaker_precedes_body_and_ignores_forwarded_headers(self):
+        limiter = WebhookCircuitBreaker(
+            source_limit=1,
+            process_limit=10,
+            window_seconds=60,
+            max_sources=4,
+            clock=lambda: 1000.0,
+        )
+        application = create_web_application(
+            database_file=self.database_file,
+            session_secret="webhook-limiter-test-session-secret",
+            integration_settings_loader=lambda: self.settings,
+            webhook_clock=lambda: NOW,
+            webhook_circuit_breaker=limiter,
+        )
+        client = TestClient(application)
+        self.addCleanup(client.close)
+
+        first = client.post(
+            "/integrations/webhooks/callback",
+            content=b"{}",
+            headers={"Content-Type": "application/json"},
+        )
+        self.assertEqual(first.status_code, 401)
+
+        with (
+            patch("web_app.read_bounded_request_body") as read_body,
+            patch("web_app.verify_inbound_webhook") as verify,
+            patch("web_app.accept_inbound_webhook") as accept,
+        ):
+            rejected = client.post(
+                "/integrations/webhooks/callback",
+                content=b"unread body",
+                headers={
+                    "Content-Type": "application/json",
+                    "X-Forwarded-For": "198.51.100.22",
+                    "Forwarded": "for=203.0.113.9",
+                },
+            )
+
+        self.assertEqual(rejected.status_code, 429)
+        self.assertEqual(rejected.json(), {"detail": "Too many webhook requests."})
+        self.assertEqual(rejected.headers["retry-after"], "60")
+        read_body.assert_not_called()
+        verify.assert_not_called()
+        accept.assert_not_called()
         self.assertEqual(
             load_webhook_deliveries(database_file=self.database_file),
             [],

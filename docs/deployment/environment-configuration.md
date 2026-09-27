@@ -60,8 +60,8 @@ processes. Worker configuration validates safe numeric bounds and fails closed.
 | `ABAP_WEBHOOK_RETRY_POLL_SECONDS` | No | Retry-worker polling interval; example `10`, maximum `300`. |
 | `ABAP_WEBHOOK_RETRY_LEASE_SECONDS` | No | Short lease for one durable retry attempt; example `30`, maximum `300`. A crashed worker's delivery becomes eligible after this expires. |
 | `ABAP_WEBHOOK_RETRY_CLAIM_LIMIT` | No | Maximum due records leased in one retry-worker cycle; example `25`, maximum `100`. |
-| `ABAP_OUTBOUND_WEBHOOK_SECRET` | Yes | Signs ABAP-to-n8n messages. Must be random, stable during rotation overlap, and different from the inbound secret. |
-| `ABAP_INBOUND_WEBHOOK_SECRET` | Yes | Verifies n8n-to-ABAP callbacks. Must be random, stable during rotation overlap, and different from the outbound secret. |
+| `ABAP_OUTBOUND_WEBHOOK_SECRET` | Yes | Signs ABAP-to-n8n messages. Must be a separate random value of at least 32 characters and at most 4096 UTF-8 bytes, with no surrounding whitespace, control characters, or example placeholder prefix. |
+| `ABAP_INBOUND_WEBHOOK_SECRET` | Yes | Verifies n8n-to-ABAP callbacks. Uses the same policy as the outbound secret and must have a different value. |
 
 The future implementation must use versioned schemas, strict JSON content
 types, authenticated signatures over canonical request data, constant-time
@@ -159,5 +159,9 @@ deterministic test substitute before being advertised as available.
   reference variable names but may not contain their values.
 - Automated tests own generated test secrets and isolated destinations.
 - Operators own rotation and must preserve separate inbound and outbound keys.
+- Generate webhook secrets with a cryptographically secure command such as
+  `python -c "import secrets; print(secrets.token_urlsafe(48))"`. The current
+  design uses coordinated replacement of each corresponding ABAP/n8n secret;
+  it does not accept overlapping old and new signing keys.
 - Readiness may report a capability as unavailable, but must never expose a
   secret or raw private configuration detail.

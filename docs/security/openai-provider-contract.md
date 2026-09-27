@@ -39,6 +39,11 @@ either a validated text response or a fixed safe error.
 - ABAP_EXTERNAL_PROVIDER selects the external provider.
 - OPENAI_API_KEY contains the provider credential.
 - OPENAI_TIMEOUT_SECONDS controls the bounded request timeout.
+- OPENAI_MAX_OUTPUT_TOKENS bounds generation before submission. It defaults to
+  512, accepts integers from 1 through 4096, and is sent through the Responses
+  API `max_output_tokens` parameter. The 512-token default is an operational
+  tuning value and may be raised later if legitimate responses are observed to
+  be unnecessarily truncated.
 - AI_ASSISTANT_MODEL selects the configured model.
 
 Integrations must be disabled by default.

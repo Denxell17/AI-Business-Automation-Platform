@@ -10,6 +10,9 @@ from typing import TypedDict
 DEFAULT_OPENAI_TIMEOUT_SECONDS = 30.0
 MIN_OPENAI_TIMEOUT_SECONDS = 1.0
 MAX_OPENAI_TIMEOUT_SECONDS = 120.0
+DEFAULT_OPENAI_MAX_OUTPUT_TOKENS = 512
+MIN_OPENAI_MAX_OUTPUT_TOKENS = 1
+MAX_OPENAI_MAX_OUTPUT_TOKENS = 4096
 DEFAULT_LOCAL_AI_CONNECT_TIMEOUT_SECONDS = 2.0
 DEFAULT_LOCAL_AI_READ_TIMEOUT_SECONDS = 90.0
 DEFAULT_LOCAL_AI_MAX_INPUT_CHARS = 12000
@@ -155,6 +158,7 @@ class OpenAIProviderSettings(TypedDict):
 
     api_key: str
     timeout_seconds: float
+    max_output_tokens: int
 
 
 def load_openai_provider_settings(
@@ -196,7 +200,28 @@ def load_openai_provider_settings(
             f"{MAX_OPENAI_TIMEOUT_SECONDS:g} seconds."
         )
 
+    max_output_value = selected_environment.get(
+        "OPENAI_MAX_OUTPUT_TOKENS",
+        str(DEFAULT_OPENAI_MAX_OUTPUT_TOKENS),
+    )
+    if re.fullmatch(r"[1-9][0-9]*", max_output_value) is None:
+        raise ValueError(
+            "OPENAI_MAX_OUTPUT_TOKENS must be a positive integer."
+        )
+    max_output_tokens = int(max_output_value)
+    if not (
+        MIN_OPENAI_MAX_OUTPUT_TOKENS
+        <= max_output_tokens
+        <= MAX_OPENAI_MAX_OUTPUT_TOKENS
+    ):
+        raise ValueError(
+            "OPENAI_MAX_OUTPUT_TOKENS must be between "
+            f"{MIN_OPENAI_MAX_OUTPUT_TOKENS} and "
+            f"{MAX_OPENAI_MAX_OUTPUT_TOKENS}."
+        )
+
     return {
         "api_key": api_key,
         "timeout_seconds": timeout_seconds,
+        "max_output_tokens": max_output_tokens,
     }
