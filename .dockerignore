@@ -2,13 +2,23 @@
 !Projects/
 !Projects/employee_management_system/
 !Projects/employee_management_system/*.py
-!Projects/employee_management_system/requirements*.txt
+!Projects/employee_management_system/requirements-deploy.txt
 !Projects/employee_management_system/templates/**
 !Projects/employee_management_system/static/**
 !Projects/employee_management_system/migrations/**
-!Projects/employee_management_system/tests/**
-**/__pycache__/**
+
+# Development, test, and local runtime artifacts must not enter the build context.
+Projects/employee_management_system/tests/
+Projects/employee_management_system/run_tests.py
+Projects/employee_management_system/data/
+Projects/employee_management_system/exports/
+Projects/employee_management_system/logs/
+Projects/employee_management_system/archive/
+Projects/employee_management_system/performance_boundary_demo.py
+Projects/employee_management_system/requirements.txt
+**/__pycache__/
 **/*.pyc
+**/.gitkeep
 **/.env*
 **/*.db
 **/*.log
