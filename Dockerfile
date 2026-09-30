@@ -6,7 +6,9 @@ COPY Projects/employee_management_system/requirements-deploy.txt /tmp/requiremen
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 RUN groupadd --gid 10001 abap && useradd --uid 10001 --gid abap --no-create-home abap
 COPY Projects/employee_management_system/ /app/
-RUN mkdir -p /app/logs /app/data /app/exports && chown -R abap:abap /app/logs /app/data /app/exports
+RUN mkdir -p /app/logs /app/data/documents /app/exports \
+    && chown -R abap:abap /app/logs /app/data /app/exports \
+    && chmod 0750 /app/logs /app/data /app/data/documents /app/exports
 USER abap
 EXPOSE 8000
 CMD ["python", "-m", "uvicorn", "deployment:create_application", "--factory", "--host", "0.0.0.0", "--port", "8000", "--no-proxy-headers"]
