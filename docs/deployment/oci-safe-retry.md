@@ -115,8 +115,9 @@ volume, and Always Free usage before installing software.
 
 ## Optional GitHub Actions retry
 
-`.github/workflows/oci-always-free-retry.yml` can make one safe launch attempt
-per hour without keeping a laptop or Cloud Shell session connected. It is
+`.github/workflows/oci-always-free-retry.yml` can make up to three safe launch
+attempts, 30 minutes apart, during each hourly invocation without keeping a
+laptop or Cloud Shell session connected. It is
 disabled unless the repository variable `ABAP_OCI_RETRY_ENABLED` is exactly
 `true`. Scheduled attempts also require `ABAP_OCI_RETRY_UNTIL_UTC`; set it to a
 UTC timestamp no more than seven days in the future. After that timestamp,
@@ -143,7 +144,14 @@ the output, then run one manual `create=true` attempt. Enable the hourly
 schedule only after both manual paths behave as expected.
 
 Every run checks for an existing non-terminated `abap-production-01` before
-launching. Capacity exhaustion returns the dedicated status code `75`, which
-the workflow treats as an expected no-capacity result. Any other error fails
-the workflow immediately. The workflow never upgrades the OCI account,
+starting the script, and the script repeats that check immediately before every
+launch attempt. Scheduled retries also check the seven-day deadline before
+every launch and before and after every sleep. The script does not sleep when
+there is insufficient time before the deadline for another full retry interval.
+
+Capacity exhaustion returns status `75`, an instance discovered during retry
+returns status `76`, and expiration of the scheduled retry window returns
+status `77`. The workflow treats these as safe outcomes. A successful launch
+returns `0` and stops immediately; any other error fails the workflow. The job
+has a hard 180-minute timeout. The workflow never upgrades the OCI account,
 changes networking, deletes resources, or selects another shape.

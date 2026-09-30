@@ -23,6 +23,16 @@ capacity_exhausted() {
   exit 75
 }
 
+instance_exists() {
+  printf 'INSTANCE_EXISTS: %s\n' "$*"
+  exit 76
+}
+
+retry_window_expired() {
+  printf 'RETRY_WINDOW_EXPIRED: %s\n' "$*"
+  exit 77
+}
+
 require_command() {
   command -v "$1" >/dev/null 2>&1 || fail "Required command not found: $1"
 }
@@ -61,10 +71,26 @@ grep -Eq '^(ssh-ed25519|ssh-rsa|ecdsa-sha2-nistp(256|384|521)) ' "$PUBLIC_KEY_FI
 
 readonly MAX_ATTEMPTS="${ABAP_MAX_ATTEMPTS:-$DEFAULT_MAX_ATTEMPTS}"
 readonly RETRY_SECONDS="${ABAP_RETRY_SECONDS:-$DEFAULT_RETRY_SECONDS}"
+readonly RETRY_UNTIL_UTC="${ABAP_OCI_RETRY_UNTIL_UTC:-}"
 is_positive_integer "$MAX_ATTEMPTS" || fail "ABAP_MAX_ATTEMPTS must be a positive integer."
 is_positive_integer "$RETRY_SECONDS" || fail "ABAP_RETRY_SECONDS must be a positive integer."
 (( MAX_ATTEMPTS <= 48 )) || fail "ABAP_MAX_ATTEMPTS cannot exceed 48."
 (( RETRY_SECONDS >= 1800 )) || fail "ABAP_RETRY_SECONDS cannot be less than 1800 seconds."
+
+retry_until_epoch=""
+if [[ -n "$RETRY_UNTIL_UTC" ]]; then
+  retry_until_epoch="$(date -u -d "$RETRY_UNTIL_UTC" +%s)" || \
+    fail "ABAP_OCI_RETRY_UNTIL_UTC is not a valid UTC timestamp."
+fi
+
+check_retry_deadline() {
+  [[ -n "$retry_until_epoch" ]] || return 0
+  local now_epoch
+  now_epoch="$(date -u +%s)"
+  if (( now_epoch >= retry_until_epoch )); then
+    retry_window_expired "The configured retry deadline has been reached."
+  fi
+}
 
 printf 'Validating OCI target without creating resources...\n'
 
@@ -118,7 +144,7 @@ existing_instance_id="$(
     --raw-output
 )"
 if [[ -n "$existing_instance_id" && "$existing_instance_id" != "null" ]]; then
-  fail "An active or retained instance named $INSTANCE_NAME already exists: $existing_instance_id"
+  instance_exists "A non-terminated instance named $INSTANCE_NAME already exists: $existing_instance_id"
 fi
 
 printf '\nValidated launch plan:\n'
@@ -143,6 +169,10 @@ instance_options='{"areLegacyImdsEndpointsDisabled":true}'
 freeform_tags='{"managed-by":"abap-safe-retry","environment":"production"}'
 
 for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
+  # The scheduled deadline is checked at the start of every iteration, including
+  # immediately after a retry sleep, before any launch request can be issued.
+  check_retry_deadline
+
   printf '[%s] Launch attempt %d of %d...\n' "$(date -u +'%Y-%m-%dT%H:%M:%SZ')" "$attempt" "$MAX_ATTEMPTS"
 
   # Recheck immediately before every write so a prior/manual success can never
@@ -157,8 +187,12 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
       --raw-output
   )"
   if [[ -n "$existing_instance_id" && "$existing_instance_id" != "null" ]]; then
-    fail "Stopping to prevent a duplicate; instance now exists: $existing_instance_id"
+    instance_exists "Stopping to prevent a duplicate; instance now exists: $existing_instance_id"
   fi
+
+  # Recheck after the read-only instance lookup so a deadline reached during
+  # that request cannot be followed by a launch.
+  check_retry_deadline
 
   error_file="$(mktemp)"
   if instance_id="$(
@@ -202,6 +236,16 @@ for (( attempt = 1; attempt <= MAX_ATTEMPTS; attempt++ )); do
     capacity_exhausted "Capacity remained unavailable after $MAX_ATTEMPTS attempts. No instance was created."
   fi
 
+  check_retry_deadline
+  if [[ -n "$retry_until_epoch" ]]; then
+    now_epoch="$(date -u +%s)"
+    remaining_seconds=$(( retry_until_epoch - now_epoch ))
+    if (( remaining_seconds <= RETRY_SECONDS )); then
+      retry_window_expired "Only $remaining_seconds seconds remain; there is not enough time for another retry interval."
+    fi
+  fi
+
   printf 'Waiting %s seconds before the next permitted attempt...\n' "$RETRY_SECONDS"
   sleep "$RETRY_SECONDS"
+  check_retry_deadline
 done

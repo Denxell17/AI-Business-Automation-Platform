@@ -21,10 +21,10 @@ concurrency:
 
 jobs:
   retry:
-    name: Validate and attempt once
+    name: Validate and retry safely
     if: github.event_name == 'workflow_dispatch' || vars.ABAP_OCI_RETRY_ENABLED == 'true'
     runs-on: ubuntu-24.04
-    timeout-minutes: 35
+    timeout-minutes: 180
     env:
       OCI_CLI_SUPPRESS_FILE_PERMISSIONS_WARNING: "True"
       OCI_TENANCY_OCID: ${{ secrets.OCI_TENANCY_OCID }}
@@ -36,8 +36,8 @@ jobs:
       ABAP_OCI_IMAGE_OCID: ${{ secrets.ABAP_OCI_IMAGE_OCID }}
       ABAP_SSH_PUBLIC_KEY: ${{ secrets.ABAP_SSH_PUBLIC_KEY }}
       ABAP_SSH_PUBLIC_KEY_FILE: ${{ github.workspace }}/.abap_ssh_public_key.pub
-      ABAP_MAX_ATTEMPTS: "1"
-      ABAP_RETRY_SECONDS: "3600"
+      ABAP_MAX_ATTEMPTS: "3"
+      ABAP_RETRY_SECONDS: "1800"
 
     steps:
       - name: Enforce the seven-day window
@@ -63,6 +63,8 @@ jobs:
           now_epoch="$(date -u +%s)"
           if (( now_epoch >= until_epoch )); then
             echo "The seven-day retry window has ended; no OCI request was made."
+            echo "The seven-day retry window has ended; no OCI request was made." \
+              >> "$GITHUB_STEP_SUMMARY"
             echo "active=false" >> "$GITHUB_OUTPUT"
           else
             echo "The scheduled retry window is active."
@@ -139,6 +141,7 @@ jobs:
         if: steps.window.outputs.active == 'true' && steps.existing.outputs.exists == 'false'
         env:
           CREATE_REQUESTED: ${{ github.event_name == 'schedule' || inputs.create }}
+          ABAP_OCI_RETRY_UNTIL_UTC: ${{ github.event_name == 'schedule' && vars.ABAP_OCI_RETRY_UNTIL_UTC || '' }}
         run: |
           if [[ "$CREATE_REQUESTED" == "true" ]]; then
             export ABAP_CONFIRM_CREATE=YES
@@ -152,7 +155,17 @@ jobs:
           set -e
 
           if (( result == 75 )); then
-            echo "Oracle A1 capacity is unavailable; the next scheduled run may try again." \
+            echo "Oracle A1 capacity remained unavailable after all permitted attempts; a later scheduled run may try again." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if (( result == 76 )); then
+            echo "ABAP already exists; retrying stopped and no additional launch request was made." \
+              >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+          if (( result == 77 )); then
+            echo "The seven-day retry window expired; retrying stopped and no additional launch request was made." \
               >> "$GITHUB_STEP_SUMMARY"
             exit 0
           fi
