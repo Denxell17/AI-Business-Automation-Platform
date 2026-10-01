@@ -316,6 +316,79 @@ class TestWebApplication(unittest.TestCase):
             response.text,
         )
 
+    def test_home_page_keeps_four_primary_metrics_and_compact_business_snapshot(self):
+        self.sign_in()
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response.text.count('class="metric-card '),
+            4,
+        )
+        self.assertIn("Business snapshot", response.text)
+        self.assertIn("Qualified leads", response.text)
+        self.assertIn("Outstanding invoices", response.text)
+        self.assertEqual(
+            response.text.count('class="business-metric"'),
+            5,
+        )
+        self.assertNotIn("Customer relationships", response.text)
+        self.assertNotIn("Invoice summary", response.text)
+        self.assertLess(
+            response.text.index("System readiness"),
+            response.text.index("Business snapshot"),
+        )
+        self.assertNotIn(
+            'class="dashboard-metrics" aria-label="Customer relationships"',
+            response.text,
+        )
+        self.assertNotIn(
+            'class="dashboard-metrics" aria-label="Invoice summary"',
+            response.text,
+        )
+
+    @patch("web_app.user_has_permission", return_value=False)
+    def test_home_page_hides_business_snapshot_without_data_permissions(
+        self,
+        _mock_user_has_permission,
+    ):
+        self.sign_in()
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotIn("Business snapshot", response.text)
+        self.assertEqual(
+            response.text.count('class="metric-card '),
+            4,
+        )
+
+    @patch(
+        "web_app.load_recent_activity_entries",
+        return_value=[
+            "2026-10-02 09:15:30,125 | INFO | "
+            "User Example logged in.",
+            "Older unstructured audit record.",
+        ],
+    )
+    def test_home_page_presents_safe_activity_summaries(
+        self,
+        _mock_load_recent_activity_entries,
+    ):
+        self.sign_in()
+        response = self.client.get("/")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("User Example logged in.", response.text)
+        self.assertIn("Older unstructured audit record.", response.text)
+        self.assertIn(
+            'datetime="2026-10-02T09:15:30.125"',
+            response.text,
+        )
+        self.assertNotIn(
+            "2026-10-02 09:15:30,125 | INFO |",
+            response.text,
+        )
+
     def test_home_page_presents_operational_actions_and_status(self):
         self.sign_in()
         response = self.client.get("/")
@@ -3590,6 +3663,15 @@ class TestWebApplication(unittest.TestCase):
         self.assertIn(
             ".module-status.is-available",
             response.text,
+        )
+
+    def test_pages_use_a_content_versioned_stylesheet_url(self):
+        response = self.client.get("/login")
+
+        self.assertEqual(response.status_code, 200)
+        self.assertRegex(
+            response.text,
+            r'/static/styles\.css\?v=[0-9a-f]{12}',
         )
 
     def test_navigation_script_is_available(self):

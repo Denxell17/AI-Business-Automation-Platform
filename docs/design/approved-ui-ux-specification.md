@@ -7,7 +7,8 @@
 - **Design system:** B — Quiet Precision
 - **Dark background:** Original Soft Graphite achievable-dashboard treatment
 - **Status treatment:** B — Shape-coded outline
-- **Approval state:** Approved for phased implementation by the project owner
+- **Approval state:** Implemented and approved as the product UI baseline by
+  the project owner on October 2, 2026
 - **Canonical dashboard reference:**
   `assets/abap-final-dashboard-proposal.png`
 - **Approved logo concept reference:**
@@ -80,12 +81,13 @@ The selected treatment is the original Soft Graphite dashboard—not the later
 Cool Graphite, Midnight Navy, Slate Blue, Neutral Charcoal, or Warm Graphite
 comparison variants.
 
-### Optional Light Theme
+### Approved Light Theme
 
-The light theme is required for accessibility and user preference. Use a soft,
-professional off-white canvas near `#F6F8FB`, a quiet cool-gray sidebar near
-`#EEF2F6`, white or near-white surfaces, cool-gray borders near `#CBD5E1`, dark
-slate primary text near `#172033`, and readable secondary text near `#526173`.
+The light theme is required for accessibility and user preference. Its approved
+foundation uses the soft neutral canvas `#EDF1F4`, differentiated sidebar
+`#E5EAEF`, white primary surfaces, raised surface `#F6F8FA`, subtle surface
+`#F0F3F6`, border `#C5CED8`, primary text `#182332`, and secondary text
+`#586779`.
 
 Do not create harsh all-white expanses. The light theme must preserve the same
 information architecture and component behavior as the dark theme.
@@ -349,15 +351,19 @@ Do not add a second chatbot.
 Success-rate reporting is not approved until its population, time window,
 formula, exclusions, and empty-data behavior are explicitly defined.
 
-## 17. Exceptions and Unresolved Work
+## 17. Approved Baseline and Remaining Work
 
 - Reconstruct and approve production SVG logo masters before final asset
   integration.
-- Validate exact color tokens in-browser against actual component surfaces.
-- Define how a user selects and persists the optional light theme.
-- Define Dashboard aggregation boundaries and query performance before coding.
-- Confirm final mobile reflow with rendered browser prototypes.
-- Preserve all current authorization and payroll boundaries during redesign.
+- The current operational Dashboard layout, Soft Graphite dark theme, refined
+  light theme, shared component language, responsive behavior, and
+  accessibility treatment are the approved product UI baseline as of October
+  2, 2026.
+- Preserve this visual system for future ABAP UI work. Do not change the
+  Dashboard layout or theme system unless a future feature requires it or a
+  verified usability or accessibility issue justifies it.
+- Preserve all current authorization, permission, security, audit, and payroll
+  boundaries in future UI work.
 
 ## 18. Implementation Gate
 
@@ -386,3 +392,10 @@ preserving an explicit saved theme choice, replaced the legacy duplicated-A
 login treatment with the approved wordmark, kept the account footer visible
 while navigation scrolls independently, and moved the active navigation rail
 inside its selected item.
+
+The project owner granted final visual approval on October 2, 2026. The compact
+operational Dashboard, permission-aware Business Snapshot, human-readable
+Recent Activity presentation, approved dark theme, and softened accessible
+light theme now form the protected UI baseline. The next separate application
+task is internationalization and localization, beginning with English and
+Japanese (日本語); that work is not part of this completed UI milestone.

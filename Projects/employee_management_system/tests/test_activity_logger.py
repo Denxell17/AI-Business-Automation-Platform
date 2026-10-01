@@ -5,6 +5,7 @@ from unittest.mock import patch
 
 from activity_logger import (
     ACTIVITY_LOG_ENTRY_LIMIT,
+    build_activity_summaries,
     load_recent_activity_entries,
 )
 
@@ -61,6 +62,41 @@ class TestActivityLogger(unittest.TestCase):
             entries = load_recent_activity_entries()
 
         self.assertIsNone(entries)
+
+    def test_dashboard_summaries_separate_known_metadata_without_changing_message(self):
+        summaries = build_activity_summaries(
+            [
+                "2026-10-02 09:15:30,125 | INFO | "
+                "User Example logged in | source retained.",
+            ]
+        )
+
+        self.assertEqual(
+            summaries,
+            [
+                {
+                    "message": (
+                        "User Example logged in | source retained."
+                    ),
+                    "level": "INFO",
+                    "recorded_at": "2026-10-02T09:15:30.125",
+                }
+            ],
+        )
+
+    def test_dashboard_summaries_preserve_unrecognized_entries_verbatim(self):
+        entry = "An older unstructured audit record | remains unchanged"
+
+        self.assertEqual(
+            build_activity_summaries([entry]),
+            [
+                {
+                    "message": entry,
+                    "level": None,
+                    "recorded_at": None,
+                }
+            ],
+        )
 
 
 if __name__ == "__main__":

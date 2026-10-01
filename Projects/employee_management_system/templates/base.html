@@ -12,7 +12,7 @@
     <script src="{{ url_for('static', path='/theme.js') }}"></script>
     <link
         rel="stylesheet"
-        href="{{ url_for('static', path='/styles.css') }}"
+        href="{{ url_for('static', path='/styles.css') }}?v={{ stylesheet_version }}"
     >
     {% block head %}{% endblock %}
 </head>

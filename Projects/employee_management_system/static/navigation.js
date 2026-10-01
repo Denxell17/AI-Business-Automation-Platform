@@ -143,12 +143,8 @@ if (menuButton && navigation) {
 const localDateTimeFormatter = new Intl.DateTimeFormat(
     undefined,
     {
-        year: "numeric",
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-        timeZoneName: "short",
+        dateStyle: "medium",
+        timeStyle: "short",
     },
 );
 
@@ -164,6 +160,6 @@ document.querySelectorAll("time[data-local-datetime]").forEach(
         timeElement.textContent = localDateTimeFormatter.format(
             localDate,
         );
-        timeElement.title = `Stored in UTC as ${storedTimestamp}`;
+        timeElement.title = `Recorded timestamp: ${storedTimestamp}`;
     },
 );

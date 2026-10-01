@@ -212,6 +212,29 @@ class TestUiFoundations(unittest.TestCase):
         self.assertIn("color-scheme: light", self.stylesheet)
         self.assertNotIn("style.colorScheme", theme_script)
 
+    def test_light_theme_uses_layered_neutral_surface_tokens(self):
+        expected_tokens = (
+            "--color-background: #edf1f4",
+            "--color-sidebar: #e5eaef",
+            "--color-surface: #ffffff",
+            "--color-surface-raised: #f6f8fa",
+            "--color-surface-subtle: #f0f3f6",
+            "--color-text: #182332",
+            "--color-muted: #586779",
+            "--color-border: #c5ced8",
+            "--color-action-soft: #dfeaf6",
+            "--color-focus: #1f66bd",
+        )
+
+        for token in expected_tokens:
+            with self.subTest(token=token):
+                self.assertIn(token, self.stylesheet)
+
+        # The approved dark foundation remains unchanged.
+        self.assertIn("--color-background: #1b1f24", self.stylesheet)
+        self.assertIn("--color-surface: #242a31", self.stylesheet)
+        self.assertIn("--color-text: #f4f6f8", self.stylesheet)
+
     def test_responsive_and_reduced_motion_rules_are_present(self):
         self.assertIn("@media (max-width: 760px)", self.stylesheet)
         self.assertIn("@media (max-width: 640px)", self.stylesheet)
@@ -276,6 +299,50 @@ class TestUiFoundations(unittest.TestCase):
                 )
                 self.assertIn("aria-label=", template)
                 self.assertNotIn("style=", template)
+
+    def test_dashboard_preserves_compact_operational_hierarchy(self):
+        dashboard = (
+            TEMPLATE_DIRECTORY / "home.html"
+        ).read_text(encoding="utf-8")
+        base = (
+            TEMPLATE_DIRECTORY / "base.html"
+        ).read_text(encoding="utf-8")
+
+        self.assertEqual(dashboard.count('class="metric-card '), 4)
+        self.assertIn('class="business-metric-strip"', dashboard)
+        self.assertEqual(dashboard.count('class="business-metric"'), 5)
+        self.assertIn("?v={{ stylesheet_version }}", base)
+        self.assertIn(
+            "grid-template-columns: repeat(5, minmax(0, 1fr))",
+            self.stylesheet,
+        )
+        self.assertIn(
+            ".business-metric dd > strong { display: block",
+            self.stylesheet,
+        )
+        self.assertIn(
+            ".business-metric dd > span { display: block",
+            self.stylesheet,
+        )
+        self.assertLess(
+            dashboard.index("Workflow operations"),
+            dashboard.index("Business snapshot"),
+        )
+        self.assertIn("border-inline-start", self.stylesheet)
+
+    def test_dashboard_timestamps_are_locale_formatting_ready(self):
+        dashboard = (
+            TEMPLATE_DIRECTORY / "home.html"
+        ).read_text(encoding="utf-8")
+        navigation = (
+            STATIC_DIRECTORY / "navigation.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn('<time datetime="{{ value }}"', dashboard)
+        self.assertIn("data-local-datetime", dashboard)
+        self.assertIn('dateStyle: "medium"', navigation)
+        self.assertIn('timeStyle: "short"', navigation)
+        self.assertIn("Recorded timestamp:", navigation)
 
 
 if __name__ == "__main__":

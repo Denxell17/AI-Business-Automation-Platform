@@ -1,53 +1,96 @@
 {% extends "application_base.html" %}
 {% from "ui_macros.html" import icon, status with context %}
 {% macro value_or_dash(value) -%}{{ value if value is not none else "—" }}{%- endmacro %}
+{% macro local_datetime(value, fallback="—") -%}
+    {%- if value -%}<time datetime="{{ value }}" data-local-datetime>{{ value }}</time>{%- else -%}{{ fallback }}{%- endif -%}
+{%- endmacro %}
 
 {% block content %}
 <div class="dashboard-page">
     <header class="dashboard-heading">
-        <div><p class="section-eyebrow">Operational overview</p><h1 id="dashboard-heading" class="section-title">Dashboard</h1><p class="dashboard-subtitle">System activity, attention items, and useful actions.</p></div>
-        {% if can_manage_workflows %}<a class="ui-button ui-button--primary dashboard-primary-action" href="{{ url_for('workflow_create_form') }}">{{ icon('plus') }}<span>Create workflow</span></a>{% endif %}
+        <div>
+            <p class="section-eyebrow">Operational overview</p>
+            <h1 id="dashboard-heading" class="section-title">Dashboard</h1>
+            <p class="dashboard-subtitle">System activity, attention items, and useful actions.</p>
+        </div>
+        {% if can_manage_workflows %}
+        <a class="ui-button ui-button--primary dashboard-primary-action" href="{{ url_for('workflow_create_form') }}">
+            {{ icon('plus') }}<span>Create workflow</span>
+        </a>
+        {% endif %}
     </header>
 
     <section class="dashboard-metrics" aria-label="Platform summary">
-        <article class="metric-card metric-card--blue"><div><p>Employees</p><strong>{{ value_or_dash(dashboard.employee_total) }}</strong><span>Current records</span></div><span class="metric-icon" aria-hidden="true">{{ icon('employees') }}</span></article>
-        <article class="metric-card metric-card--green"><div><p>Departments</p><strong>{{ value_or_dash(dashboard.department_total) }}</strong><span>Derived from workforce data</span></div><span class="metric-icon" aria-hidden="true">{{ icon('report') }}</span></article>
-        <article class="metric-card metric-card--purple"><div><p>Active workflows</p><strong>{{ value_or_dash(dashboard.active_workflow_total) }}</strong><span>Current workflow status</span></div><span class="metric-icon" aria-hidden="true">{{ icon('workflows') }}</span></article>
-        <article class="metric-card metric-card--red"><div><p>Failed runs</p><strong>{{ value_or_dash(dashboard.failed_workflow_run_total) }}</strong><span>Execution history</span></div><span class="metric-icon" aria-hidden="true">{{ icon('info') }}</span></article>
+        <article class="metric-card metric-card--blue">
+            <div><p>Employees</p><strong>{{ value_or_dash(dashboard.employee_total) }}</strong><span>Current records</span></div>
+            <span class="metric-icon" aria-hidden="true">{{ icon('employees') }}</span>
+        </article>
+        <article class="metric-card metric-card--green">
+            <div><p>Departments</p><strong>{{ value_or_dash(dashboard.department_total) }}</strong><span>Derived from workforce data</span></div>
+            <span class="metric-icon" aria-hidden="true">{{ icon('report') }}</span>
+        </article>
+        <article class="metric-card metric-card--purple">
+            <div><p>Active workflows</p><strong>{{ value_or_dash(dashboard.active_workflow_total) }}</strong><span>Current workflow status</span></div>
+            <span class="metric-icon" aria-hidden="true">{{ icon('workflows') }}</span>
+        </article>
+        <article class="metric-card metric-card--red">
+            <div><p>Failed runs</p><strong>{{ value_or_dash(dashboard.failed_workflow_run_total) }}</strong><span>All execution history</span></div>
+            <span class="metric-icon" aria-hidden="true">{{ icon('info') }}</span>
+        </article>
     </section>
-
-    {% if dashboard.lead_total is not none %}
-    <section class="dashboard-metrics" aria-label="Customer relationships">
-        <article class="metric-card metric-card--blue"><div><p>Leads</p><strong>{{ dashboard.lead_total }}</strong><span>Persisted lead records</span></div></article>
-        <article class="metric-card metric-card--green"><div><p>Qualified leads</p><strong>{{ dashboard.qualified_lead_total }}</strong><span>Ready for conversion</span></div></article>
-        <article class="metric-card metric-card--purple"><div><p>Customers</p><strong>{{ dashboard.customer_total }}</strong><span>Converted customer records</span></div></article>
-    </section>
-    {% endif %}
-
-    {% if dashboard.invoice_total is not none %}
-    <section class="dashboard-metrics" aria-label="Invoice summary">
-        <article class="metric-card metric-card--blue"><div><p>Invoices</p><strong>{{ dashboard.invoice_total }}</strong><span>Persisted customer invoices</span></div></article>
-        <article class="metric-card metric-card--green"><div><p>Outstanding invoices</p><strong>USD {{ '%.2f' | format(dashboard.outstanding_invoice_total_cents / 100) }}</strong><span>Sent invoices awaiting payment</span></div></article>
-    </section>
-    {% endif %}
 
     <div class="dashboard-grid dashboard-grid--primary">
         <section class="dashboard-panel dashboard-panel--wide" aria-labelledby="workflow-operations-heading">
-            <header class="panel-heading"><div><h2 id="workflow-operations-heading">Workflow operations</h2><p>Recent workflow executions from execution history.</p></div><a href="{{ url_for('workflow_directory') }}">View all</a></header>
-            {% if dashboard.workflow_executions is none %}<p class="permission-message">Workflow information is not available for this account.</p>
-            {% elif dashboard.workflow_executions %}<div class="ui-table-wrapper dashboard-table" role="region" tabindex="0" aria-label="Recent workflow executions"><table><caption class="ui-visually-hidden">Recent workflow execution status</caption><thead><tr><th scope="col">Status</th><th scope="col">Workflow</th><th scope="col">Triggered</th><th scope="col">Finished</th></tr></thead><tbody>{% for execution in dashboard.workflow_executions %}<tr><td>{{ status(execution.status | title) }}</td><th scope="row">{{ execution.workflow_name }}</th><td>{{ execution.started_at }}</td><td>{{ execution.finished_at or "Running" }}</td></tr>{% endfor %}</tbody></table></div>
-            {% else %}<div class="dashboard-empty">{{ icon('workflows') }}<strong>No workflow executions</strong><span>Execution data will appear here when workflows run.</span></div>{% endif %}
+            <header class="panel-heading">
+                <div><h2 id="workflow-operations-heading">Workflow operations</h2><p>Recent workflow executions from execution history.</p></div>
+                <a href="{{ url_for('workflow_directory') }}">View all</a>
+            </header>
+            {% if dashboard.workflow_executions is none %}
+            <p class="permission-message">Workflow information is not available for this account.</p>
+            {% elif dashboard.workflow_executions %}
+            <div class="ui-table-wrapper dashboard-table" role="region" tabindex="0" aria-label="Recent workflow executions">
+                <table>
+                    <caption class="ui-visually-hidden">Recent workflow execution status</caption>
+                    <thead><tr><th scope="col">Status</th><th scope="col">Workflow</th><th scope="col">Triggered</th><th scope="col">Finished</th></tr></thead>
+                    <tbody>
+                        {% for execution in dashboard.workflow_executions %}
+                        <tr>
+                            <td>{{ status(execution.status | title) }}</td>
+                            <th scope="row">{{ execution.workflow_name }}</th>
+                            <td>{{ local_datetime(execution.started_at) }}</td>
+                            <td>{{ local_datetime(execution.finished_at, "Running") }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="dashboard-empty">{{ icon('workflows') }}<strong>No workflow executions</strong><span>Execution data will appear here when workflows run.</span></div>
+            {% endif %}
         </section>
 
         <section class="dashboard-panel" aria-labelledby="department-heading">
             <header class="panel-heading"><div><h2 id="department-heading">Department headcounts</h2><p>Employee counts by department from workforce data.</p></div></header>
-            {% if dashboard.department_counts is none %}<p class="permission-message">Workforce information is not available for this account.</p>
-            {% elif dashboard.department_counts %}<ul class="department-list">{% set maximum = dashboard.department_counts[0].employee_count %}{% for department in dashboard.department_counts %}<li><div><span>{{ department.department }}</span><strong>{{ department.employee_count }}</strong></div><progress class="department-bar" value="{{ department.employee_count }}" max="{{ maximum }}" aria-label="{{ department.department }} headcount relative to the largest department">{{ department.employee_count }} of {{ maximum }}</progress></li>{% endfor %}</ul>
-            {% else %}<div class="dashboard-empty">{{ icon('report') }}<strong>No department data available</strong><span>Headcounts will appear when workforce records are available.</span></div>{% endif %}
+            {% if dashboard.department_counts is none %}
+            <p class="permission-message">Workforce information is not available for this account.</p>
+            {% elif dashboard.department_counts %}
+            <ul class="department-list">
+                {% set maximum = dashboard.department_counts[0].employee_count %}
+                {% for department in dashboard.department_counts %}
+                <li>
+                    <div><span>{{ department.department }}</span><strong>{{ department.employee_count }}</strong></div>
+                    <progress class="department-bar" value="{{ department.employee_count }}" max="{{ maximum }}" aria-label="{{ department.department }} headcount relative to the largest department">{{ department.employee_count }} of {{ maximum }}</progress>
+                </li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="dashboard-empty">{{ icon('report') }}<strong>No department data available</strong><span>Headcounts will appear when workforce records are available.</span></div>
+            {% endif %}
         </section>
 
         <aside class="dashboard-panel quick-actions" aria-labelledby="quick-actions-heading">
-            <header class="panel-heading"><div><h2 id="quick-actions-heading">Quick actions</h2></div></header><nav aria-label="Dashboard actions">
+            <header class="panel-heading"><div><h2 id="quick-actions-heading">Quick actions</h2></div></header>
+            <nav aria-label="Dashboard actions">
                 {% if can_register_employee %}<a href="{{ url_for('employee_create_form') }}">{{ icon('employees') }}<span>Add employee</span>{{ icon('chevron-right') }}</a>{% endif %}
                 {% if can_manage_workflows %}<a href="{{ url_for('workflow_create_form') }}">{{ icon('workflows') }}<span>Create workflow</span>{{ icon('chevron-right') }}</a>{% endif %}
                 {% if can_manage_crm %}<a href="{{ url_for('lead_create_form') }}">{{ icon('users') }}<span>Create lead</span>{{ icon('chevron-right') }}</a>{% endif %}
@@ -59,14 +102,75 @@
     </div>
 
     <div class="dashboard-grid dashboard-grid--secondary">
-        <section class="dashboard-panel" aria-labelledby="schedules-heading"><header class="panel-heading"><div><h2 id="schedules-heading">Upcoming schedules</h2><p>Enabled workflow schedules.</p></div><a href="{{ url_for('workflow_directory') }}">View all</a></header>{% if dashboard.enabled_schedules %}<ul class="compact-list">{% for schedule in dashboard.enabled_schedules %}<li>{{ status('Enabled') }}<span><strong>{{ schedule.workflow_name }}</strong><small>{{ schedule.schedule_type | title }}{% if schedule.scheduled_time %} · {{ schedule.scheduled_time }}{% endif %}</small></span></li>{% endfor %}</ul>{% else %}<div class="dashboard-empty dashboard-empty--compact">{{ icon('activity-log') }}<strong>No schedules configured</strong><span>Enabled workflow schedules will appear here.</span></div>{% endif %}</section>
+        <section class="dashboard-panel" aria-labelledby="schedules-heading">
+            <header class="panel-heading"><div><h2 id="schedules-heading">Upcoming schedules</h2><p>Enabled workflow schedules.</p></div><a href="{{ url_for('workflow_directory') }}">View all</a></header>
+            {% if dashboard.enabled_schedules %}
+            <ul class="compact-list">
+                {% for schedule in dashboard.enabled_schedules %}
+                <li>{{ status('Enabled') }}<span><strong>{{ schedule.workflow_name }}</strong><small>{{ schedule.schedule_type | title }}{% if schedule.scheduled_time %} · {{ schedule.scheduled_time }}{% endif %}</small></span></li>
+                {% endfor %}
+            </ul>
+            {% else %}
+            <div class="dashboard-empty dashboard-empty--compact">{{ icon('activity-log') }}<strong>No schedules configured</strong><span>Enabled workflow schedules will appear here.</span></div>
+            {% endif %}
+        </section>
 
-        <section class="dashboard-panel" aria-labelledby="recent-activity-heading"><header class="panel-heading"><div><h2 id="recent-activity-heading">Recent activity</h2><p>Latest authorized activity from the audit log.</p></div>{% if activity_entries is not none %}<a href="{{ url_for('activity_log_page') }}">View all</a>{% endif %}</header>{% if activity_entries %}<ul class="compact-list activity-list">{% for entry in activity_entries %}<li>{{ icon('activity-log') }}<span>{{ entry }}</span></li>{% endfor %}</ul>{% elif activity_entries is none %}<p class="permission-message">Activity history is restricted for this account.</p>{% else %}<div class="dashboard-empty dashboard-empty--compact">{{ icon('activity-log') }}<strong>No recent activity</strong><span>Authorized audit events will appear here.</span></div>{% endif %}</section>
+        <section class="dashboard-panel" aria-labelledby="recent-activity-heading">
+            <header class="panel-heading"><div><h2 id="recent-activity-heading">Recent activity</h2><p>Latest authorized activity from the audit log.</p></div>{% if activity_entries is not none %}<a href="{{ url_for('activity_log_page') }}">View all</a>{% endif %}</header>
+            {% if activity_entries %}
+            <ul class="compact-list activity-list">
+                {% for entry in activity_entries %}
+                <li>
+                    {{ icon('activity-log') }}
+                    <span>
+                        <span class="activity-summary">{{ entry.message }}</span>
+                        {% if entry.recorded_at %}<small>{{ local_datetime(entry.recorded_at) }}{% if entry.level %} · {{ entry.level | title }}{% endif %}</small>{% endif %}
+                    </span>
+                </li>
+                {% endfor %}
+            </ul>
+            {% elif activity_entries is none %}
+            <p class="permission-message">Activity history is restricted for this account.</p>
+            {% else %}
+            <div class="dashboard-empty dashboard-empty--compact">{{ icon('activity-log') }}<strong>No recent activity</strong><span>Authorized audit events will appear here.</span></div>
+            {% endif %}
+        </section>
 
         <div class="dashboard-stack">
-            <section class="dashboard-panel" aria-labelledby="agent-heading"><header class="panel-heading"><div><h2 id="agent-heading">Agent executions</h2><p>Recent Agent Template executions.</p></div>{% if dashboard.agent_executions is not none %}<a href="{{ url_for('agent_template_directory') }}">View all</a>{% endif %}</header>{% if dashboard.agent_executions %}<ul class="compact-list">{% for execution in dashboard.agent_executions %}<li>{{ status(execution.status | title) }}<span><strong>{{ execution.agent_template_name }}</strong><small>{{ execution.started_at }}</small></span></li>{% endfor %}</ul>{% elif dashboard.agent_executions is none %}<p class="permission-message">Agent information is restricted for this account.</p>{% else %}<div class="dashboard-empty dashboard-empty--compact"><strong>No agent executions</strong><span>Agent runs will appear here.</span></div>{% endif %}</section>
-            <section class="dashboard-panel readiness-panel" aria-labelledby="readiness-heading"><header class="panel-heading"><div><h2 id="readiness-heading">System readiness</h2><p>Current application and database status.</p></div></header><div class="readiness-status">{{ icon('health') }}<span><strong>{{ 'Operational' if database_ready else 'Attention required' }}</strong><small>{{ 'Database connection is ready.' if database_ready else 'Database readiness check failed.' }}</small></span><span class="readiness-dot{% if database_ready %} is-ready{% endif %}"></span></div></section>
+            <section class="dashboard-panel" aria-labelledby="agent-heading">
+                <header class="panel-heading"><div><h2 id="agent-heading">Agent executions</h2><p>Recent Agent Template executions.</p></div>{% if dashboard.agent_executions is not none %}<a href="{{ url_for('agent_template_directory') }}">View all</a>{% endif %}</header>
+                {% if dashboard.agent_executions %}
+                <ul class="compact-list">{% for execution in dashboard.agent_executions %}<li>{{ status(execution.status | title) }}<span><strong>{{ execution.agent_template_name }}</strong><small>{{ local_datetime(execution.started_at) }}</small></span></li>{% endfor %}</ul>
+                {% elif dashboard.agent_executions is none %}
+                <p class="permission-message">Agent information is restricted for this account.</p>
+                {% else %}
+                <div class="dashboard-empty dashboard-empty--compact"><strong>No agent executions</strong><span>Agent runs will appear here.</span></div>
+                {% endif %}
+            </section>
+            <section class="dashboard-panel readiness-panel" aria-labelledby="readiness-heading">
+                <header class="panel-heading"><div><h2 id="readiness-heading">System readiness</h2><p>Current application and database status.</p></div></header>
+                <div class="readiness-status">{{ icon('health') }}<span><strong>{{ 'Operational' if database_ready else 'Attention required' }}</strong><small>{{ 'Database connection is ready.' if database_ready else 'Database readiness check failed.' }}</small></span><span class="readiness-dot{% if database_ready %} is-ready{% endif %}" aria-hidden="true"></span></div>
+            </section>
         </div>
     </div>
+
+    {% if dashboard.lead_total is not none or dashboard.invoice_total is not none %}
+    <section class="dashboard-panel business-snapshot" aria-labelledby="business-snapshot-heading">
+        <header class="panel-heading">
+            <div><h2 id="business-snapshot-heading">Business snapshot</h2><p>Supporting customer and invoice information from current records.</p></div>
+        </header>
+        <dl class="business-metric-strip">
+            {% if dashboard.lead_total is not none %}
+            <div class="business-metric"><dt>Leads</dt><dd><strong>{{ dashboard.lead_total }}</strong><span>Current records</span></dd></div>
+            <div class="business-metric"><dt>Qualified leads</dt><dd><strong>{{ dashboard.qualified_lead_total }}</strong><span>Ready for conversion</span></dd></div>
+            <div class="business-metric"><dt>Customers</dt><dd><strong>{{ dashboard.customer_total }}</strong><span>Converted records</span></dd></div>
+            {% endif %}
+            {% if dashboard.invoice_total is not none %}
+            <div class="business-metric"><dt>Invoices</dt><dd><strong>{{ dashboard.invoice_total }}</strong><span>Current records</span></dd></div>
+            <div class="business-metric"><dt>Outstanding invoices</dt><dd><strong>USD {{ '%.2f' | format(dashboard.outstanding_invoice_total_cents / 100) }}</strong><span>Sent invoices awaiting payment</span></dd></div>
+            {% endif %}
+        </dl>
+    </section>
+    {% endif %}
 </div>
 {% endblock %}

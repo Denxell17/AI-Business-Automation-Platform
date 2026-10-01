@@ -1,3 +1,4 @@
+import hashlib
 import secrets
 import sqlite3
 from collections.abc import Callable
@@ -23,6 +24,7 @@ from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
 
 from activity_logger import (
+    build_activity_summaries,
     load_recent_activity_entries,
     log_activity,
 )
@@ -162,6 +164,9 @@ from webhook_contract import verify_inbound_webhook
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
 TEMPLATES_DIRECTORY = APPLICATION_DIRECTORY / "templates"
 STATIC_DIRECTORY = APPLICATION_DIRECTORY / "static"
+STYLESHEET_VERSION = hashlib.sha256(
+    (STATIC_DIRECTORY / "styles.css").read_bytes()
+).hexdigest()[:12]
 
 SESSION_COOKIE_NAME = "abap_session"
 SESSION_MAX_AGE_SECONDS = 8 * 60 * 60
@@ -276,6 +281,7 @@ def build_employee_from_form(
 templates = Jinja2Templates(
     directory=TEMPLATES_DIRECTORY,
 )
+templates.env.globals["stylesheet_version"] = STYLESHEET_VERSION
 templates.env.globals["user_has_permission"] = (
     user_has_permission
 )
@@ -1038,7 +1044,7 @@ def create_web_application(
                 "current_user": current_user,
                 "dashboard": dashboard,
                 "activity_entries": (
-                    activity_entries[:5]
+                    build_activity_summaries(activity_entries[:5])
                     if activity_entries is not None
                     else None
                 ),
