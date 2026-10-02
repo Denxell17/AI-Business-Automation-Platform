@@ -408,7 +408,7 @@ class TestWebApplication(unittest.TestCase):
             "text/html",
             response.headers["content-type"],
         )
-        self.assertIn("Operational overview", response.text)
+        self.assertNotIn("Operational overview", response.text)
         self.assertIn("System activity, attention items", response.text)
         self.assertIn("Employees", response.text)
         self.assertIn("Workflow operations", response.text)

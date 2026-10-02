@@ -4,7 +4,7 @@
 {% block content %}
 <section class="data-page workflows-page" aria-labelledby="workflow-directory-heading">
     <header class="data-page-heading">
-        <div><p class="section-eyebrow">{{ _("Automation") }}</p><h1 id="workflow-directory-heading" class="section-title">{{ _("Workflows") }}</h1><p class="data-page-description">{{ _("Build, schedule, and monitor reusable business processes.") }}</p></div>
+        <div><h1 id="workflow-directory-heading" class="section-title">{{ _("Workflows") }}</h1><p class="data-page-description">{{ _("Build, schedule, and monitor reusable business processes.") }}</p></div>
         {% if can_manage_workflows %}<a class="ui-button ui-button--primary" href="{{ url_for('workflow_create_form') }}">{{ icon('plus') }}<span>{{ _("Create workflow") }}</span></a>{% endif %}
     </header>
 

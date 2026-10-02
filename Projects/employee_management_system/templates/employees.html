@@ -4,7 +4,7 @@
 {% block content %}
 <section class="data-page" aria-labelledby="employee-directory-heading">
     <header class="data-page-heading">
-        <div><p class="section-eyebrow">{{ _("Workforce") }}</p><h1 id="employee-directory-heading" class="section-title">{{ _("Employees") }}</h1><p class="data-page-description">{{ _("Manage employee records and workforce data.") }}</p></div>
+        <div><h1 id="employee-directory-heading" class="section-title">{{ _("Employees") }}</h1><p class="data-page-description">{{ _("Manage employee records and workforce data.") }}</p></div>
         {% if can_register_employee %}<a class="ui-button ui-button--primary" href="{{ url_for('employee_create_form') }}">{{ icon('plus') }}<span>{{ _("Add employee") }}</span></a>{% endif %}
     </header>
 

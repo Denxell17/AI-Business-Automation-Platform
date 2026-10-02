@@ -632,12 +632,6 @@ msgstr ""
 msgid "Back to Agent Template directory"
 msgstr ""
 
-#: templates/agent_execution_detail.html:35
-#: templates/agent_execution_detail.html:52
-#: templates/agent_execution_history.html:35
-msgid "AI agent operations"
-msgstr ""
-
 #: templates/agent_execution_detail.html:59
 msgid "Agent Execution"
 msgstr ""
@@ -943,10 +937,6 @@ msgid ""
 "output requirements."
 msgstr ""
 
-#: templates/agent_templates.html:7
-msgid "AI agents"
-msgstr ""
-
 #: templates/agent_templates.html:7 templates/application_base.html:30
 msgid "Agent templates"
 msgstr ""
@@ -1246,10 +1236,6 @@ msgid "No history yet."
 msgstr ""
 
 #: templates/crm_directory.html:4
-msgid "Customer relationships"
-msgstr ""
-
-#: templates/crm_directory.html:4
 msgid "Search and manage potential customers."
 msgstr ""
 
@@ -1310,11 +1296,6 @@ msgstr ""
 #: templates/employee_form.html:13 templates/employee_payroll.html:26
 #: templates/employee_profile.html:14
 msgid "Back to employee directory"
-msgstr ""
-
-#: templates/employee_delete.html:38 templates/employee_edit.html:37
-#: templates/employee_form.html:18
-msgid "Employee management"
 msgstr ""
 
 #: templates/employee_delete.html:48
@@ -1530,10 +1511,6 @@ msgid "Stored business contact information."
 msgstr ""
 
 #: templates/employees.html:7
-msgid "Workforce"
-msgstr ""
-
-#: templates/employees.html:7
 msgid "Manage employee records and workforce data."
 msgstr ""
 
@@ -1634,10 +1611,6 @@ msgstr ""
 
 #: templates/employees.html:41
 msgid "Employee records will appear here after they are added."
-msgstr ""
-
-#: templates/home.html:12
-msgid "Operational overview"
 msgstr ""
 
 #: templates/home.html:14
@@ -1995,10 +1968,6 @@ msgstr ""
 
 #: templates/invoice_form.html:6
 msgid "Create draft invoice"
-msgstr ""
-
-#: templates/invoices.html:4
-msgid "Customer billing"
 msgstr ""
 
 #: templates/invoices.html:4
@@ -2630,10 +2599,6 @@ msgid "Add tasks before setting their order."
 msgstr ""
 
 #: templates/workflows.html:7
-msgid "Automation"
-msgstr ""
-
-#: templates/workflows.html:7
 msgid "Build, schedule, and monitor reusable business processes."
 msgstr ""
 
@@ -2666,10 +2631,6 @@ msgstr ""
 
 #: templates/workflows.html:28
 msgid "Workflow records will appear here after they are created."
-msgstr ""
-
-#: templates/workforce_report.html:7
-msgid "Workforce analytics"
 msgstr ""
 
 #: templates/workforce_report.html:7

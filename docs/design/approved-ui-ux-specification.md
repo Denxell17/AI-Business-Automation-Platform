@@ -103,13 +103,46 @@ information architecture and component behavior as the dark theme.
 
 ## 4. Typography and Density
 
-- Preferred family: Inter Variable with practical system fallbacks.
-- Use type size, weight, spacing, and alignment for hierarchy.
+- Use the platform UI font deliberately: Segoe UI Variable/Segoe UI on
+  Windows, followed by explicit Noto Sans JP, Yu Gothic UI, Yu Gothic, Meiryo,
+  `system-ui`, and generic sans-serif fallbacks. ABAP does not download or
+  bundle a webfont.
+- Use only the regular 400, medium 500, semibold 600, and bold 700 weights.
+  Reserve 700 for key values and exceptional emphasis rather than routine UI.
+- Use type size, restrained weight, spacing, and alignment for hierarchy.
+- Page titles use the shared responsive 1.75–2.25rem scale at weight 600;
+  section titles use 1rem at weight 600; body text uses 0.9375rem at weight
+  400; routine controls use 0.875rem; table text uses 0.8125rem; and captions
+  and metadata use 0.75rem.
+- Keep navigation, buttons, form labels, table headings, statuses, metadata,
+  and eyebrow context labels in natural sentence case with normal tracking.
+- Japanese interface text must not inherit Latin capitalization or expanded
+  letter spacing assumptions.
 - Use tabular numerals for payroll, counts, dates, durations, and executions.
 - Keep body text comfortably readable at browser zoom and text enlargement.
 - Use moderate information density: efficient for daily operators without the
   compressed feel of a technical console.
 - Keep persistent labels on forms; placeholders are never labels.
+
+### Protected Typography and Eyebrow Policy
+
+The project owner granted final visual approval to the English dark, English
+light, and Japanese dark implementations on October 2, 2026. This typography
+system is part of the protected ABAP UI/UX baseline.
+
+- Page titles, navigation, controls, tables, labels, metadata, empty states,
+  and contextual labels use the centralized typography contract above.
+- Do not add global font-smoothing overrides or bundled font assets without a
+  separately verified usability or accessibility need.
+- Do not change the specialized metric, avatar, code, or compact-metadata
+  typography without a verified usability or accessibility issue.
+- Eyebrows are contextual labels, not routine decoration. Remove them when the
+  page title, action, and supporting description already establish context.
+- Retain eyebrows when they identify a user-created record type, distinguish
+  otherwise ambiguous content, or communicate meaningful security,
+  administrative, protected-workspace, or integration context.
+- The Dashboard begins directly with **Dashboard** / **ダッシュボード** and
+  its supporting description; it has no operational-overview eyebrow.
 
 ## 5. Shape, Surface, and Motion
 

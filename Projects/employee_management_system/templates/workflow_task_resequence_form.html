@@ -2,7 +2,7 @@
 {% block content %}
 <section class="employee-form-section" aria-labelledby="resequence-heading">
     <a class="back-link" href="{{ url_for('workflow_detail', workflow_id=workflow['workflow_id']) }}"><span aria-hidden="true">←</span>{{ _("Back to workflow") }}</a>
-    <div class="employee-form-heading"><div><p class="section-eyebrow">{{ _("Workflow automation") }}</p><h1 id="resequence-heading" class="section-title">{{ _("Resequence workflow tasks") }}</h1><p class="page-message">{{ _("Choose the task for each position. Every task must appear exactly once.") }}</p></div></div>
+    <div class="employee-form-heading"><div><h1 id="resequence-heading" class="section-title">{{ _("Resequence workflow tasks") }}</h1><p class="page-message">{{ _("Choose the task for each position. Every task must appear exactly once.") }}</p></div></div>
     {% if error_message %}<p class="directory-message directory-message-error" role="alert">{{ browser_message(error_message) }}</p>{% endif %}
     {% if tasks %}
     <form class="employee-form" method="post" action="{{ url_for('workflow_task_resequence', workflow_id=workflow['workflow_id']) }}">

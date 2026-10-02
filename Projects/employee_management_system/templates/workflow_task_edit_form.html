@@ -2,7 +2,7 @@
 {% block content %}
 <section class="employee-form-section" aria-labelledby="task-edit-heading">
     <a class="back-link" href="{{ url_for('workflow_detail', workflow_id=task['workflow_id']) }}"><span aria-hidden="true">←</span>{{ _("Back to workflow") }}</a>
-    <div class="employee-form-heading"><div><p class="section-eyebrow">{{ _("Workflow automation") }}</p><h1 id="task-edit-heading" class="section-title">{{ _("Edit workflow task") }}</h1><p class="page-message">{{ _("Task ID: %(task_id)s. Position %(position)s is changed from the resequence page.", task_id=task['task_id'], position=task['sequence_number']) }}</p></div></div>
+    <div class="employee-form-heading"><div><h1 id="task-edit-heading" class="section-title">{{ _("Edit workflow task") }}</h1><p class="page-message">{{ _("Task ID: %(task_id)s. Position %(position)s is changed from the resequence page.", task_id=task['task_id'], position=task['sequence_number']) }}</p></div></div>
     {% if error_message %}<p class="directory-message directory-message-error" role="alert"><span aria-hidden="true">!</span><span>{{ browser_message(error_message) }}</span></p>{% endif %}
     <form class="employee-form" method="post" action="{{ url_for('workflow_task_edit', workflow_id=task['workflow_id'], task_id=task['task_id']) }}">
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">

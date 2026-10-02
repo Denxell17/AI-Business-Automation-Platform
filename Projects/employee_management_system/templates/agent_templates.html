@@ -4,7 +4,7 @@
 {% block content %}
 <section class="data-page agents-page" aria-labelledby="agent-template-directory-heading">
     <header class="data-page-heading">
-        <div><p class="section-eyebrow">{{ _("AI agents") }}</p><h1 id="agent-template-directory-heading" class="section-title">{{ _("Agent templates") }}</h1><p class="data-page-description">{{ _("Configure and deploy reusable AI agent definitions.") }}</p></div>
+        <div><h1 id="agent-template-directory-heading" class="section-title">{{ _("Agent templates") }}</h1><p class="data-page-description">{{ _("Configure and deploy reusable AI agent definitions.") }}</p></div>
         {% if can_manage_agent_templates %}<a class="ui-button ui-button--primary" href="{{ url_for('agent_template_create_form') }}">{{ icon('plus') }}<span>{{ _("Create agent template") }}</span></a>{% endif %}
     </header>
 

@@ -4,7 +4,7 @@
 {% block content %}
 <section class="data-page reports-page" aria-labelledby="workforce-report-heading">
     <header class="data-page-heading">
-        <div><p class="section-eyebrow">{{ _("Workforce analytics") }}</p><h1 id="workforce-report-heading" class="section-title">{{ _("Workforce report") }}</h1><p class="data-page-description">{{ _("Current employee distribution and department headcounts.") }}</p></div>
+        <div><h1 id="workforce-report-heading" class="section-title">{{ _("Workforce report") }}</h1><p class="data-page-description">{{ _("Current employee distribution and department headcounts.") }}</p></div>
         {% if can_export_report and not error_message %}<a class="ui-button ui-button--primary" href="{{ url_for('download_employee_report') }}">{{ icon('report') }}<span>{{ _("Download employee CSV") }}</span></a>{% endif %}
     </header>
 

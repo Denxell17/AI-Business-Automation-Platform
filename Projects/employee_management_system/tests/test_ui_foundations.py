@@ -215,6 +215,93 @@ class TestUiFoundations(unittest.TestCase):
         self.assertIn("color-scheme: light", self.stylesheet)
         self.assertNotIn("style.colorScheme", theme_script)
 
+    def test_typography_contract_is_restrained_and_language_safe(self):
+        expected_tokens = (
+            '--font-ui:',
+            '--text-page-title: clamp(1.75rem, 2.5vw, 2.25rem)',
+            '--text-section-title: 1rem',
+            '--text-body: 0.9375rem',
+            '--text-ui: 0.875rem',
+            '--text-table: 0.8125rem',
+            '--text-caption: 0.75rem',
+            '--weight-regular: 400',
+            '--weight-medium: 500',
+            '--weight-semibold: 600',
+            '--weight-bold: 700',
+            'font-family: var(--font-ui)',
+            'font-synthesis: none',
+            ':lang(ja)',
+        )
+
+        for token in expected_tokens:
+            with self.subTest(token=token):
+                self.assertIn(token, self.stylesheet)
+
+        self.assertNotIn('"Inter Variable"', self.stylesheet)
+        self.assertNotRegex(
+            self.stylesheet,
+            r"font-weight:\s*(?:650|750|800|850|900)\b",
+        )
+        self.assertNotIn("text-transform: uppercase", self.stylesheet)
+        self.assertRegex(
+            self.stylesheet,
+            r":lang\(ja\)\s*\{[^}]*letter-spacing:\s*"
+            r"var\(--tracking-normal\)",
+        )
+
+    def test_shared_typography_roles_use_contract_tokens(self):
+        expected_role_rules = (
+            ".section-title,",
+            ".section-eyebrow {",
+            ".navigation-link {",
+            ".ui-button,",
+            ".form-field label,",
+            ".ui-table thead th,",
+            ".ui-status,",
+            ".dashboard-empty span {",
+        )
+
+        for rule in expected_role_rules:
+            with self.subTest(rule=rule):
+                self.assertIn(rule, self.stylesheet)
+
+    def test_eyebrows_are_limited_to_approved_contextual_labels(self):
+        template_text = "\n".join(
+            template.read_text(encoding="utf-8")
+            for template in TEMPLATE_DIRECTORY.glob("*.html")
+        )
+        retained_labels = (
+            "AI agent configuration",
+            "Protected AI workspace",
+            "Security auditing",
+            "Lead record",
+            "Customer record",
+            "Employee profile",
+            "Payroll information",
+            "Customer invoice",
+            "Secure access",
+            "Access administration",
+            "Workflow automation",
+            "Integration operations",
+        )
+        removed_labels = (
+            "AI agent operations",
+            "AI agents",
+            "Customer relationships",
+            "Employee management",
+            "Operational overview",
+            "Customer billing",
+            "Workforce analytics",
+        )
+
+        self.assertEqual(template_text.count("section-eyebrow"), 13)
+        for label in retained_labels:
+            with self.subTest(retained=label):
+                self.assertIn(f'_("{label}")', template_text)
+        for label in removed_labels:
+            with self.subTest(removed=label):
+                self.assertNotIn(f'_("{label}")', template_text)
+
     def test_light_theme_uses_layered_neutral_surface_tokens(self):
         expected_tokens = (
             "--color-background: #edf1f4",

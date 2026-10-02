@@ -632,12 +632,6 @@ msgstr "エージェント実行履歴に戻る"
 msgid "Back to Agent Template directory"
 msgstr "エージェントテンプレート一覧に戻る"
 
-#: templates/agent_execution_detail.html:35
-#: templates/agent_execution_detail.html:52
-#: templates/agent_execution_history.html:35
-msgid "AI agent operations"
-msgstr "AIエージェント操作"
-
 #: templates/agent_execution_detail.html:59
 msgid "Agent Execution"
 msgstr "エージェント実行"
@@ -943,10 +937,6 @@ msgid ""
 "output requirements."
 msgstr "エージェントの責任、境界、期待される動作、出力要件を定義してください。"
 
-#: templates/agent_templates.html:7
-msgid "AI agents"
-msgstr "AIエージェント"
-
 #: templates/agent_templates.html:7 templates/application_base.html:30
 msgid "Agent templates"
 msgstr "エージェントテンプレート"
@@ -1245,10 +1235,6 @@ msgid "No history yet."
 msgstr "履歴はまだありません。"
 
 #: templates/crm_directory.html:4
-msgid "Customer relationships"
-msgstr "顧客関係"
-
-#: templates/crm_directory.html:4
 msgid "Search and manage potential customers."
 msgstr "見込み顧客を検索、管理します。"
 
@@ -1310,11 +1296,6 @@ msgstr "保存"
 #: templates/employee_profile.html:14
 msgid "Back to employee directory"
 msgstr "従業員一覧に戻る"
-
-#: templates/employee_delete.html:38 templates/employee_edit.html:37
-#: templates/employee_form.html:18
-msgid "Employee management"
-msgstr "従業員管理"
 
 #: templates/employee_delete.html:48
 msgid "Review this permanent action before continuing."
@@ -1529,10 +1510,6 @@ msgid "Stored business contact information."
 msgstr "保存された業務連絡先情報。"
 
 #: templates/employees.html:7
-msgid "Workforce"
-msgstr "従業員管理"
-
-#: templates/employees.html:7
 msgid "Manage employee records and workforce data."
 msgstr "従業員レコードと従業員データを管理します。"
 
@@ -1633,10 +1610,6 @@ msgstr "従業員が見つかりません"
 #: templates/employees.html:41
 msgid "Employee records will appear here after they are added."
 msgstr "追加された従業員レコードがここに表示されます。"
-
-#: templates/home.html:12
-msgid "Operational overview"
-msgstr "運用概要"
 
 #: templates/home.html:14
 msgid "System activity, attention items, and useful actions."
@@ -1994,10 +1967,6 @@ msgstr "税率（%）"
 #: templates/invoice_form.html:6
 msgid "Create draft invoice"
 msgstr "下書き請求書を作成"
-
-#: templates/invoices.html:4
-msgid "Customer billing"
-msgstr "顧客請求"
 
 #: templates/invoices.html:4
 msgid "Immutable line snapshots and protected invoice documents."
@@ -2626,10 +2595,6 @@ msgid "Add tasks before setting their order."
 msgstr "順序を設定する前にタスクを追加してください。"
 
 #: templates/workflows.html:7
-msgid "Automation"
-msgstr "自動化"
-
-#: templates/workflows.html:7
 msgid "Build, schedule, and monitor reusable business processes."
 msgstr "再利用可能な業務プロセスを構築し、スケジュール設定と監視を行います。"
 
@@ -2662,10 +2627,6 @@ msgstr "ワークフローが見つかりません"
 #: templates/workflows.html:28
 msgid "Workflow records will appear here after they are created."
 msgstr "作成されたワークフローレコードがここに表示されます。"
-
-#: templates/workforce_report.html:7
-msgid "Workforce analytics"
-msgstr "従業員分析"
 
 #: templates/workforce_report.html:7
 msgid "Current employee distribution and department headcounts."
