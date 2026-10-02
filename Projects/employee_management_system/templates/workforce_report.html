@@ -4,33 +4,33 @@
 {% block content %}
 <section class="data-page reports-page" aria-labelledby="workforce-report-heading">
     <header class="data-page-heading">
-        <div><p class="section-eyebrow">Workforce analytics</p><h1 id="workforce-report-heading" class="section-title">Workforce report</h1><p class="data-page-description">Current employee distribution and department headcounts.</p></div>
-        {% if can_export_report and not error_message %}<a class="ui-button ui-button--primary" href="{{ url_for('download_employee_report') }}">{{ icon('report') }}<span>Download employee CSV</span></a>{% endif %}
+        <div><p class="section-eyebrow">{{ _("Workforce analytics") }}</p><h1 id="workforce-report-heading" class="section-title">{{ _("Workforce report") }}</h1><p class="data-page-description">{{ _("Current employee distribution and department headcounts.") }}</p></div>
+        {% if can_export_report and not error_message %}<a class="ui-button ui-button--primary" href="{{ url_for('download_employee_report') }}">{{ icon('report') }}<span>{{ _("Download employee CSV") }}</span></a>{% endif %}
     </header>
 
-    {% if error_message %}<div class="ui-alert ui-alert--danger report-error" role="alert">{{ icon('info') }}<div><h2>Report unavailable</h2><p>{{ error_message }}</p></div></div>
+    {% if error_message %}<div class="ui-alert ui-alert--danger report-error" role="alert">{{ icon('info') }}<div><h2>{{ _("Report unavailable") }}</h2><p>{{ browser_message(error_message) }}</p></div></div>
     {% else %}
-    <section class="report-metrics" aria-label="Workforce summary">
-        <article class="report-metric"><div><p>Total employees</p><strong>{{ workforce_summary['total_employees'] }}</strong><span>Current workforce records</span></div><span class="report-metric-icon report-metric-icon--blue">{{ icon('employees') }}</span></article>
-        <article class="report-metric"><div><p>Total departments</p><strong>{{ workforce_summary['total_departments'] }}</strong><span>Represented business units</span></div><span class="report-metric-icon report-metric-icon--green">{{ icon('report') }}</span></article>
-        <article class="report-metric"><div><p>Largest department</p><strong class="report-metric-name">{{ workforce_summary['largest_department'] or '—' }}</strong><span>Highest employee headcount</span></div><span class="report-metric-icon report-metric-icon--purple">{{ icon('users') }}</span></article>
-        <article class="report-metric"><div><p>Smallest department</p><strong class="report-metric-name">{{ workforce_summary['smallest_department'] or '—' }}</strong><span>Lowest employee headcount</span></div><span class="report-metric-icon report-metric-icon--orange">{{ icon('activity-log') }}</span></article>
+    <section class="report-metrics" aria-label="{{ _("Workforce summary") }}">
+        <article class="report-metric"><div><p>{{ _("Total employees") }}</p><strong>{{ workforce_summary['total_employees'] }}</strong><span>{{ _("Current workforce records") }}</span></div><span class="report-metric-icon report-metric-icon--blue">{{ icon('employees') }}</span></article>
+        <article class="report-metric"><div><p>{{ _("Total departments") }}</p><strong>{{ workforce_summary['total_departments'] }}</strong><span>{{ _("Represented business units") }}</span></div><span class="report-metric-icon report-metric-icon--green">{{ icon('report') }}</span></article>
+        <article class="report-metric"><div><p>{{ _("Largest department") }}</p><strong class="report-metric-name">{{ workforce_summary['largest_department'] or '—' }}</strong><span>{{ _("Highest employee headcount") }}</span></div><span class="report-metric-icon report-metric-icon--purple">{{ icon('users') }}</span></article>
+        <article class="report-metric"><div><p>{{ _("Smallest department") }}</p><strong class="report-metric-name">{{ workforce_summary['smallest_department'] or '—' }}</strong><span>{{ _("Lowest employee headcount") }}</span></div><span class="report-metric-icon report-metric-icon--orange">{{ icon('activity-log') }}</span></article>
     </section>
 
     {% if workforce_summary['department_counts'] %}
     <div class="report-layout">
         <section class="report-panel report-chart-panel" aria-labelledby="department-distribution-heading">
-            <header class="panel-heading"><div><h2 id="department-distribution-heading">Department distribution</h2><p>Relative workforce size across departments.</p></div></header>
+            <header class="panel-heading"><div><h2 id="department-distribution-heading">{{ _("Department distribution") }}</h2><p>{{ _("Relative workforce size across departments.") }}</p></div></header>
             {% set maximum = workforce_summary['department_counts'].values() | max %}
-            <ul class="report-bars">{% for department, employee_count in workforce_summary['department_counts'].items() | sort %}<li><div><span>{{ department }}</span><strong>{{ employee_count }}</strong></div><progress class="report-bar" value="{{ employee_count }}" max="{{ maximum }}" aria-label="{{ department }} headcount relative to the largest department">{{ employee_count }} of {{ maximum }}</progress></li>{% endfor %}</ul>
+            <ul class="report-bars">{% for department, employee_count in workforce_summary['department_counts'].items() | sort %}<li><div><span>{{ department }}</span><strong>{{ employee_count }}</strong></div><progress class="report-bar" value="{{ employee_count }}" max="{{ maximum }}" aria-label="{{ _("%(department)s headcount relative to the largest department", department=department) }}">{{ _("%(count)s of %(maximum)s", count=employee_count, maximum=maximum) }}</progress></li>{% endfor %}</ul>
         </section>
 
         <section class="report-panel" aria-labelledby="department-headcounts-heading">
-            <header class="panel-heading"><div><h2 id="department-headcounts-heading">Department headcounts</h2><p>Current employees in each department.</p></div></header>
-            <div class="ui-table-wrapper" role="region" tabindex="0" aria-label="Scrollable department headcount table"><table class="workforce-table"><caption>Current employees in each department</caption><thead><tr><th scope="col">Department</th><th scope="col">Employees</th><th scope="col">Share</th></tr></thead><tbody>{% for department, employee_count in workforce_summary['department_counts'].items() | sort %}<tr><th scope="row">{{ department }}</th><td>{{ employee_count }}</td><td>{{ ((employee_count / workforce_summary['total_employees']) * 100) | round(1) }}%</td></tr>{% endfor %}</tbody></table></div>
+            <header class="panel-heading"><div><h2 id="department-headcounts-heading">{{ _("Department headcounts") }}</h2><p>{{ _("Current employees in each department.") }}</p></div></header>
+            <div class="ui-table-wrapper" role="region" tabindex="0" aria-label="{{ _("Scrollable department headcount table") }}"><table class="workforce-table"><caption>{{ _("Current employees in each department") }}</caption><thead><tr><th scope="col">{{ _("Department") }}</th><th scope="col">{{ _("Employees") }}</th><th scope="col">{{ _("Share") }}</th></tr></thead><tbody>{% for department, employee_count in workforce_summary['department_counts'].items() | sort %}<tr><th scope="row">{{ department }}</th><td>{{ employee_count }}</td><td>{{ ((employee_count / workforce_summary['total_employees']) * 100) | round(1) }}%</td></tr>{% endfor %}</tbody></table></div>
         </section>
     </div>
-    {% else %}<div class="ui-empty-state report-empty-state">{{ icon('report') }}<div><h2>No employee data is available</h2><p>Add an employee to generate department headcounts.</p></div></div>{% endif %}
+    {% else %}<div class="ui-empty-state report-empty-state">{{ icon('report') }}<div><h2>{{ _("No employee data is available") }}</h2><p>{{ _("Add an employee to generate department headcounts.") }}</p></div></div>{% endif %}
     {% endif %}
 </section>
 {% endblock %}

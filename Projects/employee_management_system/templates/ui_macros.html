@@ -8,8 +8,8 @@
 </svg>
 {%- endmacro %}
 
-{% macro status(value) -%}
-{% set normalized = value|string|lower %}
+{% macro status(code, label=none) -%}
+{% set normalized = code|string|lower %}
 {% if normalized in ('completed', 'enabled', 'active') %}
     {% set status_icon = 'check' %}
 {% elif normalized == 'running' %}
@@ -24,7 +24,7 @@
 {% endif %}
 <span class="ui-status ui-status--{{ normalized }}">
     <span class="ui-status__symbol" aria-hidden="true">{{ icon(status_icon) }}</span>
-    <span>{{ value }}</span>
+    <span>{{ label if label is not none else controlled_label(code) }}</span>
 </span>
 {%- endmacro %}
 

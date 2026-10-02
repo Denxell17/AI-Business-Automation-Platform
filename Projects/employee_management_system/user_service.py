@@ -17,6 +17,7 @@ from database import (
     load_user_account_by_username,
     update_user_account_active_status,
     update_user_account_password_hash,
+    update_user_interface_language,
 )
 from models import UserAccount
 from password_policy import (
@@ -249,5 +250,35 @@ def change_current_user_password(
     return update_user_account_password_hash(
         stored_user["username"],
         new_password_hash,
+        database_file,
+    )
+
+
+def change_current_user_interface_language(
+    current_user: UserAccount,
+    interface_language: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Save the active account's validated interface preference."""
+    if (
+        not current_user["is_active"]
+        or interface_language not in {"en", "ja"}
+    ):
+        return False
+
+    stored_user = load_user_account_by_username(
+        current_user["username"],
+        database_file,
+    )
+    if (
+        stored_user is None
+        or not stored_user["is_active"]
+        or stored_user["user_id"] != current_user["user_id"]
+    ):
+        return False
+
+    return update_user_interface_language(
+        stored_user["username"],
+        interface_language,
         database_file,
     )

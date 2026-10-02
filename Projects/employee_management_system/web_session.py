@@ -7,12 +7,14 @@ from database import (
     load_user_account_by_username,
 )
 from models import UserAccount
+from i18n import bind_request_language
 from web_security import mark_response_sensitive
 
 
 SESSION_USER_ID = "user_id"
 SESSION_USERNAME = "username"
 SESSION_VERSION = "session_version"
+SESSION_INTERFACE_LANGUAGE = "interface_language"
 
 
 def begin_authenticated_session(
@@ -30,12 +32,24 @@ def begin_authenticated_session(
     request.session[SESSION_VERSION] = (
         user_account["session_version"]
     )
+    request.session[SESSION_INTERFACE_LANGUAGE] = (
+        user_account.get("interface_language", "en")
+        if user_account.get("interface_language") in {"en", "ja"}
+        else "en"
+    )
 
 
 def clear_authenticated_session(
     request: Request,
 ) -> None:
+    interface_language = request.session.get(
+        SESSION_INTERFACE_LANGUAGE
+    )
     request.session.clear()
+    if interface_language in {"en", "ja"}:
+        request.session[SESSION_INTERFACE_LANGUAGE] = (
+            interface_language
+        )
 
 
 def load_authenticated_session_user(
@@ -85,4 +99,6 @@ def load_authenticated_session_user(
         return None
 
     mark_response_sensitive(request)
+    request.state.authenticated_user = stored_user
+    bind_request_language(request)
     return stored_user

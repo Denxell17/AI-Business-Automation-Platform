@@ -3,10 +3,11 @@
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from authorization import MANAGE_CRM, VIEW_CRM, user_has_permission
+from i18n import LocalizedHTMLResponse as HTMLResponse
 from crm_repository import (
     list_assignable_owners, list_crm_history, list_customers,
     list_lead_notes, list_leads, load_customer, load_lead,

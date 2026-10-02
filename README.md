@@ -30,6 +30,8 @@ history, and explicit boundaries around AI and external integrations.
   deterministic providers and do not require paid API calls.
 - Health (`/health`) and database-readiness (`/ready`) endpoints, with a
   documented Docker Compose deployment package.
+- User-selectable English and Japanese browser interfaces with signed-session
+  and authenticated-account preference persistence and English fallback.
 
 For the detailed implementation boundary and planned work, see the
 [portfolio case study](PORTFOLIO.md).
@@ -45,7 +47,7 @@ Browser
 ```
 
 The stack includes Python, FastAPI, Jinja2, SQLite, PostgreSQL, Psycopg,
-ItsDangerous signed sessions, HTML/CSS/JavaScript, Docker Compose, and optional
+ItsDangerous signed sessions, gettext/Babel, HTML/CSS/JavaScript, Docker Compose, and optional
 OpenAI integration.
 
 ## Engineering and security practices

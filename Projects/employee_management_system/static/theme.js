@@ -24,19 +24,22 @@
 
     function updateControls(theme) {
         const nextTheme = theme === "dark" ? "light" : "dark";
-        const nextThemeLabel = (
-            `${nextTheme[0].toUpperCase()}${nextTheme.slice(1)} theme`
-        );
+        const nextThemeLabel = nextTheme === "light"
+            ? root.dataset.lightThemeLabel
+            : root.dataset.darkThemeLabel;
+        const useNextThemeLabel = nextTheme === "light"
+            ? root.dataset.useLightThemeLabel
+            : root.dataset.useDarkThemeLabel;
 
         document.querySelectorAll("[data-theme-toggle]").forEach(
             (button) => {
                 button.setAttribute(
                     "aria-label",
-                    `Use ${nextTheme} theme`,
+                    useNextThemeLabel,
                 );
                 button.setAttribute(
                     "title",
-                    `Use ${nextTheme} theme`,
+                    useNextThemeLabel,
                 );
 
                 const label = button.querySelector(

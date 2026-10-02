@@ -10,20 +10,20 @@
         href="{{ url_for('agent_template_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to agent template directory
+        {{ _("Back to agent template directory") }}
     </a>
 
     {% if error_message %}
     <div>
         <p class="section-eyebrow">
-            AI agent configuration
+            {{ _("AI agent configuration") }}
         </p>
 
         <h1
             id="agent-template-detail-heading"
             class="section-title"
         >
-            {{ page_title }}
+            {{ page_title_label(page_title) }}
         </h1>
     </div>
 
@@ -32,14 +32,14 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
 
     {% elif agent_template %}
     <div class="employee-profile-heading">
         <div>
             <p class="section-eyebrow">
-                AI agent configuration
+                {{ _("AI agent configuration") }}
             </p>
 
             <h1
@@ -52,7 +52,7 @@
             <p class="page-message">
                 {{ agent_template["description"]
                     if agent_template["description"]
-                    else "No description has been provided." }}
+                    else _("No description has been provided.") }}
             </p>
         </div>
 
@@ -62,7 +62,7 @@
                     class="status-dot"
                     aria-hidden="true"
                 ></span>
-                {{ agent_template["status"] | title }}
+                {{ controlled_label(agent_template["status"]) }}
             </span>
 
             {% if can_execute_agent_templates %}
@@ -75,7 +75,7 @@
                     ]
                 ) }}"
             >
-                View execution history
+                {{ _("View execution history") }}
             </a>
             {% endif %}
 
@@ -89,7 +89,7 @@
                     ]
                 ) }}"
             >
-                Edit agent template
+                {{ _("Edit agent template") }}
             </a>
             {% endif %}
         </div>
@@ -101,7 +101,7 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ execution_error_message }}</span>
+        <span>{{ browser_message(execution_error_message) }}</span>
     </p>
     {% endif %}
 
@@ -112,13 +112,11 @@
         aria-labelledby="agent-template-execution-heading"
     >
         <h2 id="agent-template-execution-heading">
-            Run Agent Template
+            {{ _("Run Agent Template") }}
         </h2>
 
         <p class="form-help">
-            Submit business input to this Active Agent Template.
-            The complete input and generated result will be stored
-            in the protected execution record.
+            {{ _("Submit business input to this Active Agent Template. The complete input and generated result will be stored in the protected execution record.") }}
         </p>
 
         <form
@@ -138,7 +136,7 @@
             >
 
             <div class="form-field">
-                <label for="input_text">Execution input</label>
+                <label for="input_text">{{ _("Execution input") }}</label>
 
                 <textarea
                     id="input_text"
@@ -149,10 +147,7 @@
                 >{{ execution_input }}</textarea>
 
                 <p class="form-help">
-                    Enter no more than
-                    {{ max_agent_execution_input_length }}
-                    characters. Review sensitive business data
-                    before submitting it to the configured provider.
+                    {{ _("Enter no more than %(limit)s characters. Review sensitive business data before submitting it to the configured provider.", limit=max_agent_execution_input_length) }}
                 </p>
             </div>
 
@@ -162,7 +157,7 @@
                     type="submit"
                 >
                     <span aria-hidden="true">▶</span>
-                    Run Agent Template
+                    {{ _("Run Agent Template") }}
                 </button>
             </div>
         </form>
@@ -174,38 +169,38 @@
         aria-labelledby="agent-template-configuration-heading"
     >
         <h2 id="agent-template-configuration-heading">
-            Template configuration
+            {{ _("Template configuration") }}
         </h2>
 
         <dl class="profile-details">
             <div>
-                <dt>Template ID</dt>
+                <dt>{{ _("Template ID") }}</dt>
                 <dd>
                     {{ agent_template["agent_template_id"] }}
                 </dd>
             </div>
 
             <div>
-                <dt>Model</dt>
+                <dt>{{ _("Model") }}</dt>
                 <dd>{{ agent_template["model_name"] }}</dd>
             </div>
 
             <div>
-                <dt>Status</dt>
+                <dt>{{ _("Status") }}</dt>
                 <dd>
-                    {{ agent_template["status"] | title }}
+                    {{ controlled_label(agent_template["status"]) }}
                 </dd>
             </div>
 
             <div>
-                <dt>Created by user ID</dt>
+                <dt>{{ _("Created by user ID") }}</dt>
                 <dd>
                     {{ agent_template["created_by_user_id"] }}
                 </dd>
             </div>
 
             <div>
-                <dt>Created</dt>
+                <dt>{{ _("Created") }}</dt>
                 <dd>
                     <time
                         datetime="{{ agent_template['created_at'] }}"
@@ -217,7 +212,7 @@
             </div>
 
             <div>
-                <dt>Last updated</dt>
+                <dt>{{ _("Last updated") }}</dt>
                 <dd>
                     <time
                         datetime="{{ agent_template['updated_at'] }}"
@@ -235,12 +230,11 @@
         aria-labelledby="agent-template-system-prompt-heading"
     >
         <h2 id="agent-template-system-prompt-heading">
-            System prompt
+            {{ _("System prompt") }}
         </h2>
 
         <p class="form-help">
-            These protected instructions define how the AI agent
-            should behave.
+            {{ _("These protected instructions define how the AI agent should behave.") }}
         </p>
 
         <pre class="agent-template-prompt">{{ agent_template["system_prompt"] }}</pre>

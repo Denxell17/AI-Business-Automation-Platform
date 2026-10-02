@@ -1,4 +1,5 @@
 ﻿fastapi[standard]
+Babel>=2.17,<3
 httpx2>=2,<3
 itsdangerous>=2,<3
 openai>=2,<3

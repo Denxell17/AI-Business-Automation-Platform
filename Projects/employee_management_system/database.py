@@ -97,6 +97,9 @@ def initialize_database(
                 session_version INTEGER NOT NULL DEFAULT 1 CHECK (
                     typeof(session_version) = 'integer'
                     AND session_version > 0
+                ),
+                interface_language TEXT NOT NULL DEFAULT 'en' CHECK (
+                    interface_language IN ('en', 'ja')
                 )
             )
             """
@@ -111,6 +114,12 @@ def initialize_database(
             connection.execute(
                 "ALTER TABLE users ADD COLUMN "
                 "session_version INTEGER NOT NULL DEFAULT 1"
+            )
+        if "interface_language" not in user_columns:
+            connection.execute(
+                "ALTER TABLE users ADD COLUMN "
+                "interface_language TEXT NOT NULL DEFAULT 'en' "
+                "CHECK (interface_language IN ('en', 'ja'))"
             )
         connection.execute(
             """
@@ -2694,7 +2703,8 @@ def load_user_account_by_username(
                 password_hash,
                 role,
                 is_active,
-                session_version
+                session_version,
+                interface_language
             FROM users
             WHERE username = ?
             """,
@@ -2711,6 +2721,7 @@ def load_user_account_by_username(
             "role": stored_user["role"],
             "is_active": bool(stored_user["is_active"]),
             "session_version": stored_user["session_version"],
+            "interface_language": stored_user["interface_language"],
         }
     finally:
         connection.close()
@@ -2804,6 +2815,36 @@ def update_user_account_password_hash(
                 password_hash,
                 username,
             ),
+        )
+        connection.commit()
+        return update_result.rowcount == 1
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        return False
+    finally:
+        connection.close()
+
+
+def update_user_interface_language(
+    username: str,
+    interface_language: str,
+    database_file: Path = DATABASE_FILE,
+) -> bool:
+    """Persist a validated interface language without invalidating sessions."""
+    if interface_language not in {"en", "ja"}:
+        return False
+
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+
+    try:
+        update_result = connection.execute(
+            """
+            UPDATE users
+            SET interface_language = ?
+            WHERE username = ?
+            """,
+            (interface_language, username),
         )
         connection.commit()
         return update_result.rowcount == 1

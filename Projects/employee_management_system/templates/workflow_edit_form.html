@@ -10,17 +10,17 @@
         ) }}"
     >
         <span aria-hidden="true">←</span>
-        Back to workflow
+        {{ _("Back to workflow") }}
     </a>
 
     <div class="employee-form-heading">
         <div>
-            <p class="section-eyebrow">Workflow automation</p>
+            <p class="section-eyebrow">{{ _("Workflow automation") }}</p>
             <h1 id="workflow-edit-heading" class="section-title">
-                Edit workflow
+                {{ _("Edit workflow") }}
             </h1>
             <p class="page-message">
-                Update this workflow's name, description, or lifecycle status.
+                {{ _("Update this workflow's name, description, or lifecycle status.") }}
             </p>
         </div>
     </div>
@@ -28,7 +28,7 @@
     {% if error_message %}
     <p class="directory-message directory-message-error" role="alert">
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
     {% endif %}
 
@@ -43,10 +43,10 @@
         <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
 
         <section class="employee-form-card" aria-labelledby="details-heading">
-            <h2 id="details-heading">Workflow details</h2>
+            <h2 id="details-heading">{{ _("Workflow details") }}</h2>
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="workflow_id">Workflow ID</label>
+                    <label for="workflow_id">{{ _("Workflow ID") }}</label>
                     <input
                         id="workflow_id"
                         type="text"
@@ -55,7 +55,7 @@
                     >
                 </div>
                 <div class="form-field">
-                    <label for="name">Workflow name</label>
+                    <label for="name">{{ _("Workflow name") }}</label>
                     <input
                         id="name"
                         name="name"
@@ -65,19 +65,19 @@
                     >
                 </div>
                 <div class="form-field">
-                    <label for="status">Status</label>
+                    <label for="status">{{ _("Status") }}</label>
                     <select id="status" name="status" required>
                         {% for option in ('draft', 'active', 'inactive') %}
                         <option
                             value="{{ option }}"
                             {% if form_values.get('status') == option %}selected{% endif %}
-                        >{{ option | title }}</option>
+                        >{{ controlled_label(option) }}</option>
                         {% endfor %}
                     </select>
                 </div>
             </div>
             <div class="form-field">
-                <label for="description">Description</label>
+                <label for="description">{{ _("Description") }}</label>
                 <textarea id="description" name="description" rows="5">{{ form_values.get('description', '') }}</textarea>
             </div>
         </section>
@@ -89,9 +89,9 @@
                     'workflow_detail',
                     workflow_id=workflow['workflow_id']
                 ) }}"
-            >Cancel</a>
+            >{{ _("Cancel") }}</a>
             <button class="employee-submit-button" type="submit">
-                Save workflow
+                {{ _("Save workflow") }}
             </button>
         </div>
     </form>

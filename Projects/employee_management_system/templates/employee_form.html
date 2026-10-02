@@ -10,28 +10,28 @@
         href="{{ url_for('employee_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to employee directory
+        {{ _("Back to employee directory") }}
     </a>
 
     <div class="employee-form-heading">
         <div>
-            <p class="section-eyebrow">Employee management</p>
+            <p class="section-eyebrow">{{ _("Employee management") }}</p>
 
             <h1
                 id="employee-form-heading"
                 class="section-title"
             >
-                Add employee
+                {{ _("Add employee") }}
             </h1>
 
             <p class="page-message">
-                Create a new employee record in the SQLite database.
+                {{ _("Create a new employee record in the SQLite database.") }}
             </p>
         </div>
 
         <span class="form-access-badge">
             <span aria-hidden="true">✓</span>
-            Registration access authorized
+            {{ _("Registration access authorized") }}
         </span>
     </div>
 
@@ -41,7 +41,7 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
     {% endif %}
 
@@ -60,11 +60,11 @@
             class="employee-form-card"
             aria-labelledby="identity-heading"
         >
-            <h2 id="identity-heading">Identity</h2>
+            <h2 id="identity-heading">{{ _("Identity") }}</h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="employee_id">Employee ID</label>
+                    <label for="employee_id">{{ _("Employee ID") }}</label>
                     <input
                         id="employee_id"
                         name="employee_id"
@@ -76,7 +76,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="name">Full name</label>
+                    <label for="name">{{ _("Full name") }}</label>
                     <input
                         id="name"
                         name="name"
@@ -93,11 +93,11 @@
             class="employee-form-card"
             aria-labelledby="employment-heading"
         >
-            <h2 id="employment-heading">Employment details</h2>
+            <h2 id="employment-heading">{{ _("Employment details") }}</h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="department">Department</label>
+                    <label for="department">{{ _("Department") }}</label>
                     <input
                         id="department"
                         name="department"
@@ -108,7 +108,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="position">Position</label>
+                    <label for="position">{{ _("Position") }}</label>
                     <input
                         id="position"
                         name="position"
@@ -119,7 +119,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="company">Company</label>
+                    <label for="company">{{ _("Company") }}</label>
                     <input
                         id="company"
                         name="company"
@@ -130,7 +130,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="country">Country</label>
+                    <label for="country">{{ _("Country") }}</label>
                     <input
                         id="country"
                         name="country"
@@ -142,7 +142,7 @@
 
                 <div class="form-field">
                     <label for="employment_status">
-                        Employment status
+                        {{ _("Employment status") }}
                     </label>
                     <input
                         id="employment_status"
@@ -158,7 +158,7 @@
 
                 <div class="form-field">
                     <label for="years_of_experience">
-                        Years of experience
+                        {{ _("Years of experience") }}
                     </label>
                     <input
                         id="years_of_experience"
@@ -181,11 +181,11 @@
             class="employee-form-card"
             aria-labelledby="contact-heading"
         >
-            <h2 id="contact-heading">Contact details</h2>
+            <h2 id="contact-heading">{{ _("Contact details") }}</h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="email">Email</label>
+                    <label for="email">{{ _("Email") }}</label>
                     <input
                         id="email"
                         name="email"
@@ -197,7 +197,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="phone_number">Phone number</label>
+                    <label for="phone_number">{{ _("Phone number") }}</label>
                     <input
                         id="phone_number"
                         name="phone_number"
@@ -217,11 +217,11 @@
             class="employee-form-card"
             aria-labelledby="payroll-basis-heading"
         >
-            <h2 id="payroll-basis-heading">Payroll basis</h2>
+            <h2 id="payroll-basis-heading">{{ _("Payroll basis") }}</h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="salary">Monthly salary</label>
+                    <label for="salary">{{ _("Monthly salary") }}</label>
                     <input
                         id="salary"
                         name="salary"
@@ -235,7 +235,7 @@
 
                 <div class="form-field">
                     <label for="performance_score">
-                        Performance score
+                        {{ _("Performance score") }}
                     </label>
                     <input
                         id="performance_score"
@@ -259,12 +259,12 @@
                 class="form-cancel-link"
                 href="{{ url_for('employee_directory') }}"
             >
-                Cancel
+                {{ _("Cancel") }}
             </a>
 
             <button class="employee-submit-button" type="submit">
                 <span aria-hidden="true">+</span>
-                Create employee
+                {{ _("Create employee") }}
             </button>
         </div>
     </form>

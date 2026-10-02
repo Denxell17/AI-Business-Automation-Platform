@@ -10,28 +10,28 @@
         href="{{ url_for('workflow_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to workflow directory
+        {{ _("Back to workflow directory") }}
     </a>
 
     <div class="employee-form-heading">
         <div>
-            <p class="section-eyebrow">Workflow automation</p>
+            <p class="section-eyebrow">{{ _("Workflow automation") }}</p>
 
             <h1
                 id="workflow-form-heading"
                 class="section-title"
             >
-                Create workflow
+                {{ _("Create workflow") }}
             </h1>
 
             <p class="page-message">
-                Create a reusable workflow definition in the SQLite database.
+                {{ _("Create a reusable workflow definition in the SQLite database.") }}
             </p>
         </div>
 
         <span class="form-access-badge">
             <span aria-hidden="true">✓</span>
-            Workflow management access authorized
+            {{ _("Workflow management access authorized") }}
         </span>
     </div>
 
@@ -41,7 +41,7 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
     {% endif %}
 
@@ -60,11 +60,11 @@
             class="employee-form-card"
             aria-labelledby="workflow-details-heading"
         >
-            <h2 id="workflow-details-heading">Workflow details</h2>
+            <h2 id="workflow-details-heading">{{ _("Workflow details") }}</h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="workflow_id">Workflow ID</label>
+                    <label for="workflow_id">{{ _("Workflow ID") }}</label>
                     <input
                         id="workflow_id"
                         name="workflow_id"
@@ -79,7 +79,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="name">Workflow name</label>
+                    <label for="name">{{ _("Workflow name") }}</label>
                     <input
                         id="name"
                         name="name"
@@ -90,7 +90,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="status">Status</label>
+                    <label for="status">{{ _("Status") }}</label>
                     <select id="status" name="status" required>
                         <option
                             value="draft"
@@ -99,26 +99,26 @@
                                 'draft'
                             ) == 'draft' %}selected{% endif %}
                         >
-                            Draft
+                            {{ _("Draft") }}
                         </option>
                         <option
                             value="active"
                             {% if form_values.get('status') == 'active' %}selected{% endif %}
                         >
-                            Active
+                            {{ _("Active") }}
                         </option>
                         <option
                             value="inactive"
                             {% if form_values.get('status') == 'inactive' %}selected{% endif %}
                         >
-                            Inactive
+                            {{ _("Inactive") }}
                         </option>
                     </select>
                 </div>
             </div>
 
             <div class="form-field">
-                <label for="description">Description</label>
+                <label for="description">{{ _("Description") }}</label>
                 <textarea
                     id="description"
                     name="description"
@@ -132,12 +132,12 @@
                 class="form-cancel-link"
                 href="{{ url_for('workflow_directory') }}"
             >
-                Cancel
+                {{ _("Cancel") }}
             </a>
 
             <button class="employee-submit-button" type="submit">
                 <span aria-hidden="true">+</span>
-                Create workflow
+                {{ _("Create workflow") }}
             </button>
         </div>
     </form>

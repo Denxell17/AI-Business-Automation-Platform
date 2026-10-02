@@ -4,10 +4,11 @@ import hashlib
 from pathlib import Path
 
 from fastapi import FastAPI, Request
-from fastapi.responses import HTMLResponse, RedirectResponse, Response
+from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
 from authorization import MANAGE_INVOICES, VIEW_INVOICES, user_has_permission
+from i18n import LocalizedHTMLResponse as HTMLResponse
 from document_storage import DocumentStorage
 from invoice_repository import (
     list_invoice_customers, load_invoice_events, load_invoice_line_items,

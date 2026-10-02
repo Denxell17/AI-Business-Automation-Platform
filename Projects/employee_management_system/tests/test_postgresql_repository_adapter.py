@@ -31,6 +31,7 @@ class TestPostgresqlRepositoryAdapter(unittest.TestCase):
             "role": "admin",
             "is_active": True,
             "session_version": 1,
+            "interface_language": "en",
         }
         raw_connection.execute.return_value = cursor
         connect.return_value = raw_connection
@@ -43,6 +44,7 @@ class TestPostgresqlRepositoryAdapter(unittest.TestCase):
             "WHERE LOWER(username) = LOWER(%s)",
             query,
         )
+        self.assertIn("interface_language", query)
 
     @patch.dict(os.environ, POSTGRESQL_ENVIRONMENT)
     @patch("database_connection.psycopg.connect")

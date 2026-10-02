@@ -15,7 +15,7 @@
         ) }}"
     >
         <span aria-hidden="true">←</span>
-        Back to employee profile
+        {{ _("Back to employee profile") }}
     </a>
     {% else %}
     <a
@@ -23,7 +23,7 @@
         href="{{ url_for('employee_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to employee directory
+        {{ _("Back to employee directory") }}
     </a>
     {% endif %}
 
@@ -39,10 +39,10 @@
                 id="employee-payroll-heading"
                 class="profile-error-title"
             >
-                {{ page_title }}
+                {{ page_title_label(page_title) }}
             </h1>
 
-            <p>{{ error_message }}</p>
+            <p>{{ browser_message(error_message) }}</p>
         </div>
     </div>
     {% else %}
@@ -50,7 +50,7 @@
         <div class="profile-identity">
             <span class="profile-avatar payroll-avatar" aria-hidden="true">₱</span>
             <div>
-            <p class="section-eyebrow">Payroll information</p>
+            <p class="section-eyebrow">{{ _("Payroll information") }}</p>
 
             <h1
                 id="employee-payroll-heading"
@@ -60,7 +60,7 @@
             </h1>
 
             <p class="profile-identifier">
-                Employee ID:
+                {{ _("Employee ID:") }}
                 <strong>{{ employee["employee_id"] }}</strong>
             </p>
             </div>
@@ -68,7 +68,7 @@
 
         <p class="payroll-access-status">
             {{ icon('check') }}
-            Payroll access authorized
+            {{ _("Payroll access authorized") }}
         </p>
     </header>
 
@@ -77,11 +77,11 @@
             class="payroll-card"
             aria-labelledby="monthly-payroll-heading"
         >
-            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('report') }}</span><div><h2 id="monthly-payroll-heading">Monthly payroll</h2><p>Recurring income and estimated deductions.</p></div></header>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('report') }}</span><div><h2 id="monthly-payroll-heading">{{ _("Monthly payroll") }}</h2><p>{{ _("Recurring income and estimated deductions.") }}</p></div></header>
 
             <dl class="payroll-details">
                 <div>
-                    <dt>Base salary</dt>
+                    <dt>{{ _("Base salary") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             employee["salary"]
@@ -90,7 +90,7 @@
                 </div>
 
                 <div>
-                    <dt>Allowance</dt>
+                    <dt>{{ _("Allowance") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["allowance"]
@@ -99,7 +99,7 @@
                 </div>
 
                 <div>
-                    <dt>Overtime</dt>
+                    <dt>{{ _("Overtime") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["overtime"]
@@ -108,7 +108,7 @@
                 </div>
 
                 <div>
-                    <dt>Monthly income</dt>
+                    <dt>{{ _("Monthly income") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["monthly_income"]
@@ -117,7 +117,7 @@
                 </div>
 
                 <div>
-                    <dt>Estimated monthly tax</dt>
+                    <dt>{{ _("Estimated monthly tax") }}</dt>
                     <dd>
                         −₱{{ "{:,.2f}".format(
                             payroll["monthly_tax"]
@@ -126,7 +126,7 @@
                 </div>
 
                 <div class="payroll-total-row payroll-highlight-row">
-                    <dt>Net monthly income</dt>
+                    <dt>{{ _("Net monthly income") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["net_monthly_income"]
@@ -140,11 +140,11 @@
             class="payroll-card"
             aria-labelledby="annual-payroll-heading"
         >
-            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('activity-log') }}</span><div><h2 id="annual-payroll-heading">Annual compensation</h2><p>Projected yearly compensation package.</p></div></header>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('activity-log') }}</span><div><h2 id="annual-payroll-heading">{{ _("Annual compensation") }}</h2><p>{{ _("Projected yearly compensation package.") }}</p></div></header>
 
             <dl class="payroll-details">
                 <div>
-                    <dt>Annual salary</dt>
+                    <dt>{{ _("Annual salary") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["annual_salary"]
@@ -153,7 +153,7 @@
                 </div>
 
                 <div>
-                    <dt>Thirteenth-month pay</dt>
+                    <dt>{{ _("Thirteenth-month pay") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["thirteenth_month_pay"]
@@ -162,7 +162,7 @@
                 </div>
 
                 <div>
-                    <dt>Estimated bonus</dt>
+                    <dt>{{ _("Estimated bonus") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["estimated_bonus"]
@@ -171,7 +171,7 @@
                 </div>
 
                 <div class="payroll-total-row payroll-highlight-row">
-                    <dt>Total compensation</dt>
+                    <dt>{{ _("Total compensation") }}</dt>
                     <dd>
                         ₱{{ "{:,.2f}".format(
                             payroll["total_compensation"]
@@ -185,16 +185,16 @@
             class="payroll-card payroll-performance-card"
             aria-labelledby="performance-payroll-heading"
         >
-            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('health') }}</span><div><h2 id="performance-payroll-heading">Performance basis</h2><p>Inputs used for the estimated bonus.</p></div></header>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('health') }}</span><div><h2 id="performance-payroll-heading">{{ _("Performance basis") }}</h2><p>{{ _("Inputs used for the estimated bonus.") }}</p></div></header>
 
             <dl class="payroll-details">
                 <div>
-                    <dt>Performance rating</dt>
+                    <dt>{{ _("Performance rating") }}</dt>
                     <dd>{{ payroll["performance_rating"] }}</dd>
                 </div>
 
                 <div>
-                    <dt>Bonus rate</dt>
+                    <dt>{{ _("Bonus rate") }}</dt>
                     <dd>
                         {{ "{:.0%}".format(
                             payroll["bonus_rate"]
@@ -204,8 +204,7 @@
             </dl>
 
             <p class="payroll-note">
-                Values are estimates calculated from the stored
-                employee record and configured payroll defaults.
+                {{ _("Values are estimates calculated from the stored employee record and configured payroll defaults.") }}
             </p>
         </section>
     </div>

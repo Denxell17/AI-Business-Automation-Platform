@@ -10,28 +10,28 @@
         href="{{ url_for('user_account_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to user accounts
+        {{ _("Back to user accounts") }}
     </a>
 
     <div class="employee-form-heading">
         <div>
-            <p class="section-eyebrow">Access administration</p>
+            <p class="section-eyebrow">{{ _("Access administration") }}</p>
 
             <h1
                 id="user-account-form-heading"
                 class="section-title"
             >
-                Add viewer account
+                {{ _("Add viewer account") }}
             </h1>
 
             <p class="page-message">
-                Create a viewer account with read-only employee access.
+                {{ _("Create a viewer account with read-only employee access.") }}
             </p>
         </div>
 
         <span class="form-access-badge">
             <span aria-hidden="true">✓</span>
-            Account management authorized
+            {{ _("Account management authorized") }}
         </span>
     </div>
 
@@ -41,7 +41,7 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
     {% endif %}
 
@@ -61,17 +61,16 @@
             aria-labelledby="viewer-account-details-heading"
         >
             <h2 id="viewer-account-details-heading">
-                Viewer account details
+                {{ _("Viewer account details") }}
             </h2>
 
             <p class="user-account-form-note">
-                Viewer accounts can view employee records, payroll, and
-                approved reports. They cannot manage user accounts.
+                {{ _("Viewer accounts can view employee records, payroll, and approved reports. They cannot manage user accounts.") }}
             </p>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="username">Username</label>
+                    <label for="username">{{ _("Username") }}</label>
                     <input
                         id="username"
                         name="username"
@@ -83,7 +82,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="password">Password</label>
+                    <label for="password">{{ _("Password") }}</label>
                     <input
                         id="password"
                         name="password"
@@ -97,7 +96,7 @@
 
                 <div class="form-field">
                     <label for="password_confirmation">
-                        Confirm password
+                        {{ _("Confirm password") }}
                     </label>
                     <input
                         id="password_confirmation"
@@ -117,12 +116,12 @@
                 class="form-cancel-link"
                 href="{{ url_for('user_account_directory') }}"
             >
-                Cancel
+                {{ _("Cancel") }}
             </a>
 
             <button type="submit">
                 <span aria-hidden="true">+</span>
-                Create viewer account
+                {{ _("Create viewer account") }}
             </button>
         </div>
     </form>

@@ -1,6 +1,6 @@
 {% extends "base.html" %}
 
-{% block title %}Sign in{% endblock %}
+{% block title %}{{ _("Sign in") }}{% endblock %}
 
 {% block body_class %}authentication-page{% endblock %}
 
@@ -23,22 +23,22 @@
                 height="53"
             >
             <p class="authentication-brand-description">
-                AI Business Automation Platform
+                {{ _("AI Business Automation Platform") }}
             </p>
         </header>
 
         <div class="authentication-introduction">
-            <p class="section-eyebrow">Secure access</p>
+            <p class="section-eyebrow">{{ _("Secure access") }}</p>
 
             <h1
                 id="login-heading"
                 class="authentication-title"
             >
-                Sign in to your workspace
+                {{ _("Sign in to your workspace") }}
             </h1>
 
             <p class="authentication-description">
-                Enter your ABAP account credentials.
+                {{ _("Enter your ABAP account credentials.") }}
             </p>
         </div>
 
@@ -49,7 +49,7 @@
             role="alert"
         >
             <span aria-hidden="true">!</span>
-            <span>{{ error_message }}</span>
+            <span>{{ browser_message(error_message) }}</span>
         </div>
         {% endif %}
 
@@ -64,7 +64,7 @@
                 value="{{ csrf_token }}"
             >
             <div class="form-field">
-                <label for="username">Username</label>
+                <label for="username">{{ _("Username") }}</label>
                 <input
                     id="username"
                     name="username"
@@ -78,7 +78,7 @@
             </div>
 
             <div class="form-field">
-                <label for="password">Password</label>
+                <label for="password">{{ _("Password") }}</label>
                 <input
                     id="password"
                     name="password"
@@ -94,14 +94,22 @@
                 class="primary-button"
                 type="submit"
             >
-                Sign in
+                {{ _("Sign in") }}
             </button>
         </form>
 
         <footer class="authentication-footer">
+            <form class="language-selector language-selector--login" method="post" action="{{ url_for('change_interface_language') }}">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+                <input type="hidden" name="return_to" value="{{ request.url.path }}">
+                <label for="login-interface-language">{{ _("Interface language") }}</label>
+                <select id="login-interface-language" name="language">
+                    {% for option in language_options %}<option value="{{ option.code }}"{% if interface_language == option.code %} selected{% endif %}>{{ option.label }}</option>{% endfor %}
+                </select>
+                <button type="submit">{{ _("Apply") }}</button>
+            </form>
             <p>
-                Only active, authorized accounts can access
-                this workspace.
+                {{ _("Only active, authorized accounts can access this workspace.") }}
             </p>
         </footer>
     </section>

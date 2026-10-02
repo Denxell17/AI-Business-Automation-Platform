@@ -109,7 +109,8 @@ Day 155 is the target for the complete ABAP portfolio MVP.
 - The approved ABAP UI implementation milestone is complete, with automated foundation checks protecting its accessibility and responsive requirements.
 - On October 2, 2026, the project owner granted final visual approval to the current Dashboard layout, Soft Graphite dark theme, refined light theme, and shared design language. This is now the protected product UI baseline; future changes require a feature need or a verified usability/accessibility issue.
 - the project owner approved completing the remaining ABAP platform scope before moving to broader portfolio study. The implementation sequence and acceptance gates are documented in `full-platform-completion-roadmap.md`.
-- Milestones 0 through 5 of the ABAP Full Platform Completion Roadmap are complete. OCI capacity acquisition is in progress for Milestone 8, but ABAP is not yet deployed publicly. The next separate application task is internationalization and localization, beginning with English and Japanese (日本語); it has not started.
+- Milestones 0 through 5 of the ABAP Full Platform Completion Roadmap are complete. OCI capacity acquisition is in progress for Milestone 8, but ABAP is not yet deployed publicly.
+- The initial internationalization and localization milestone is complete: the browser UI supports user-selectable English and Japanese (日本語), signed-session and authenticated-account preference persistence, English fallback, complete gettext catalogs, request-scoped translation, and explicit separation from business data, currency/region, exports/documents, and AI response language.
 
 ## Phase 3 — Master GoHighLevel
 

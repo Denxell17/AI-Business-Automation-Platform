@@ -10,6 +10,7 @@ const backdropButton = document.querySelector(
 const navigation = document.querySelector(
     "#primary-navigation",
 );
+const root = document.documentElement;
 const mobileNavigationQuery = window.matchMedia(
     "(max-width: 760px)",
 );
@@ -59,8 +60,8 @@ function setNavigationOpen(isOpen) {
     menuButton.setAttribute(
         "aria-label",
         isOpen
-            ? "Close navigation"
-            : "Open navigation",
+            ? root.dataset.closeNavigationLabel
+            : root.dataset.openNavigationLabel,
     );
 
     synchronizeNavigationAvailability(isOpen);
@@ -160,6 +161,8 @@ document.querySelectorAll("time[data-local-datetime]").forEach(
         timeElement.textContent = localDateTimeFormatter.format(
             localDate,
         );
-        timeElement.title = `Recorded timestamp: ${storedTimestamp}`;
+        timeElement.title = (
+            `${root.dataset.recordedTimestampLabel} ${storedTimestamp}`
+        );
     },
 );

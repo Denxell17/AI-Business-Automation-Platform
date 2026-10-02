@@ -17,7 +17,7 @@
         ) }}"
     >
         <span aria-hidden="true">←</span>
-        Back to Agent Template details
+        {{ _("Back to Agent Template details") }}
     </a>
     {% else %}
     <a
@@ -25,33 +25,32 @@
         href="{{ url_for('agent_template_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to Agent Template directory
+        {{ _("Back to Agent Template directory") }}
     </a>
     {% endif %}
 
     <div class="employee-form-heading">
         <div>
             <p class="section-eyebrow">
-                AI agent operations
+                {{ _("AI agent operations") }}
             </p>
 
             <h1
                 id="agent-execution-history-heading"
                 class="section-title"
             >
-                {{ page_title }}
+                {{ page_title_label(page_title) }}
             </h1>
 
             {% if agent_template %}
             <p class="page-message">
-                Review the stored execution history for
-                {{ agent_template["agent_template_id"] }}.
+                {{ _("Review the stored execution history for %(template_id)s.", template_id=agent_template["agent_template_id"]) }}
             </p>
             {% endif %}
         </div>
 
         {% if agent_template %}
-        {{ status(agent_template["status"] | title) }}
+        {{ status(agent_template["status"]) }}
         {% endif %}
     </div>
 
@@ -61,30 +60,29 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
 
     {% elif execution_list %}
     <div
         class="employee-table-wrapper"
         role="region"
-        aria-label="Agent Execution history"
+        aria-label="{{ _("Agent Execution history") }}"
         tabindex="0"
     >
         <table class="employee-table">
             <caption class="ui-visually-hidden">
-                Agent Execution history for
-                {{ agent_template["name"] }}
+                {{ _("Agent Execution history for %(template_name)s", template_name=agent_template["name"]) }}
             </caption>
 
             <thead>
                 <tr>
-                    <th scope="col">Execution ID</th>
-                    <th scope="col">Status</th>
-                    <th scope="col">Model</th>
-                    <th scope="col">Requested by</th>
-                    <th scope="col">Started</th>
-                    <th scope="col">Finished</th>
+                    <th scope="col">{{ _("Execution ID") }}</th>
+                    <th scope="col">{{ _("Status") }}</th>
+                    <th scope="col">{{ _("Model") }}</th>
+                    <th scope="col">{{ _("Requested by") }}</th>
+                    <th scope="col">{{ _("Started") }}</th>
+                    <th scope="col">{{ _("Finished") }}</th>
                 </tr>
             </thead>
 
@@ -109,13 +107,13 @@
                     </th>
 
                     <td>
-                        {{ status(execution["status"] | title) }}
+                        {{ status(execution["status"]) }}
                     </td>
 
                     <td>{{ execution["model_name"] }}</td>
 
                     <td>
-                        User
+                        {{ _("User") }}
                         {{ execution["requested_by_user_id"] }}
                     </td>
 
@@ -137,7 +135,7 @@
                             {{ execution["finished_at"] }}
                         </time>
                         {% else %}
-                        Running
+                        {{ _("Running") }}
                         {% endif %}
                     </td>
                 </tr>
@@ -147,7 +145,7 @@
     </div>
 
     {% else %}
-    <div class="ui-empty-state agent-history-empty"><div class="ui-empty-state__content">{{ icon('activity-log') }}<h2>No Agent Executions yet</h2><p>This Agent Template has no stored execution history.</p></div></div>
+    <div class="ui-empty-state agent-history-empty"><div class="ui-empty-state__content">{{ icon('activity-log') }}<h2>{{ _("No Agent Executions yet") }}</h2><p>{{ _("This Agent Template has no stored execution history.") }}</p></div></div>
     {% endif %}
 </section>
 {% endblock %}

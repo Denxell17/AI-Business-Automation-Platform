@@ -11,7 +11,7 @@
         href="{{ url_for('employee_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to employee directory
+        {{ _("Back to employee directory") }}
     </a>
 
     {% if error_message %}
@@ -26,10 +26,10 @@
                 id="employee-profile-heading"
                 class="profile-error-title"
             >
-                {{ page_title }}
+                {{ page_title_label(page_title) }}
             </h1>
 
-            <p>{{ error_message }}</p>
+            <p>{{ browser_message(error_message) }}</p>
         </div>
     </div>
     {% else %}
@@ -37,7 +37,7 @@
         <div class="profile-identity">
             <span class="profile-avatar" aria-hidden="true">{{ employee["name"][:2] | upper }}</span>
             <div>
-            <p class="section-eyebrow">Employee profile</p>
+            <p class="section-eyebrow">{{ _("Employee profile") }}</p>
 
             <h1
                 id="employee-profile-heading"
@@ -47,7 +47,7 @@
             </h1>
 
             <p class="profile-identifier">
-                Employee ID:
+                {{ _("Employee ID:") }}
                 <strong>{{ employee["employee_id"] }}</strong>
             </p>
             </div>
@@ -73,7 +73,7 @@
                 employee_id=employee['employee_id']
             ) }}"
         >
-            Edit employee
+            {{ _("Edit employee") }}
         </a>
         {% endif %}
 
@@ -85,7 +85,7 @@
                 employee_id=employee['employee_id']
             ) }}"
         >
-            Delete employee
+            {{ _("Delete employee") }}
         </a>
         {% endif %}
 
@@ -97,7 +97,7 @@
                 employee_id=employee['employee_id']
             ) }}"
         >
-            View payroll
+            {{ _("View payroll") }}
         </a>
         {% endif %}
     </div>
@@ -108,38 +108,38 @@
             class="profile-card"
             aria-labelledby="employment-details-heading"
         >
-            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('employees') }}</span><div><h2 id="employment-details-heading">Employment details</h2><p>Role and organization information.</p></div></header>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('employees') }}</span><div><h2 id="employment-details-heading">{{ _("Employment details") }}</h2><p>{{ _("Role and organization information.") }}</p></div></header>
 
             <dl class="profile-details">
                 <div>
-                    <dt>Department</dt>
+                    <dt>{{ _("Department") }}</dt>
                     <dd>{{ employee["department"] }}</dd>
                 </div>
 
                 <div>
-                    <dt>Position</dt>
+                    <dt>{{ _("Position") }}</dt>
                     <dd>{{ employee["position"] }}</dd>
                 </div>
 
                 <div>
-                    <dt>Company</dt>
+                    <dt>{{ _("Company") }}</dt>
                     <dd>{{ employee["company"] }}</dd>
                 </div>
 
                 <div>
-                    <dt>Country</dt>
+                    <dt>{{ _("Country") }}</dt>
                     <dd>{{ employee["country"] }}</dd>
                 </div>
 
                 <div>
-                    <dt>Years of experience</dt>
+                    <dt>{{ _("Years of experience") }}</dt>
                     <dd>
                         {{ employee["years_of_experience"] }}
                     </dd>
                 </div>
 
                 <div>
-                    <dt>Employment status</dt>
+                    <dt>{{ _("Employment status") }}</dt>
                     <dd>{{ employee["employment_status"] }}</dd>
                 </div>
             </dl>
@@ -149,16 +149,16 @@
             class="profile-card"
             aria-labelledby="contact-details-heading"
         >
-            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('activity-log') }}</span><div><h2 id="contact-details-heading">Contact details</h2><p>Stored business contact information.</p></div></header>
+            <header class="profile-card-heading"><span aria-hidden="true">{{ icon('activity-log') }}</span><div><h2 id="contact-details-heading">{{ _("Contact details") }}</h2><p>{{ _("Stored business contact information.") }}</p></div></header>
 
             <dl class="profile-details">
                 <div>
-                    <dt>Email</dt>
+                    <dt>{{ _("Email") }}</dt>
                     <dd>{{ employee["email"] }}</dd>
                 </div>
 
                 <div>
-                    <dt>Phone number</dt>
+                    <dt>{{ _("Phone number") }}</dt>
                     <dd>{{ employee["phone_number"] }}</dd>
                 </div>
             </dl>

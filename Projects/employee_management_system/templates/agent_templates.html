@@ -4,23 +4,23 @@
 {% block content %}
 <section class="data-page agents-page" aria-labelledby="agent-template-directory-heading">
     <header class="data-page-heading">
-        <div><p class="section-eyebrow">AI agents</p><h1 id="agent-template-directory-heading" class="section-title">Agent templates</h1><p class="data-page-description">Configure and deploy reusable AI agent definitions.</p></div>
-        {% if can_manage_agent_templates %}<a class="ui-button ui-button--primary" href="{{ url_for('agent_template_create_form') }}">{{ icon('plus') }}<span>Create agent template</span></a>{% endif %}
+        <div><p class="section-eyebrow">{{ _("AI agents") }}</p><h1 id="agent-template-directory-heading" class="section-title">{{ _("Agent templates") }}</h1><p class="data-page-description">{{ _("Configure and deploy reusable AI agent definitions.") }}</p></div>
+        {% if can_manage_agent_templates %}<a class="ui-button ui-button--primary" href="{{ url_for('agent_template_create_form') }}">{{ icon('plus') }}<span>{{ _("Create agent template") }}</span></a>{% endif %}
     </header>
 
-    {% if not error_message %}<div class="directory-toolbar"><form class="status-filter-form" method="get" action="{{ url_for('agent_template_directory') }}" aria-label="Filter agent templates by status"><label for="status">Status</label><select id="status" name="status"><option value="">All statuses</option>{% for option in ('draft', 'active', 'inactive') %}<option value="{{ option }}"{% if selected_status == option %} selected{% endif %}>{{ option | title }}</option>{% endfor %}</select><button class="ui-button ui-button--secondary" type="submit">Apply filter</button></form><p class="result-count"><strong>{{ agent_template_list | length }}</strong> template{% if agent_template_list | length != 1 %}s{% endif %}</p></div>{% endif %}
+    {% if not error_message %}<div class="directory-toolbar"><form class="status-filter-form" method="get" action="{{ url_for('agent_template_directory') }}" aria-label="{{ _("Filter agent templates by status") }}"><label for="status">{{ _("Status") }}</label><select id="status" name="status"><option value="">{{ _("All statuses") }}</option>{% for option in ('draft', 'active', 'inactive') %}<option value="{{ option }}"{% if selected_status == option %} selected{% endif %}>{{ controlled_label(option) }}</option>{% endfor %}</select><button class="ui-button ui-button--secondary" type="submit">{{ _("Apply filter") }}</button></form><p class="result-count">{{ ngettext("%(num)s template", "%(num)s templates", agent_template_list | length) }}</p></div>{% endif %}
 
-    {% if error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ error_message }}</span></div>
+    {% if error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ browser_message(error_message) }}</span></div>
     {% elif agent_template_list %}
-    <div class="agent-card-grid" aria-label="Agent template directory">
+    <div class="agent-card-grid" aria-label="{{ _("Agent template directory") }}">
         {% for agent_template in agent_template_list %}
         <article class="agent-card">
-            <header><span class="agent-model-chip">{{ agent_template['model_name'] }}</span>{{ status(agent_template['status'] | title) }}</header>
+            <header><span class="agent-model-chip">{{ agent_template['model_name'] }}</span>{{ status(agent_template['status']) }}</header>
             <div class="agent-card-content"><span class="agent-card-icon" aria-hidden="true">{{ icon('agent') }}</span><div><h2><a href="{{ url_for('agent_template_detail', agent_template_id=agent_template['agent_template_id']) }}">{{ agent_template['name'] }}</a></h2><p>{{ agent_template['description'] or 'No description provided.' }}</p></div></div>
-            <footer><span>{{ agent_template['agent_template_id'] }}</span><span>Updated <time datetime="{{ agent_template['updated_at'] }}" data-local-datetime>{{ agent_template['updated_at'] }}</time></span></footer>
+            <footer><span>{{ agent_template['agent_template_id'] }}</span><span>{{ _("Updated") }} <time datetime="{{ agent_template['updated_at'] }}" data-local-datetime>{{ agent_template['updated_at'] }}</time></span></footer>
         </article>
         {% endfor %}
     </div>
-    {% else %}<div class="ui-empty-state agent-empty-state">{{ icon('agent') }}<div><h2>No agent templates found</h2><p>Agent templates will appear here after an administrator creates them.</p></div>{% if can_manage_agent_templates %}<a class="ui-button ui-button--primary" href="{{ url_for('agent_template_create_form') }}">Create agent template</a>{% endif %}</div>{% endif %}
+    {% else %}<div class="ui-empty-state agent-empty-state">{{ icon('agent') }}<div><h2>{{ _("No agent templates found") }}</h2><p>{{ _("Agent templates will appear here after an administrator creates them.") }}</p></div>{% if can_manage_agent_templates %}<a class="ui-button ui-button--primary" href="{{ url_for('agent_template_create_form') }}">{{ _("Create agent template") }}</a>{% endif %}</div>{% endif %}
 </section>
 {% endblock %}

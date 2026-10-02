@@ -426,6 +426,29 @@ textarea:disabled,
     border-color: var(--color-border);
 }
 
+.language-selector {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 0.4rem;
+}
+
+.language-selector select,
+.language-selector button {
+    min-height: 2.35rem;
+    padding: 0.4rem 0.55rem;
+    background: var(--color-surface-subtle);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-control);
+    font: inherit;
+}
+
+.language-selector button {
+    color: var(--color-link);
+    font-weight: 700;
+    cursor: pointer;
+}
+
 .account-summary {
     display: flex;
     align-items: center;
@@ -1122,6 +1145,18 @@ textarea:disabled,
 
 .authentication-footer p {
     margin: 0;
+}
+
+.language-selector--login {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: end;
+    margin-bottom: 1rem;
+}
+
+.language-selector--login label {
+    grid-column: 1 / -1;
+    color: var(--color-text);
+    font-weight: 650;
 }
 
 @media (max-width: 480px) {

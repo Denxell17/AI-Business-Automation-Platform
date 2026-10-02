@@ -396,6 +396,7 @@ inside its selected item.
 The project owner granted final visual approval on October 2, 2026. The compact
 operational Dashboard, permission-aware Business Snapshot, human-readable
 Recent Activity presentation, approved dark theme, and softened accessible
-light theme now form the protected UI baseline. The next separate application
-task is internationalization and localization, beginning with English and
-Japanese (日本語); that work is not part of this completed UI milestone.
+light theme now form the protected UI baseline. The separate English/Japanese
+internationalization milestone was completed on October 2, 2026. It localizes
+the approved interface without changing the protected layout, themes,
+responsive behavior, or shared visual language.

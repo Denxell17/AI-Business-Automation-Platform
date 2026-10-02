@@ -69,6 +69,7 @@ class UserAccount(TypedDict):
     role: str
     is_active: bool
     session_version: int
+    interface_language: str
 
 
 class UserAccountSummary(TypedDict):

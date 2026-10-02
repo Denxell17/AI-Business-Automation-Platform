@@ -154,6 +154,80 @@ class TestWebApplication(unittest.TestCase):
 
         return token_match.group(1)
 
+    def test_anonymous_language_selection_is_saved_in_session(self):
+        csrf_token = csrf_token_from_page(self.client, "/login")
+        response = self.client.post(
+            "/language",
+            data={
+                "language": "ja",
+                "csrf_token": csrf_token,
+                "return_to": "/login",
+            },
+            follow_redirects=False,
+        )
+
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(response.headers["location"], "/login")
+        japanese_login = self.client.get("/login")
+        self.assertRegex(japanese_login.text, r'<html\s+lang="ja"\s+dir="ltr"')
+        self.assertIn("サインイン", japanese_login.text)
+
+    def test_language_selection_rejects_invalid_code_and_external_return(self):
+        csrf_token = csrf_token_from_page(self.client, "/login")
+        invalid = self.client.post(
+            "/language",
+            data={"language": "en-US", "csrf_token": csrf_token},
+        )
+        self.assertEqual(invalid.status_code, 400)
+
+        response = self.client.post(
+            "/language",
+            data={
+                "language": "ja",
+                "csrf_token": csrf_token_from_page(self.client, "/login"),
+                "return_to": "https://example.com/phishing",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.headers["location"], "/")
+
+    def test_authenticated_language_is_persisted_and_wins_on_next_login(self):
+        username = "JapanesePreferenceViewer"
+        password = "JapanesePreferencePassword123!"
+        register_user_account(username, password, "viewer", self.database_file)
+        self.sign_in(username, password)
+
+        response = self.client.post(
+            "/language",
+            data={
+                "language": "ja",
+                "csrf_token": csrf_token_from_page(self.client, "/"),
+                "return_to": "/",
+            },
+            follow_redirects=False,
+        )
+        self.assertEqual(response.status_code, 303)
+        self.assertEqual(
+            load_user_account_by_username(username, self.database_file)[
+                "interface_language"
+            ],
+            "ja",
+        )
+
+        sign_out(self.client)
+        self.client.post(
+            "/language",
+            data={
+                "language": "en",
+                "csrf_token": csrf_token_from_page(self.client, "/login"),
+                "return_to": "/login",
+            },
+        )
+        self.sign_in(username, password)
+        dashboard = self.client.get("/")
+        self.assertRegex(dashboard.text, r'<html\s+lang="ja"\s+dir="ltr"')
+        self.assertIn("ダッシュボード", dashboard.text)
+
     def get_workflow_create_csrf_token(self) -> str:
         response = self.client.get("/workflows/new")
 
@@ -736,11 +810,8 @@ class TestWebApplication(unittest.TestCase):
             "http://testserver/login",
         )
         cookie_header = response.headers["set-cookie"].lower()
-        self.assertIn("abap_session=null", cookie_header)
-        self.assertIn(
-            "expires=thu, 01 jan 1970 00:00:00 gmt",
-            cookie_header,
-        )
+        self.assertIn("abap_session=", cookie_header)
+        self.assertNotIn("user_id", cookie_header)
         self.assertEqual(
             self.client.get(
                 "/",

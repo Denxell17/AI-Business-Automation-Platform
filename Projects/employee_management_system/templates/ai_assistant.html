@@ -4,22 +4,22 @@
 {% block content %}
 <section class="data-page assistant-page" aria-labelledby="ai-assistant-heading">
     <header class="data-page-heading">
-        <div><p class="section-eyebrow">Protected AI workspace</p><h1 id="ai-assistant-heading" class="section-title">AI Assistant</h1><p class="data-page-description">Ask a focused business question through ABAP's protected provider boundary.</p></div>
-        <span class="assistant-access-state">{{ icon('check') }}<span>Access authorized</span></span>
+        <div><p class="section-eyebrow">{{ _("Protected AI workspace") }}</p><h1 id="ai-assistant-heading" class="section-title">{{ _("AI Assistant") }}</h1><p class="data-page-description">{{ _("Ask a focused business question through ABAP's protected provider boundary.") }}</p></div>
+        <span class="assistant-access-state">{{ icon('check') }}<span>{{ _("Access authorized") }}</span></span>
     </header>
 
-    {% if error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ error_message }}</span></div>{% endif %}
+    {% if error_message %}<div class="ui-alert ui-alert--danger" role="alert">{{ icon('info') }}<span>{{ browser_message(error_message) }}</span></div>{% endif %}
 
     <div class="assistant-layout{% if not assistant_response %} assistant-layout--single{% endif %}">
         <form class="assistant-composer" method="post" action="{{ url_for('ai_assistant_ask') }}">
             <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
-            <header><span class="assistant-panel-icon" aria-hidden="true">{{ icon('assistant') }}</span><div><h2>Business question</h2><p>Describe the outcome or decision you need help with.</p></div></header>
-            <div class="form-field assistant-question-field"><label for="question">What would you like help with?</label><textarea id="question" name="question" rows="12" maxlength="{{ max_question_length }}" placeholder="Example: Summarize the operational risks in this workflow…" required>{{ question }}</textarea><div class="assistant-field-meta"><span>Maximum {{ max_question_length }} characters</span><span>This one-off interaction is not stored as conversation history</span></div></div>
-            <div class="assistant-privacy-note">{{ icon('health') }}<p><strong>Review before sending</strong><span>Remove confidential, personal, or regulated information that the external provider does not need.</span></p></div>
-            <button class="ui-button ui-button--primary assistant-submit" type="submit">{{ icon('assistant') }}<span>Ask AI Assistant</span></button>
+            <header><span class="assistant-panel-icon" aria-hidden="true">{{ icon('assistant') }}</span><div><h2>{{ _("Business question") }}</h2><p>{{ _("Describe the outcome or decision you need help with.") }}</p></div></header>
+            <div class="form-field assistant-question-field"><label for="question">{{ _("What would you like help with?") }}</label><textarea id="question" name="question" rows="12" maxlength="{{ max_question_length }}" placeholder="{{ _("Example: Summarize the operational risks in this workflow…") }}" required>{{ question }}</textarea><div class="assistant-field-meta"><span>{{ _("Maximum %(count)s characters", count=max_question_length) }}</span><span>{{ _("This one-off interaction is not stored as conversation history") }}</span></div></div>
+            <div class="assistant-privacy-note">{{ icon('health') }}<p><strong>{{ _("Review before sending") }}</strong><span>{{ _("Remove confidential, personal, or regulated information that the external provider does not need.") }}</span></p></div>
+            <button class="ui-button ui-button--primary assistant-submit" type="submit">{{ icon('assistant') }}<span>{{ _("Ask AI Assistant") }}</span></button>
         </form>
 
-        {% if assistant_response %}<section class="assistant-response" aria-labelledby="ai-assistant-response-heading" aria-live="polite"><header><span class="assistant-panel-icon" aria-hidden="true">{{ icon('assistant') }}</span><div><h2 id="ai-assistant-response-heading">Assistant response</h2><p>Generated with {{ model_name }}</p></div></header><div class="assistant-response-content"><pre>{{ assistant_response }}</pre></div><footer>AI-generated content may require review before business use.</footer></section>{% endif %}
+        {% if assistant_response %}<section class="assistant-response" aria-labelledby="ai-assistant-response-heading" aria-live="polite"><header><span class="assistant-panel-icon" aria-hidden="true">{{ icon('assistant') }}</span><div><h2 id="ai-assistant-response-heading">{{ _("Assistant response") }}</h2><p>{{ _("Generated with %(model_name)s", model_name=model_name) }}</p></div></header><div class="assistant-response-content"><pre>{{ assistant_response }}</pre></div><footer>{{ _("AI-generated content may require review before business use.") }}</footer></section>{% endif %}
     </div>
 </section>
 {% endblock %}

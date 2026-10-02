@@ -27,6 +27,7 @@ class TestPostgresqlMigrations(unittest.TestCase):
                 "006_create_crm_domain.sql",
                 "007_create_invoice_document_domain.sql",
                 "008_add_user_session_version.sql",
+                "009_add_user_interface_language.sql",
             ],
         )
 
@@ -83,6 +84,23 @@ class TestPostgresqlMigrations(unittest.TestCase):
         self.assertIn(
             "CHECK (session_version > 0)",
             session_version_sql,
+        )
+
+    def test_interface_language_migration_contains_expected_contract(self):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        interface_language_sql = migration_files[8].read_text(
+            encoding="utf-8-sig"
+        )
+
+        self.assertIn(
+            "ADD COLUMN interface_language TEXT NOT NULL DEFAULT 'en'",
+            interface_language_sql,
+        )
+        self.assertIn(
+            "CHECK (interface_language IN ('en', 'ja'))",
+            interface_language_sql,
         )
 
     def test_agent_template_migration_contains_expected_contract(

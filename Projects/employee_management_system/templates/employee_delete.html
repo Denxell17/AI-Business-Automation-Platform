@@ -11,7 +11,7 @@
         href="{{ url_for('employee_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to employee directory
+        {{ _("Back to employee directory") }}
     </a>
 
     {% if error_message and employee is none %}
@@ -26,41 +26,41 @@
                 id="employee-delete-heading"
                 class="profile-error-title"
             >
-                {{ page_title }}
+                {{ page_title_label(page_title) }}
             </h1>
 
-            <p>{{ error_message }}</p>
+            <p>{{ browser_message(error_message) }}</p>
         </div>
     </div>
     {% else %}
     <div class="employee-form-heading">
         <div>
-            <p class="section-eyebrow">Employee management</p>
+            <p class="section-eyebrow">{{ _("Employee management") }}</p>
 
             <h1
                 id="employee-delete-heading"
                 class="section-title"
             >
-                Delete employee
+                {{ _("Delete employee") }}
             </h1>
 
             <p class="page-message">
-                Review this permanent action before continuing.
+                {{ _("Review this permanent action before continuing.") }}
             </p>
         </div>
 
         <span class="form-access-badge destructive-access-badge">
             {{ icon('check') }}
-            Delete access authorized
+            {{ _("Delete access authorized") }}
         </span>
     </div>
 
     <section
         class="destructive-target-card"
-        aria-label="Employee being deleted"
+        aria-label="{{ _("Employee being deleted") }}"
     >
         <span class="destructive-target-icon" aria-hidden="true">{{ icon('employees') }}</span>
-        <div><p><strong>{{ employee["name"] }}</strong></p><p>Employee ID: <strong>{{ employee["employee_id"] }}</strong></p></div>
+        <div><p><strong>{{ employee["name"] }}</strong></p><p>{{ _("Employee ID:") }} <strong>{{ employee["employee_id"] }}</strong></p></div>
     </section>
 
     {% if error_message %}
@@ -69,7 +69,7 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
     {% endif %}
 
@@ -79,7 +79,7 @@
         role="note"
     >
         <span class="destructive-warning-icon" aria-hidden="true">{{ icon('info') }}</span>
-        <div><strong>This action is permanent</strong><p>This permanently deletes the employee record and cannot be undone.</p></div>
+        <div><strong>{{ _("This action is permanent") }}</strong><p>{{ _("This permanently deletes the employee record and cannot be undone.") }}</p></div>
     </div>
 
     <form
@@ -102,14 +102,14 @@
                     employee_id=employee['employee_id']
                 ) }}"
             >
-                Cancel
+                {{ _("Cancel") }}
             </a>
 
             <button
                 class="ui-button ui-button--danger destructive-confirm-button"
                 type="submit"
             >
-                Permanently delete employee
+                {{ _("Permanently delete employee") }}
             </button>
         </div>
     </form>

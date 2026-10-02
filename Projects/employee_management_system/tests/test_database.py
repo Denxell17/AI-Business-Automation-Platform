@@ -971,6 +971,7 @@ class TestEmployeeDatabase(unittest.TestCase):
                     "role": "admin",
                     "is_active": True,
                     "session_version": 1,
+                    "interface_language": "en",
                 },
             )
 

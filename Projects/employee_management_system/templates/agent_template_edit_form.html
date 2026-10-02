@@ -13,31 +13,30 @@
         ) }}"
     >
         <span aria-hidden="true">←</span>
-        Back to agent template details
+        {{ _("Back to agent template details") }}
     </a>
 
     <div class="employee-form-heading">
         <div>
             <p class="section-eyebrow">
-                AI agent configuration
+                {{ _("AI agent configuration") }}
             </p>
 
             <h1
                 id="agent-template-edit-heading"
                 class="section-title"
             >
-                Edit agent template
+                {{ _("Edit agent template") }}
             </h1>
 
             <p class="page-message">
-                Update this template and select an allowed
-                lifecycle status.
+                {{ _("Update this template and select an allowed lifecycle status.") }}
             </p>
         </div>
 
         <span class="form-access-badge">
             <span aria-hidden="true">✓</span>
-            Agent template management authorized
+            {{ _("Agent template management authorized") }}
         </span>
     </div>
 
@@ -47,7 +46,7 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
     {% endif %}
 
@@ -76,13 +75,13 @@
             aria-labelledby="agent-template-edit-identity-heading"
         >
             <h2 id="agent-template-edit-identity-heading">
-                Template identity
+                {{ _("Template identity") }}
             </h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
                     <label for="agent_template_id">
-                        Template ID
+                        {{ _("Template ID") }}
                     </label>
 
                     <input
@@ -93,12 +92,12 @@
                     >
 
                     <p class="form-help">
-                        Template IDs remain fixed after creation.
+                        {{ _("Template IDs remain fixed after creation.") }}
                     </p>
                 </div>
 
                 <div class="form-field">
-                    <label for="name">Template name</label>
+                    <label for="name">{{ _("Template name") }}</label>
 
                     <input
                         id="name"
@@ -111,7 +110,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="model_name">Model name</label>
+                    <label for="model_name">{{ _("Model name") }}</label>
 
                     <input
                         id="model_name"
@@ -128,7 +127,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="status">Lifecycle status</label>
+                    <label for="status">{{ _("Lifecycle status") }}</label>
 
                     <select id="status" name="status" required>
                         {% for status_option in allowed_statuses %}
@@ -138,24 +137,20 @@
                                 'status'
                             ) == status_option %}selected{% endif %}
                         >
-                            {{ status_option | title }}
+                            {{ controlled_label(status_option) }}
                         </option>
                         {% endfor %}
                     </select>
 
                     <p class="form-help">
                         {% if expected_status == "draft" %}
-                            A Draft template can remain Draft or
-                            become Active.
+                            {{ _("A Draft template can remain Draft or become Active.") }}
                         {% elif expected_status == "active" %}
-                            An Active template can remain Active or
-                            become Inactive.
+                            {{ _("An Active template can remain Active or become Inactive.") }}
                         {% elif expected_status == "inactive" %}
-                            An Inactive template can remain Inactive
-                            or become Active.
+                            {{ _("An Inactive template can remain Inactive or become Active.") }}
                         {% else %}
-                            Refresh the page before selecting a
-                            lifecycle status.
+                            {{ _("Refresh the page before selecting a lifecycle status.") }}
                         {% endif %}
                     </p>
                 </div>
@@ -167,11 +162,11 @@
             aria-labelledby="agent-template-edit-instructions-heading"
         >
             <h2 id="agent-template-edit-instructions-heading">
-                Agent instructions
+                {{ _("Agent instructions") }}
             </h2>
 
             <div class="form-field">
-                <label for="description">Description</label>
+                <label for="description">{{ _("Description") }}</label>
 
                 <textarea
                     id="description"
@@ -182,7 +177,7 @@
             </div>
 
             <div class="form-field">
-                <label for="system_prompt">System prompt</label>
+                <label for="system_prompt">{{ _("System prompt") }}</label>
 
                 <textarea
                     id="system_prompt"
@@ -193,8 +188,7 @@
                 >{{ form_values.get('system_prompt', '') }}</textarea>
 
                 <p class="form-help">
-                    Review these instructions carefully before
-                    activating the template.
+                    {{ _("Review these instructions carefully before activating the template.") }}
                 </p>
             </div>
         </section>
@@ -207,14 +201,14 @@
                     agent_template_id=agent_template_id
                 ) }}"
             >
-                Cancel
+                {{ _("Cancel") }}
             </a>
 
             <button
                 class="employee-submit-button"
                 type="submit"
             >
-                Save agent template
+                {{ _("Save agent template") }}
             </button>
         </div>
     </form>

@@ -10,7 +10,7 @@
         href="{{ url_for('employee_directory') }}"
     >
         <span aria-hidden="true">←</span>
-        Back to employee directory
+        {{ _("Back to employee directory") }}
     </a>
 
     {% if error_message and employee is none %}
@@ -25,45 +25,45 @@
                 id="employee-edit-heading"
                 class="profile-error-title"
             >
-                {{ page_title }}
+                {{ page_title_label(page_title) }}
             </h1>
 
-            <p>{{ error_message }}</p>
+            <p>{{ browser_message(error_message) }}</p>
         </div>
     </div>
     {% else %}
     <div class="employee-form-heading">
         <div>
-            <p class="section-eyebrow">Employee management</p>
+            <p class="section-eyebrow">{{ _("Employee management") }}</p>
 
             <h1
                 id="employee-edit-heading"
                 class="section-title"
             >
-                Edit employee
+                {{ _("Edit employee") }}
             </h1>
 
             <p class="page-message">
-                Update employment and contact details.
+                {{ _("Update employment and contact details.") }}
             </p>
         </div>
 
         <span class="form-access-badge">
             <span aria-hidden="true">✓</span>
-            Update access authorized
+            {{ _("Update access authorized") }}
         </span>
     </div>
 
     <section
         class="employee-edit-summary"
-        aria-label="Employee being edited"
+        aria-label="{{ _("Employee being edited") }}"
     >
         <p>
             <strong>{{ employee["name"] }}</strong>
         </p>
 
         <p>
-            Employee ID:
+            {{ _("Employee ID:") }}
             <strong>{{ employee["employee_id"] }}</strong>
         </p>
     </section>
@@ -74,7 +74,7 @@
         role="alert"
     >
         <span aria-hidden="true">!</span>
-        <span>{{ error_message }}</span>
+        <span>{{ browser_message(error_message) }}</span>
     </p>
     {% endif %}
 
@@ -94,12 +94,12 @@
             aria-labelledby="employment-edit-heading"
         >
             <h2 id="employment-edit-heading">
-                Employment details
+                {{ _("Employment details") }}
             </h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="department">Department</label>
+                    <label for="department">{{ _("Department") }}</label>
                     <input
                         id="department"
                         name="department"
@@ -113,7 +113,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="position">Position</label>
+                    <label for="position">{{ _("Position") }}</label>
                     <input
                         id="position"
                         name="position"
@@ -133,12 +133,12 @@
             aria-labelledby="contact-edit-heading"
         >
             <h2 id="contact-edit-heading">
-                Contact details
+                {{ _("Contact details") }}
             </h2>
 
             <div class="employee-form-grid">
                 <div class="form-field">
-                    <label for="email">Email</label>
+                    <label for="email">{{ _("Email") }}</label>
                     <input
                         id="email"
                         name="email"
@@ -153,7 +153,7 @@
                 </div>
 
                 <div class="form-field">
-                    <label for="phone_number">Phone number</label>
+                    <label for="phone_number">{{ _("Phone number") }}</label>
                     <input
                         id="phone_number"
                         name="phone_number"
@@ -177,12 +177,12 @@
                     employee_id=employee['employee_id']
                 ) }}"
             >
-                Cancel
+                {{ _("Cancel") }}
             </a>
 
             <button class="employee-submit-button" type="submit">
                 <span aria-hidden="true">✓</span>
-                Save changes
+                {{ _("Save changes") }}
             </button>
         </div>
     </form>

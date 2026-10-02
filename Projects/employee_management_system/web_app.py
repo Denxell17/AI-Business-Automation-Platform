@@ -5,6 +5,7 @@ from collections.abc import Callable
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated
+from urllib.parse import urlsplit
 
 import psycopg
 from fastapi import (
@@ -13,7 +14,6 @@ from fastapi import (
     Request,
 )
 from fastapi.responses import (
-    HTMLResponse,
     JSONResponse,
     RedirectResponse,
     Response,
@@ -121,11 +121,19 @@ from integration_config import (
     IntegrationSettings,
     load_integration_settings,
 )
+from i18n import (
+    LocalizedHTMLResponse as HTMLResponse,
+    RequestLanguageMiddleware,
+    gettext_for_request,
+    request_i18n_context,
+    validated_language,
+)
 from login_rate_limiter import LoginRateLimiter
 from password_policy import MAXIMUM_PASSWORD_LENGTH
 from reports import calculate_workforce_summary
 from user_service import (
     authenticate_user_account,
+    change_current_user_interface_language,
     register_viewer_account,
     set_viewer_account_active_status,
 )
@@ -280,7 +288,10 @@ def build_employee_from_form(
 
 templates = Jinja2Templates(
     directory=TEMPLATES_DIRECTORY,
+    context_processors=[request_i18n_context],
 )
+templates.env.add_extension("jinja2.ext.i18n")
+templates.env.newstyle_gettext = True
 templates.env.globals["stylesheet_version"] = STYLESHEET_VERSION
 templates.env.globals["user_has_permission"] = (
     user_has_permission
@@ -321,6 +332,21 @@ async def read_bounded_request_body(
             return None
         chunks.append(chunk)
     return b"".join(chunks)
+
+
+def safe_local_return_path(value: str) -> str:
+    """Return a local path or the application root."""
+    candidate = value.strip()
+    parsed = urlsplit(candidate)
+    if (
+        not candidate.startswith("/")
+        or candidate.startswith("//")
+        or "\\" in candidate
+        or parsed.scheme
+        or parsed.netloc
+    ):
+        return "/"
+    return candidate
 
 
 def create_web_application(
@@ -411,6 +437,7 @@ def create_web_application(
         ),
     )
 
+    application.add_middleware(RequestLanguageMiddleware)
     application.add_middleware(
         SessionMiddleware,
         secret_key=selected_session_secret,
@@ -429,6 +456,46 @@ def create_web_application(
         StaticFiles(directory=STATIC_DIRECTORY),
         name="static",
     )
+
+    @application.post("/language")
+    def change_interface_language(
+        request: Request,
+        language: Annotated[str, Form()],
+        csrf_token: Annotated[str, Form()],
+        return_to: Annotated[str, Form()] = "/",
+    ) -> Response:
+        gettext_function = gettext_for_request(request)
+        selected_language = validated_language(language)
+        if selected_language is None:
+            return HTMLResponse(
+                gettext_function("Unsupported interface language."),
+                status_code=400,
+            )
+        if not csrf_token_is_valid(request, csrf_token):
+            return HTMLResponse(
+                gettext_function("Your form could not be verified."),
+                status_code=403,
+            )
+
+        current_user = load_authenticated_session_user(
+            request,
+            database_file,
+        )
+        if current_user is not None and not change_current_user_interface_language(
+            current_user,
+            selected_language,
+            database_file,
+        ):
+            return HTMLResponse(
+                gettext_function("Language preference could not be saved."),
+                status_code=500,
+            )
+
+        request.session["interface_language"] = selected_language
+        return RedirectResponse(
+            url=safe_local_return_path(return_to),
+            status_code=303,
+        )
 
     @application.post("/integrations/webhooks/callback")
     async def inbound_webhook_callback(request: Request) -> Response:

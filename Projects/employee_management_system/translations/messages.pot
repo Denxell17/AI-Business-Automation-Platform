@@ -1,0 +1,2745 @@
+# Translations template for PROJECT.
+# Copyright (C) 2026 ORGANIZATION
+# This file is distributed under the same license as the PROJECT project.
+# FIRST AUTHOR <EMAIL@ADDRESS>, 2026.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PROJECT VERSION\n"
+"Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
+"POT-Creation-Date: 2026-10-02 10:57+0800\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=utf-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Generated-By: Babel 2.18.0\n"
+
+#: i18n.py:37 templates/activity_log.html:6 templates/application_base.html:44
+msgid "Activity log"
+msgstr ""
+
+#: i18n.py:38 templates/employee_form.html:24 templates/employees.html:8
+#: templates/employees.html:41 templates/home.html:94
+msgid "Add employee"
+msgstr ""
+
+#: i18n.py:39 templates/user_account_form.html:24
+#: templates/user_accounts.html:6
+msgid "Add viewer account"
+msgstr ""
+
+#: i18n.py:40 templates/workflow_schedule_form.html:12
+msgid "Add workflow schedule"
+msgstr ""
+
+#: i18n.py:41 templates/workflow_task_form.html:12
+msgid "Add workflow task"
+msgstr ""
+
+#: i18n.py:42
+msgid "Agent Execution not found"
+msgstr ""
+
+#: i18n.py:43
+msgid "Agent Template not found"
+msgstr ""
+
+#: i18n.py:44 templates/agent_templates.html:15
+msgid "Agent template directory"
+msgstr ""
+
+#: i18n.py:45
+msgid "Agent template not found"
+msgstr ""
+
+#: i18n.py:46
+msgid "Agent template unavailable"
+msgstr ""
+
+#: i18n.py:47 templates/ai_assistant.html:7 templates/application_base.html:33
+msgid "AI Assistant"
+msgstr ""
+
+#: i18n.py:48 templates/agent_template_form.html:24
+#: templates/agent_template_form.html:207 templates/agent_templates.html:8
+#: templates/agent_templates.html:24
+msgid "Create agent template"
+msgstr ""
+
+#: i18n.py:49 templates/home.html:18 templates/home.html:95
+#: templates/workflow_form.html:24 templates/workflow_form.html:140
+#: templates/workflows.html:8 templates/workflows.html:28
+msgid "Create workflow"
+msgstr ""
+
+#: i18n.py:50 templates/application_base.html:19 templates/home.html:13
+msgid "Dashboard"
+msgstr ""
+
+#: i18n.py:51 templates/employee_delete.html:44
+#: templates/employee_profile.html:88
+msgid "Delete employee"
+msgstr ""
+
+#: i18n.py:52 templates/workflow_task_delete_form.html:6
+msgid "Delete workflow task"
+msgstr ""
+
+#: i18n.py:53 templates/employee_edit.html:43
+#: templates/employee_profile.html:76
+msgid "Edit employee"
+msgstr ""
+
+#: i18n.py:54 templates/workflow_detail.html:19
+#: templates/workflow_edit_form.html:20
+msgid "Edit workflow"
+msgstr ""
+
+#: i18n.py:55 templates/workflow_task_edit_form.html:5
+msgid "Edit workflow task"
+msgstr ""
+
+#: i18n.py:56 templates/employees.html:32
+msgid "Employee directory"
+msgstr ""
+
+#: i18n.py:57
+msgid "Employee not found"
+msgstr ""
+
+#: i18n.py:58
+msgid "Employee payroll"
+msgstr ""
+
+#: i18n.py:59 templates/employee_profile.html:40
+msgid "Employee profile"
+msgstr ""
+
+#: i18n.py:60 templates/workflow_task_resequence_form.html:5
+msgid "Resequence workflow tasks"
+msgstr ""
+
+#: i18n.py:61 templates/login.html:3 templates/login.html:97
+msgid "Sign in"
+msgstr ""
+
+#: i18n.py:62 templates/application_base.html:47 templates/user_accounts.html:6
+msgid "User accounts"
+msgstr ""
+
+#: i18n.py:63 templates/application_base.html:50
+#: templates/webhook_deliveries.html:9
+msgid "Webhook deliveries"
+msgstr ""
+
+#: i18n.py:64 templates/workflows.html:23
+msgid "Workflow directory"
+msgstr ""
+
+#: i18n.py:65 templates/workforce_report.html:7
+msgid "Workforce report"
+msgstr ""
+
+#: i18n.py:74
+msgid "A viewer account could not be created."
+msgstr ""
+
+#: i18n.py:75
+msgid "Access denied."
+msgstr ""
+
+#: i18n.py:76
+msgid "Activity log entries could not be loaded."
+msgstr ""
+
+#: i18n.py:77
+msgid "Agent Execution history could not be loaded."
+msgstr ""
+
+#: i18n.py:78
+msgid ""
+"Agent template could not be created. Verify the template ID, name, system"
+" prompt, model name, and draft status."
+msgstr ""
+
+#: i18n.py:79
+msgid ""
+"Agent template could not be updated. Verify the submitted fields and "
+"lifecycle transition, or refresh the page if another update was completed"
+" first."
+msgstr ""
+
+#: i18n.py:80
+msgid "Agent template records could not be loaded."
+msgstr ""
+
+#: i18n.py:81
+msgid "Agent-template status filter is invalid."
+msgstr ""
+
+#: i18n.py:82
+msgid "An employee with that ID already exists."
+msgstr ""
+
+#: i18n.py:83
+msgid "An invoice needs between one and twenty line items."
+msgstr ""
+
+#: i18n.py:84
+msgid "Converted leads cannot be edited."
+msgstr ""
+
+#: i18n.py:85
+msgid "Customer filter is invalid."
+msgstr ""
+
+#: i18n.py:86
+msgid "Customer is required."
+msgstr ""
+
+#: i18n.py:87
+msgid "Customer not found."
+msgstr ""
+
+#: i18n.py:88
+msgid "Customer status is invalid."
+msgstr ""
+
+#: i18n.py:89
+msgid "Department, position, email, and phone number are required."
+msgstr ""
+
+#: i18n.py:90
+msgid "Document is unavailable."
+msgstr ""
+
+#: i18n.py:91
+msgid "Document not found."
+msgstr ""
+
+#: i18n.py:92
+msgid "Due date is invalid."
+msgstr ""
+
+#: i18n.py:93
+msgid "Email is invalid."
+msgstr ""
+
+#: i18n.py:94
+msgid "Employee changes could not be saved. Please try again later."
+msgstr ""
+
+#: i18n.py:95
+msgid "Employee could not be deleted."
+msgstr ""
+
+#: i18n.py:96
+msgid "Employee could not be saved. Please try again later."
+msgstr ""
+
+#: i18n.py:97
+msgid "Employee deletion could not be saved. Please try again later."
+msgstr ""
+
+#: i18n.py:98
+msgid "Employee records could not be loaded."
+msgstr ""
+
+#: i18n.py:99
+msgid "Employee records could not be loaded. Please try again later."
+msgstr ""
+
+#: i18n.py:100
+msgid "Execution could not be finished."
+msgstr ""
+
+#: i18n.py:101
+msgid "Execution could not be started. Only active workflows can run."
+msgstr ""
+
+#: i18n.py:102
+msgid "Generated document is invalid."
+msgstr ""
+
+#: i18n.py:103
+msgid "Invalid CSRF token."
+msgstr ""
+
+#: i18n.py:104
+msgid "Invoice customer must be active."
+msgstr ""
+
+#: i18n.py:105
+msgid "Invoice document could not be generated."
+msgstr ""
+
+#: i18n.py:106
+msgid "Invoice line item is invalid."
+msgstr ""
+
+#: i18n.py:107
+msgid "Invoice not found."
+msgstr ""
+
+#: i18n.py:108
+msgid "Invoice number is invalid."
+msgstr ""
+
+#: i18n.py:109
+msgid "Invoice status could not be changed."
+msgstr ""
+
+#: i18n.py:110
+msgid "Invoice status transition is invalid."
+msgstr ""
+
+#: i18n.py:111
+msgid "Invoice workflow could not start."
+msgstr ""
+
+#: i18n.py:112
+msgid "Language preference could not be saved."
+msgstr ""
+
+#: i18n.py:113
+msgid "Lead cannot accept notes."
+msgstr ""
+
+#: i18n.py:114
+msgid "Lead cannot be edited."
+msgstr ""
+
+#: i18n.py:115
+msgid "Lead not found."
+msgstr ""
+
+#: i18n.py:116
+msgid "Lead stage is invalid."
+msgstr ""
+
+#: i18n.py:117
+msgid "Lead stage transition is invalid."
+msgstr ""
+
+#: i18n.py:118
+msgid "Line description is invalid."
+msgstr ""
+
+#: i18n.py:119
+msgid "Only active workflows can have schedules."
+msgstr ""
+
+#: i18n.py:120
+msgid "Only an Active Agent Template can be executed."
+msgstr ""
+
+#: i18n.py:121
+msgid "Only qualified leads can be converted."
+msgstr ""
+
+#: i18n.py:122
+msgid "Owner is invalid."
+msgstr ""
+
+#: i18n.py:123
+msgid "Owner must be an active user."
+msgstr ""
+
+#: i18n.py:124
+msgid "Password confirmation does not match."
+msgstr ""
+
+#: i18n.py:125
+msgid ""
+"Schedule could not be created. Verify its ID, type, time, weekday, and "
+"that the workflow is active."
+msgstr ""
+
+#: i18n.py:126
+msgid "Schedule status could not be updated."
+msgstr ""
+
+#: i18n.py:127
+msgid "Search is too long."
+msgstr ""
+
+#: i18n.py:128
+msgid "Task could not be created. Verify the task ID, title, and sequence number."
+msgstr ""
+
+#: i18n.py:129
+msgid ""
+"Task could not be deleted. An active workflow must retain at least one "
+"task."
+msgstr ""
+
+#: i18n.py:130
+msgid "Task could not be updated. Verify the title and required setting."
+msgstr ""
+
+#: i18n.py:131
+msgid "Task execution could not be finished."
+msgstr ""
+
+#: i18n.py:132
+msgid "Task execution could not be saved."
+msgstr ""
+
+#: i18n.py:133
+msgid "Tax rate is invalid."
+msgstr ""
+
+#: i18n.py:134
+msgid "The AI Assistant could not complete the request."
+msgstr ""
+
+#: i18n.py:135
+msgid "The AI provider could not complete the request."
+msgstr ""
+
+#: i18n.py:136
+msgid "The Agent Execution could not be loaded."
+msgstr ""
+
+#: i18n.py:137
+msgid "The Agent Template could not be loaded."
+msgstr ""
+
+#: i18n.py:138
+msgid "The agent template could not be loaded."
+msgstr ""
+
+#: i18n.py:139
+msgid "The agent template could not be saved because the database is unavailable."
+msgstr ""
+
+#: i18n.py:140
+msgid "The requested Agent Execution was not found."
+msgstr ""
+
+#: i18n.py:141
+msgid "The requested Agent Template was not found."
+msgstr ""
+
+#: i18n.py:142
+msgid "The requested account status is invalid."
+msgstr ""
+
+#: i18n.py:143
+msgid "The requested agent template was not found."
+msgstr ""
+
+#: i18n.py:144
+msgid "The requested employee record was not found."
+msgstr ""
+
+#: i18n.py:145
+msgid "The viewer account status could not be changed."
+msgstr ""
+
+#: i18n.py:146
+msgid "Too many AI requests. Try again shortly."
+msgstr ""
+
+#: i18n.py:147
+msgid "Unsupported interface language."
+msgstr ""
+
+#: i18n.py:148
+msgid "User accounts could not be loaded."
+msgstr ""
+
+#: i18n.py:149
+msgid "Username or password is incorrect."
+msgstr ""
+
+#: i18n.py:150
+msgid "Username, password, and password confirmation are required."
+msgstr ""
+
+#: i18n.py:151
+msgid "Webhook delivery records could not be loaded."
+msgstr ""
+
+#: i18n.py:152
+msgid "Workflow could not be created. Verify the workflow ID, name, and status."
+msgstr ""
+
+#: i18n.py:153
+msgid "Workflow could not be updated. Verify the workflow name and status."
+msgstr ""
+
+#: i18n.py:154
+msgid "Workflow must be active."
+msgstr ""
+
+#: i18n.py:155
+msgid "Workflow not found."
+msgstr ""
+
+#: i18n.py:156
+msgid "Workflow records could not be loaded."
+msgstr ""
+
+#: i18n.py:157
+msgid "Workflow schedules could not be saved."
+msgstr ""
+
+#: i18n.py:158
+msgid "Workflow status filter is invalid."
+msgstr ""
+
+#: i18n.py:159
+msgid "Workflow task not found."
+msgstr ""
+
+#: i18n.py:160
+msgid "Workflow tasks could not be resequenced."
+msgstr ""
+
+#: i18n.py:161
+msgid "Your form could not be verified."
+msgstr ""
+
+#: i18n.py:166 templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:13 templates/employee_form.html:122
+#: templates/employee_profile.html:125
+msgid "Company"
+msgstr ""
+
+#: i18n.py:167 templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:11 templates/employee_edit.html:141
+#: templates/employee_form.html:188 templates/employee_profile.html:156
+msgid "Email"
+msgstr ""
+
+#: i18n.py:168 templates/crm_directory.html:7 templates/crm_form.html:10
+#: templates/employees.html:33
+msgid "Name"
+msgstr ""
+
+#: i18n.py:169
+msgid "Note"
+msgstr ""
+
+#: i18n.py:170 templates/crm_form.html:12 templates/employee_edit.html:156
+#: templates/employee_form.html:200 templates/employee_profile.html:161
+msgid "Phone number"
+msgstr ""
+
+#: i18n.py:171 templates/invoice_detail.html:5 templates/invoice_form.html:6
+msgid "Quantity"
+msgstr ""
+
+#: i18n.py:172 templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:16
+msgid "Stage"
+msgstr ""
+
+#: i18n.py:173 templates/agent_execution_detail.html:108
+#: templates/agent_execution_history.html:81
+#: templates/agent_template_detail.html:189 templates/agent_templates.html:11
+#: templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:17 templates/employees.html:33
+#: templates/home.html:54 templates/invoice_detail.html:4
+#: templates/invoices.html:5 templates/webhook_deliveries.html:22
+#: templates/workflow_detail.html:35 templates/workflow_edit_form.html:68
+#: templates/workflow_form.html:93 templates/workflows.html:14
+#: templates/workflows.html:24
+msgid "Status"
+msgstr ""
+
+#: i18n.py:174 templates/invoice_detail.html:5
+msgid "Unit price"
+msgstr ""
+
+#: i18n.py:181
+#, python-format
+msgid "%(field)s is invalid."
+msgstr ""
+
+#: i18n.py:182
+#, python-format
+msgid "%(field)s is required."
+msgstr ""
+
+#: i18n.py:183
+#, python-format
+msgid "%(field)s has too many decimal places."
+msgstr ""
+
+#: templates/activity_log.html:6
+msgid "Security auditing"
+msgstr ""
+
+#: templates/activity_log.html:6
+msgid "Review recent application, access, and security events."
+msgstr ""
+
+#: templates/activity_log.html:6
+msgid "Administrator access"
+msgstr ""
+
+#: templates/activity_log.html:8
+msgid "Activity unavailable"
+msgstr ""
+
+#: templates/activity_log.html:11 templates/home.html:119
+msgid "Recent activity"
+msgstr ""
+
+#: templates/activity_log.html:11
+msgid "Newest events are shown first. Log records are read-only."
+msgstr ""
+
+#: templates/activity_log.html:11
+#, python-format
+msgid "%(num)s entry"
+msgid_plural "%(num)s entries"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/activity_log.html:12
+msgid "Recorded application event"
+msgstr ""
+
+#: templates/activity_log.html:14
+msgid "No activity has been recorded"
+msgstr ""
+
+#: templates/activity_log.html:14
+msgid "New application and security actions will appear here."
+msgstr ""
+
+#: templates/agent_execution_detail.html:20
+msgid "Back to Agent Execution history"
+msgstr ""
+
+#: templates/agent_execution_detail.html:28
+#: templates/agent_execution_history.html:28
+msgid "Back to Agent Template directory"
+msgstr ""
+
+#: templates/agent_execution_detail.html:35
+#: templates/agent_execution_detail.html:52
+#: templates/agent_execution_history.html:35
+msgid "AI agent operations"
+msgstr ""
+
+#: templates/agent_execution_detail.html:59
+msgid "Agent Execution"
+msgstr ""
+
+#: templates/agent_execution_detail.html:74
+msgid "Execution summary"
+msgstr ""
+
+#: templates/agent_execution_detail.html:74
+msgid "Provider, requester, and timing metadata."
+msgstr ""
+
+#: templates/agent_execution_detail.html:78
+msgid "Agent Template"
+msgstr ""
+
+#: templates/agent_execution_detail.html:96
+#: templates/agent_template_detail.html:177
+#: templates/agent_template_edit_form.html:84
+#: templates/agent_template_form.html:76
+msgid "Template ID"
+msgstr ""
+
+#: templates/agent_execution_detail.html:103
+#: templates/agent_execution_history.html:82
+#: templates/agent_template_detail.html:184
+msgid "Model"
+msgstr ""
+
+#: templates/agent_execution_detail.html:113
+msgid "Requested by user ID"
+msgstr ""
+
+#: templates/agent_execution_detail.html:122
+#: templates/agent_execution_history.html:84 templates/workflow_detail.html:104
+msgid "Started"
+msgstr ""
+
+#: templates/agent_execution_detail.html:134
+#: templates/agent_execution_history.html:85 templates/home.html:54
+msgid "Finished"
+msgstr ""
+
+#: templates/agent_execution_detail.html:146
+msgid "Still running"
+msgstr ""
+
+#: templates/agent_execution_detail.html:158
+msgid "Submitted input"
+msgstr ""
+
+#: templates/agent_execution_detail.html:158
+msgid "Protected input stored with this execution."
+msgstr ""
+
+#: templates/agent_execution_detail.html:167
+msgid "Execution result"
+msgstr ""
+
+#: templates/agent_execution_detail.html:167
+msgid "Escaped provider output or safe failure information."
+msgstr ""
+
+#: templates/agent_execution_detail.html:177
+msgid "This execution is still running and does not have a final result yet."
+msgstr ""
+
+#: templates/agent_execution_history.html:20
+msgid "Back to Agent Template details"
+msgstr ""
+
+#: templates/agent_execution_history.html:47
+#, python-format
+msgid "Review the stored execution history for %(template_id)s."
+msgstr ""
+
+#: templates/agent_execution_history.html:70
+msgid "Agent Execution history"
+msgstr ""
+
+#: templates/agent_execution_history.html:75
+#, python-format
+msgid "Agent Execution history for %(template_name)s"
+msgstr ""
+
+#: templates/agent_execution_history.html:80
+msgid "Execution ID"
+msgstr ""
+
+#: templates/agent_execution_history.html:83
+msgid "Requested by"
+msgstr ""
+
+#: templates/agent_execution_history.html:116 templates/user_accounts.html:12
+msgid "User"
+msgstr ""
+
+#: templates/agent_execution_history.html:138
+msgid "Running"
+msgstr ""
+
+#: templates/agent_execution_history.html:148
+msgid "No Agent Executions yet"
+msgstr ""
+
+#: templates/agent_execution_history.html:148
+msgid "This Agent Template has no stored execution history."
+msgstr ""
+
+#: templates/agent_template_detail.html:13
+#: templates/agent_template_form.html:13
+msgid "Back to agent template directory"
+msgstr ""
+
+#: templates/agent_template_detail.html:19
+#: templates/agent_template_detail.html:42
+#: templates/agent_template_edit_form.html:22
+#: templates/agent_template_form.html:18
+msgid "AI agent configuration"
+msgstr ""
+
+#: templates/agent_template_detail.html:55
+msgid "No description has been provided."
+msgstr ""
+
+#: templates/agent_template_detail.html:78
+msgid "View execution history"
+msgstr ""
+
+#: templates/agent_template_detail.html:92
+#: templates/agent_template_edit_form.html:29
+msgid "Edit agent template"
+msgstr ""
+
+#: templates/agent_template_detail.html:115
+#: templates/agent_template_detail.html:160
+msgid "Run Agent Template"
+msgstr ""
+
+#: templates/agent_template_detail.html:119
+msgid ""
+"Submit business input to this Active Agent Template. The complete input "
+"and generated result will be stored in the protected execution record."
+msgstr ""
+
+#: templates/agent_template_detail.html:139
+msgid "Execution input"
+msgstr ""
+
+#: templates/agent_template_detail.html:150
+#, python-format
+msgid ""
+"Enter no more than %(limit)s characters. Review sensitive business data "
+"before submitting it to the configured provider."
+msgstr ""
+
+#: templates/agent_template_detail.html:172
+msgid "Template configuration"
+msgstr ""
+
+#: templates/agent_template_detail.html:196
+msgid "Created by user ID"
+msgstr ""
+
+#: templates/agent_template_detail.html:203 templates/workflow_detail.html:36
+#: templates/workflow_detail.html:75 templates/workflows.html:24
+msgid "Created"
+msgstr ""
+
+#: templates/agent_template_detail.html:215 templates/workflow_detail.html:37
+#: templates/workflows.html:24
+msgid "Last updated"
+msgstr ""
+
+#: templates/agent_template_detail.html:233
+#: templates/agent_template_edit_form.html:180
+#: templates/agent_template_form.html:178
+msgid "System prompt"
+msgstr ""
+
+#: templates/agent_template_detail.html:237
+msgid "These protected instructions define how the AI agent should behave."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:16
+msgid "Back to agent template details"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:33
+msgid "Update this template and select an allowed lifecycle status."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:39
+#: templates/agent_template_form.html:34
+msgid "Agent template management authorized"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:78
+#: templates/agent_template_form.html:70
+msgid "Template identity"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:95
+msgid "Template IDs remain fixed after creation."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:100
+#: templates/agent_template_form.html:98
+msgid "Template name"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:113
+#: templates/agent_template_form.html:115
+msgid "Model name"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:130
+msgid "Lifecycle status"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:147
+msgid "A Draft template can remain Draft or become Active."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:149
+msgid "An Active template can remain Active or become Inactive."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:151
+msgid "An Inactive template can remain Inactive or become Active."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:153
+msgid "Refresh the page before selecting a lifecycle status."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:165
+#: templates/agent_template_form.html:159
+msgid "Agent instructions"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:169
+#: templates/agent_template_form.html:163 templates/invoice_detail.html:5
+#: templates/invoice_form.html:6 templates/workflow_detail.html:38
+#: templates/workflow_edit_form.html:80 templates/workflow_form.html:121
+#: templates/workflows.html:24
+msgid "Description"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:191
+msgid "Review these instructions carefully before activating the template."
+msgstr ""
+
+#: templates/agent_template_edit_form.html:204
+#: templates/agent_template_form.html:199 templates/employee_delete.html:105
+#: templates/employee_edit.html:180 templates/employee_form.html:262
+#: templates/user_account_form.html:119 templates/workflow_edit_form.html:92
+#: templates/workflow_form.html:135 templates/workflow_schedule_form.html:63
+#: templates/workflow_task_delete_form.html:12
+#: templates/workflow_task_edit_form.html:10
+#: templates/workflow_task_form.html:52
+#: templates/workflow_task_resequence_form.html:15
+msgid "Cancel"
+msgstr ""
+
+#: templates/agent_template_edit_form.html:211
+msgid "Save agent template"
+msgstr ""
+
+#: templates/agent_template_form.html:28
+msgid ""
+"Define the identity, model, and system instructions for a reusable AI "
+"agent."
+msgstr ""
+
+#: templates/agent_template_form.html:93
+msgid "Enter a stable identifier such as AGENT-CUSTOMER-SUPPORT."
+msgstr ""
+
+#: templates/agent_template_form.html:110
+msgid "Use a short name that explains the agent’s role."
+msgstr ""
+
+#: templates/agent_template_form.html:131
+msgid "Enter the model identifier this template should use."
+msgstr ""
+
+#: templates/agent_template_form.html:137
+msgid "Initial status"
+msgstr ""
+
+#: templates/agent_template_form.html:148
+msgid "New templates remain drafts until a later review and activation step."
+msgstr ""
+
+#: templates/agent_template_form.html:173
+msgid "Explain what the template is intended to do."
+msgstr ""
+
+#: templates/agent_template_form.html:189
+msgid ""
+"Define the agent’s responsibilities, boundaries, expected behavior, and "
+"output requirements."
+msgstr ""
+
+#: templates/agent_templates.html:7
+msgid "AI agents"
+msgstr ""
+
+#: templates/agent_templates.html:7 templates/application_base.html:30
+msgid "Agent templates"
+msgstr ""
+
+#: templates/agent_templates.html:7
+msgid "Configure and deploy reusable AI agent definitions."
+msgstr ""
+
+#: templates/agent_templates.html:11
+msgid "Filter agent templates by status"
+msgstr ""
+
+#: templates/agent_templates.html:11 templates/workflows.html:14
+msgid "All statuses"
+msgstr ""
+
+#: templates/agent_templates.html:11 templates/workflows.html:14
+msgid "Apply filter"
+msgstr ""
+
+#: templates/agent_templates.html:11
+#, python-format
+msgid "%(num)s template"
+msgid_plural "%(num)s templates"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/agent_templates.html:20 templates/webhook_deliveries.html:22
+msgid "Updated"
+msgstr ""
+
+#: templates/agent_templates.html:24
+msgid "No agent templates found"
+msgstr ""
+
+#: templates/agent_templates.html:24
+msgid "Agent templates will appear here after an administrator creates them."
+msgstr ""
+
+#: templates/ai_assistant.html:7
+msgid "Protected AI workspace"
+msgstr ""
+
+#: templates/ai_assistant.html:7
+msgid ""
+"Ask a focused business question through ABAP's protected provider "
+"boundary."
+msgstr ""
+
+#: templates/ai_assistant.html:8
+msgid "Access authorized"
+msgstr ""
+
+#: templates/ai_assistant.html:16
+msgid "Business question"
+msgstr ""
+
+#: templates/ai_assistant.html:16
+msgid "Describe the outcome or decision you need help with."
+msgstr ""
+
+#: templates/ai_assistant.html:17
+msgid "What would you like help with?"
+msgstr ""
+
+#: templates/ai_assistant.html:17
+msgid "Example: Summarize the operational risks in this workflow…"
+msgstr ""
+
+#: templates/ai_assistant.html:17
+#, python-format
+msgid "Maximum %(count)s characters"
+msgstr ""
+
+#: templates/ai_assistant.html:17
+msgid "This one-off interaction is not stored as conversation history"
+msgstr ""
+
+#: templates/ai_assistant.html:18
+msgid "Review before sending"
+msgstr ""
+
+#: templates/ai_assistant.html:18
+msgid ""
+"Remove confidential, personal, or regulated information that the external"
+" provider does not need."
+msgstr ""
+
+#: templates/ai_assistant.html:19
+msgid "Ask AI Assistant"
+msgstr ""
+
+#: templates/ai_assistant.html:22
+msgid "Assistant response"
+msgstr ""
+
+#: templates/ai_assistant.html:22
+#, python-format
+msgid "Generated with %(model_name)s"
+msgstr ""
+
+#: templates/ai_assistant.html:22
+msgid "AI-generated content may require review before business use."
+msgstr ""
+
+#: templates/application_base.html:6
+msgid "Primary navigation"
+msgstr ""
+
+#: templates/application_base.html:8 templates/application_base.html:92
+msgid "ABAP Dashboard"
+msgstr ""
+
+#: templates/application_base.html:10 templates/login.html:26
+msgid "AI Business Automation Platform"
+msgstr ""
+
+#: templates/application_base.html:12 templates/application_base.html:87
+#: templates/base.html:10
+msgid "Close navigation"
+msgstr ""
+
+#: templates/application_base.html:15
+msgid "ABAP workspace navigation"
+msgstr ""
+
+#: templates/application_base.html:17
+msgid "Workspace"
+msgstr ""
+
+#: templates/application_base.html:20 templates/employees.html:7
+#: templates/home.html:25 templates/workforce_report.html:30
+msgid "Employees"
+msgstr ""
+
+#: templates/application_base.html:21 templates/workflows.html:7
+msgid "Workflows"
+msgstr ""
+
+#: templates/application_base.html:23 templates/crm_directory.html:4
+#: templates/home.html:164
+msgid "Leads"
+msgstr ""
+
+#: templates/application_base.html:24 templates/crm_directory.html:4
+#: templates/home.html:166
+msgid "Customers"
+msgstr ""
+
+#: templates/application_base.html:27 templates/home.html:169
+#: templates/invoices.html:4 templates/invoices.html:5
+msgid "Invoices"
+msgstr ""
+
+#: templates/application_base.html:35
+msgid "Reports"
+msgstr ""
+
+#: templates/application_base.html:41
+msgid "Administration"
+msgstr ""
+
+#: templates/application_base.html:57
+msgid "Resources"
+msgstr ""
+
+#: templates/application_base.html:59
+msgid "System health"
+msgstr ""
+
+#: templates/application_base.html:60
+msgid "API documentation"
+msgstr ""
+
+#: templates/application_base.html:66 templates/application_base.html:94
+#: templates/base.html:7
+msgid "Use light theme"
+msgstr ""
+
+#: templates/application_base.html:66 templates/application_base.html:94
+#: templates/base.html:5
+msgid "Light theme"
+msgstr ""
+
+#: templates/application_base.html:70 templates/application_base.html:71
+#: templates/login.html:105
+msgid "Interface language"
+msgstr ""
+
+#: templates/application_base.html:74 templates/login.html:109
+msgid "Apply"
+msgstr ""
+
+#: templates/application_base.html:82
+msgid "Sign out"
+msgstr ""
+
+#: templates/application_base.html:91 templates/base.html:9
+msgid "Open navigation"
+msgstr ""
+
+#: templates/base.html:6
+msgid "Dark theme"
+msgstr ""
+
+#: templates/base.html:8
+msgid "Use dark theme"
+msgstr ""
+
+#: templates/base.html:11
+msgid "Recorded timestamp:"
+msgstr ""
+
+#: templates/base.html:31
+msgid "Skip to main content"
+msgstr ""
+
+#: templates/crm_detail.html:4 templates/crm_form.html:4
+msgid "← Back to leads"
+msgstr ""
+
+#: templates/crm_detail.html:4 templates/crm_form.html:4
+msgid "← Back to customers"
+msgstr ""
+
+#: templates/crm_detail.html:5
+msgid "Lead record"
+msgstr ""
+
+#: templates/crm_detail.html:5
+msgid "Customer record"
+msgstr ""
+
+#: templates/crm_detail.html:6
+msgid "Identity and contact"
+msgstr ""
+
+#: templates/crm_detail.html:6
+msgid "Phone"
+msgstr ""
+
+#: templates/crm_detail.html:7 templates/crm_form.html:15
+msgid "Owner"
+msgstr ""
+
+#: templates/crm_detail.html:7 templates/invoice_detail.html:4
+#: templates/invoice_form.html:5 templates/invoices.html:5
+msgid "Customer"
+msgstr ""
+
+#: templates/crm_detail.html:7
+msgid "View converted customer"
+msgstr ""
+
+#: templates/crm_detail.html:8
+msgid "Source lead"
+msgstr ""
+
+#: templates/crm_detail.html:8
+msgid "View original lead"
+msgstr ""
+
+#: templates/crm_detail.html:9
+msgid "Edit customer"
+msgstr ""
+
+#: templates/crm_detail.html:9
+msgid "Edit lead"
+msgstr ""
+
+#: templates/crm_detail.html:11
+msgid "Convert to customer"
+msgstr ""
+
+#: templates/crm_detail.html:12
+msgid "Notes"
+msgstr ""
+
+#: templates/crm_detail.html:12
+msgid "New note"
+msgstr ""
+
+#: templates/crm_detail.html:12
+msgid "Add note"
+msgstr ""
+
+#: templates/crm_detail.html:12
+msgid "No notes yet."
+msgstr ""
+
+#: templates/crm_detail.html:14
+msgid "Audit history"
+msgstr ""
+
+#: templates/crm_detail.html:14
+msgid "No history yet."
+msgstr ""
+
+#: templates/crm_directory.html:4
+msgid "Customer relationships"
+msgstr ""
+
+#: templates/crm_directory.html:4
+msgid "Search and manage potential customers."
+msgstr ""
+
+#: templates/crm_directory.html:4
+msgid "Search and manage converted customers."
+msgstr ""
+
+#: templates/crm_directory.html:5 templates/home.html:96
+msgid "Create lead"
+msgstr ""
+
+#: templates/crm_directory.html:6
+msgid "Search by name, email, or company"
+msgstr ""
+
+#: templates/crm_directory.html:6
+msgid "Search"
+msgstr ""
+
+#: templates/crm_directory.html:7
+msgid "Lead records"
+msgstr ""
+
+#: templates/crm_directory.html:7
+msgid "Customer records"
+msgstr ""
+
+#: templates/crm_directory.html:7
+msgid "Details"
+msgstr ""
+
+#: templates/crm_directory.html:7
+msgid "View"
+msgstr ""
+
+#: templates/crm_directory.html:8
+msgid "No leads found."
+msgstr ""
+
+#: templates/crm_directory.html:8
+msgid "No customers found."
+msgstr ""
+
+#: templates/crm_form.html:9 templates/employee_edit.html:136
+#: templates/employee_form.html:184 templates/employee_profile.html:152
+msgid "Contact details"
+msgstr ""
+
+#: templates/crm_form.html:15
+msgid "Unassigned"
+msgstr ""
+
+#: templates/crm_form.html:18
+msgid "Save"
+msgstr ""
+
+#: templates/employee_delete.html:14 templates/employee_edit.html:13
+#: templates/employee_form.html:13 templates/employee_payroll.html:26
+#: templates/employee_profile.html:14
+msgid "Back to employee directory"
+msgstr ""
+
+#: templates/employee_delete.html:38 templates/employee_edit.html:37
+#: templates/employee_form.html:18
+msgid "Employee management"
+msgstr ""
+
+#: templates/employee_delete.html:48
+msgid "Review this permanent action before continuing."
+msgstr ""
+
+#: templates/employee_delete.html:54
+msgid "Delete access authorized"
+msgstr ""
+
+#: templates/employee_delete.html:60
+msgid "Employee being deleted"
+msgstr ""
+
+#: templates/employee_delete.html:63 templates/employee_edit.html:66
+#: templates/employee_payroll.html:63 templates/employee_profile.html:50
+msgid "Employee ID:"
+msgstr ""
+
+#: templates/employee_delete.html:82
+msgid "This action is permanent"
+msgstr ""
+
+#: templates/employee_delete.html:82
+msgid "This permanently deletes the employee record and cannot be undone."
+msgstr ""
+
+#: templates/employee_delete.html:112
+msgid "Permanently delete employee"
+msgstr ""
+
+#: templates/employee_edit.html:47
+msgid "Update employment and contact details."
+msgstr ""
+
+#: templates/employee_edit.html:53
+msgid "Update access authorized"
+msgstr ""
+
+#: templates/employee_edit.html:59
+msgid "Employee being edited"
+msgstr ""
+
+#: templates/employee_edit.html:97 templates/employee_form.html:96
+#: templates/employee_profile.html:111
+msgid "Employment details"
+msgstr ""
+
+#: templates/employee_edit.html:102 templates/employee_form.html:100
+#: templates/employee_profile.html:115 templates/employees.html:14
+#: templates/employees.html:33 templates/workforce_report.html:30
+msgid "Department"
+msgstr ""
+
+#: templates/employee_edit.html:116 templates/employee_form.html:111
+#: templates/employee_profile.html:120
+#: templates/workflow_task_resequence_form.html:12
+msgid "Position"
+msgstr ""
+
+#: templates/employee_edit.html:185
+msgid "Save changes"
+msgstr ""
+
+#: templates/employee_form.html:28
+msgid "Create a new employee record in the SQLite database."
+msgstr ""
+
+#: templates/employee_form.html:34
+msgid "Registration access authorized"
+msgstr ""
+
+#: templates/employee_form.html:63
+msgid "Identity"
+msgstr ""
+
+#: templates/employee_form.html:67
+msgid "Employee ID"
+msgstr ""
+
+#: templates/employee_form.html:79
+msgid "Full name"
+msgstr ""
+
+#: templates/employee_form.html:133 templates/employee_profile.html:130
+msgid "Country"
+msgstr ""
+
+#: templates/employee_form.html:145 templates/employee_profile.html:142
+msgid "Employment status"
+msgstr ""
+
+#: templates/employee_form.html:161 templates/employee_profile.html:135
+msgid "Years of experience"
+msgstr ""
+
+#: templates/employee_form.html:220
+msgid "Payroll basis"
+msgstr ""
+
+#: templates/employee_form.html:224
+msgid "Monthly salary"
+msgstr ""
+
+#: templates/employee_form.html:238
+msgid "Performance score"
+msgstr ""
+
+#: templates/employee_form.html:267
+msgid "Create employee"
+msgstr ""
+
+#: templates/employee_payroll.html:18
+msgid "Back to employee profile"
+msgstr ""
+
+#: templates/employee_payroll.html:53
+msgid "Payroll information"
+msgstr ""
+
+#: templates/employee_payroll.html:71
+msgid "Payroll access authorized"
+msgstr ""
+
+#: templates/employee_payroll.html:80
+msgid "Monthly payroll"
+msgstr ""
+
+#: templates/employee_payroll.html:80
+msgid "Recurring income and estimated deductions."
+msgstr ""
+
+#: templates/employee_payroll.html:84
+msgid "Base salary"
+msgstr ""
+
+#: templates/employee_payroll.html:93
+msgid "Allowance"
+msgstr ""
+
+#: templates/employee_payroll.html:102
+msgid "Overtime"
+msgstr ""
+
+#: templates/employee_payroll.html:111
+msgid "Monthly income"
+msgstr ""
+
+#: templates/employee_payroll.html:120
+msgid "Estimated monthly tax"
+msgstr ""
+
+#: templates/employee_payroll.html:129
+msgid "Net monthly income"
+msgstr ""
+
+#: templates/employee_payroll.html:143
+msgid "Annual compensation"
+msgstr ""
+
+#: templates/employee_payroll.html:143
+msgid "Projected yearly compensation package."
+msgstr ""
+
+#: templates/employee_payroll.html:147
+msgid "Annual salary"
+msgstr ""
+
+#: templates/employee_payroll.html:156
+msgid "Thirteenth-month pay"
+msgstr ""
+
+#: templates/employee_payroll.html:165
+msgid "Estimated bonus"
+msgstr ""
+
+#: templates/employee_payroll.html:174
+msgid "Total compensation"
+msgstr ""
+
+#: templates/employee_payroll.html:188
+msgid "Performance basis"
+msgstr ""
+
+#: templates/employee_payroll.html:188
+msgid "Inputs used for the estimated bonus."
+msgstr ""
+
+#: templates/employee_payroll.html:192
+msgid "Performance rating"
+msgstr ""
+
+#: templates/employee_payroll.html:197
+msgid "Bonus rate"
+msgstr ""
+
+#: templates/employee_payroll.html:207
+msgid ""
+"Values are estimates calculated from the stored employee record and "
+"configured payroll defaults."
+msgstr ""
+
+#: templates/employee_profile.html:100
+msgid "View payroll"
+msgstr ""
+
+#: templates/employee_profile.html:111
+msgid "Role and organization information."
+msgstr ""
+
+#: templates/employee_profile.html:152
+msgid "Stored business contact information."
+msgstr ""
+
+#: templates/employees.html:7
+msgid "Workforce"
+msgstr ""
+
+#: templates/employees.html:7
+msgid "Manage employee records and workforce data."
+msgstr ""
+
+#: templates/employees.html:11
+msgid "Search and filter employees"
+msgstr ""
+
+#: templates/employees.html:13
+msgid "Search by name"
+msgstr ""
+
+#: templates/employees.html:13
+msgid "Search employees by name…"
+msgstr ""
+
+#: templates/employees.html:14
+msgid "All departments"
+msgstr ""
+
+#: templates/employees.html:15
+msgid "Apply filters"
+msgstr ""
+
+#: templates/employees.html:18
+msgid "Advanced filters"
+msgstr ""
+
+#: templates/employees.html:18
+msgid "Filters active"
+msgstr ""
+
+#: templates/employees.html:20
+msgid "Minimum salary"
+msgstr ""
+
+#: templates/employees.html:21
+msgid "Maximum salary"
+msgstr ""
+
+#: templates/employees.html:22
+msgid "Sort results by"
+msgstr ""
+
+#: templates/employees.html:22
+msgid "Default order"
+msgstr ""
+
+#: templates/employees.html:22
+msgid "Name: A to Z"
+msgstr ""
+
+#: templates/employees.html:22
+msgid "Salary: highest first"
+msgstr ""
+
+#: templates/employees.html:25
+msgid "Clear filters"
+msgstr ""
+
+#: templates/employees.html:32
+msgid "Current authorized workforce records."
+msgstr ""
+
+#: templates/employees.html:32
+#, python-format
+msgid "%(num)s result"
+msgid_plural "%(num)s results"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/employees.html:33
+msgid "Scrollable employee directory"
+msgstr ""
+
+#: templates/employees.html:33
+msgid "Current employee records"
+msgstr ""
+
+#: templates/employees.html:33
+msgid "Email address"
+msgstr ""
+
+#: templates/employees.html:33 templates/user_accounts.html:12
+msgid "Role"
+msgstr ""
+
+#: templates/employees.html:41
+msgid "No matching employees found"
+msgstr ""
+
+#: templates/employees.html:41
+msgid "Try changing or clearing the current filters."
+msgstr ""
+
+#: templates/employees.html:41
+msgid "No employees found"
+msgstr ""
+
+#: templates/employees.html:41
+msgid "Employee records will appear here after they are added."
+msgstr ""
+
+#: templates/home.html:12
+msgid "Operational overview"
+msgstr ""
+
+#: templates/home.html:14
+msgid "System activity, attention items, and useful actions."
+msgstr ""
+
+#: templates/home.html:23
+msgid "Platform summary"
+msgstr ""
+
+#: templates/home.html:25 templates/home.html:164 templates/home.html:169
+msgid "Current records"
+msgstr ""
+
+#: templates/home.html:29
+msgid "Departments"
+msgstr ""
+
+#: templates/home.html:29
+msgid "Derived from workforce data"
+msgstr ""
+
+#: templates/home.html:33
+msgid "Active workflows"
+msgstr ""
+
+#: templates/home.html:33
+msgid "Current workflow status"
+msgstr ""
+
+#: templates/home.html:37
+msgid "Failed runs"
+msgstr ""
+
+#: templates/home.html:37
+msgid "All execution history"
+msgstr ""
+
+#: templates/home.html:45
+msgid "Workflow operations"
+msgstr ""
+
+#: templates/home.html:45
+msgid "Recent workflow executions from execution history."
+msgstr ""
+
+#: templates/home.html:46 templates/home.html:106 templates/home.html:119
+#: templates/home.html:141
+msgid "View all"
+msgstr ""
+
+#: templates/home.html:49
+msgid "Workflow information is not available for this account."
+msgstr ""
+
+#: templates/home.html:51
+msgid "Recent workflow executions"
+msgstr ""
+
+#: templates/home.html:53
+msgid "Recent workflow execution status"
+msgstr ""
+
+#: templates/home.html:54 templates/workflows.html:24
+msgid "Workflow"
+msgstr ""
+
+#: templates/home.html:54
+msgid "Triggered"
+msgstr ""
+
+#: templates/home.html:68
+msgid "No workflow executions"
+msgstr ""
+
+#: templates/home.html:68
+msgid "Execution data will appear here when workflows run."
+msgstr ""
+
+#: templates/home.html:73 templates/workforce_report.html:29
+msgid "Department headcounts"
+msgstr ""
+
+#: templates/home.html:73
+msgid "Employee counts by department from workforce data."
+msgstr ""
+
+#: templates/home.html:75
+msgid "Workforce information is not available for this account."
+msgstr ""
+
+#: templates/home.html:82 templates/workforce_report.html:25
+#, python-format
+msgid "%(department)s headcount relative to the largest department"
+msgstr ""
+
+#: templates/home.html:82 templates/workforce_report.html:25
+#, python-format
+msgid "%(count)s of %(maximum)s"
+msgstr ""
+
+#: templates/home.html:87
+msgid "No department data available"
+msgstr ""
+
+#: templates/home.html:87
+msgid "Headcounts will appear when workforce records are available."
+msgstr ""
+
+#: templates/home.html:92
+msgid "Quick actions"
+msgstr ""
+
+#: templates/home.html:93
+msgid "Dashboard actions"
+msgstr ""
+
+#: templates/home.html:97 templates/invoice_form.html:3
+#: templates/invoices.html:4
+msgid "Create invoice"
+msgstr ""
+
+#: templates/home.html:98
+msgid "Open AI Assistant"
+msgstr ""
+
+#: templates/home.html:99
+msgid "View reports"
+msgstr ""
+
+#: templates/home.html:106
+msgid "Upcoming schedules"
+msgstr ""
+
+#: templates/home.html:106
+msgid "Enabled workflow schedules."
+msgstr ""
+
+#: templates/home.html:114 templates/workflow_detail.html:87
+msgid "No schedules configured"
+msgstr ""
+
+#: templates/home.html:114
+msgid "Enabled workflow schedules will appear here."
+msgstr ""
+
+#: templates/home.html:119
+msgid "Latest authorized activity from the audit log."
+msgstr ""
+
+#: templates/home.html:133
+msgid "Activity history is restricted for this account."
+msgstr ""
+
+#: templates/home.html:135
+msgid "No recent activity"
+msgstr ""
+
+#: templates/home.html:135
+msgid "Authorized audit events will appear here."
+msgstr ""
+
+#: templates/home.html:141
+msgid "Agent executions"
+msgstr ""
+
+#: templates/home.html:141
+msgid "Recent Agent Template executions."
+msgstr ""
+
+#: templates/home.html:145
+msgid "Agent information is restricted for this account."
+msgstr ""
+
+#: templates/home.html:147
+msgid "No agent executions"
+msgstr ""
+
+#: templates/home.html:147
+msgid "Agent runs will appear here."
+msgstr ""
+
+#: templates/home.html:151
+msgid "System readiness"
+msgstr ""
+
+#: templates/home.html:151
+msgid "Current application and database status."
+msgstr ""
+
+#: templates/home.html:152
+msgid "Operational"
+msgstr ""
+
+#: templates/home.html:152
+msgid "Attention required"
+msgstr ""
+
+#: templates/home.html:152
+msgid "Database connection is ready."
+msgstr ""
+
+#: templates/home.html:152
+msgid "Database readiness check failed."
+msgstr ""
+
+#: templates/home.html:160
+msgid "Business snapshot"
+msgstr ""
+
+#: templates/home.html:160
+msgid "Supporting customer and invoice information from current records."
+msgstr ""
+
+#: templates/home.html:165
+msgid "Qualified leads"
+msgstr ""
+
+#: templates/home.html:165
+msgid "Ready for conversion"
+msgstr ""
+
+#: templates/home.html:166
+msgid "Converted records"
+msgstr ""
+
+#: templates/home.html:170
+msgid "Outstanding invoices"
+msgstr ""
+
+#: templates/home.html:170
+msgid "Sent invoices awaiting payment"
+msgstr ""
+
+#: templates/invoice_detail.html:3 templates/invoice_form.html:3
+msgid "← Back to invoices"
+msgstr ""
+
+#: templates/invoice_detail.html:3
+msgid "Customer invoice"
+msgstr ""
+
+#: templates/invoice_detail.html:4
+msgid "Invoice summary"
+msgstr ""
+
+#: templates/invoice_detail.html:4 templates/invoice_form.html:5
+#: templates/invoices.html:5
+msgid "Due date"
+msgstr ""
+
+#: templates/invoice_detail.html:4 templates/invoices.html:5
+msgid "On receipt"
+msgstr ""
+
+#: templates/invoice_detail.html:4 templates/invoice_detail.html:5
+#: templates/invoices.html:5
+msgid "Total"
+msgstr ""
+
+#: templates/invoice_detail.html:4
+msgid "Change status"
+msgstr ""
+
+#: templates/invoice_detail.html:4
+msgid "Save status"
+msgstr ""
+
+#: templates/invoice_detail.html:5
+msgid "Immutable line items"
+msgstr ""
+
+#: templates/invoice_detail.html:5
+msgid "Tax"
+msgstr ""
+
+#: templates/invoice_detail.html:5
+msgid "Subtotal:"
+msgstr ""
+
+#: templates/invoice_detail.html:5
+msgid "Tax:"
+msgstr ""
+
+#: templates/invoice_detail.html:6
+msgid "Protected document"
+msgstr ""
+
+#: templates/invoice_detail.html:6
+msgid "Download invoice PDF"
+msgstr ""
+
+#: templates/invoice_detail.html:6
+#, python-format
+msgid "Stored privately as %(filename)s."
+msgstr ""
+
+#: templates/invoice_detail.html:6
+msgid "Generate invoice PDF"
+msgstr ""
+
+#: templates/invoice_detail.html:6
+msgid "No document has been generated."
+msgstr ""
+
+#: templates/invoice_detail.html:7
+msgid "Workflow runs"
+msgstr ""
+
+#: templates/invoice_detail.html:7
+msgid "Active workflow"
+msgstr ""
+
+#: templates/invoice_detail.html:7
+msgid "Start tracked workflow"
+msgstr ""
+
+#: templates/invoice_detail.html:7
+msgid "No linked workflow runs."
+msgstr ""
+
+#: templates/invoice_detail.html:8
+msgid "Payment-state history"
+msgstr ""
+
+#: templates/invoice_form.html:5
+msgid "Invoice details"
+msgstr ""
+
+#: templates/invoice_form.html:5
+msgid "Select customer"
+msgstr ""
+
+#: templates/invoice_form.html:5
+msgid "Invoice number"
+msgstr ""
+
+#: templates/invoice_form.html:6
+msgid "Line items"
+msgstr ""
+
+#: templates/invoice_form.html:6
+msgid ""
+"Quantity permits three decimal places; line amounts and tax are rounded "
+"half up to cents."
+msgstr ""
+
+#: templates/invoice_form.html:6
+msgid "Unit price (USD)"
+msgstr ""
+
+#: templates/invoice_form.html:6
+msgid "Tax rate (%)"
+msgstr ""
+
+#: templates/invoice_form.html:6
+msgid "Create draft invoice"
+msgstr ""
+
+#: templates/invoices.html:4
+msgid "Customer billing"
+msgstr ""
+
+#: templates/invoices.html:4
+msgid "Immutable line snapshots and protected invoice documents."
+msgstr ""
+
+#: templates/invoices.html:5
+msgid "Number"
+msgstr ""
+
+#: templates/invoices.html:5
+msgid "No invoices found."
+msgstr ""
+
+#: templates/login.html:31
+msgid "Secure access"
+msgstr ""
+
+#: templates/login.html:37
+msgid "Sign in to your workspace"
+msgstr ""
+
+#: templates/login.html:41
+msgid "Enter your ABAP account credentials."
+msgstr ""
+
+#: templates/login.html:67 templates/user_account_form.html:73
+msgid "Username"
+msgstr ""
+
+#: templates/login.html:81 templates/user_account_form.html:85
+msgid "Password"
+msgstr ""
+
+#: templates/login.html:112
+msgid "Only active, authorized accounts can access this workspace."
+msgstr ""
+
+#: templates/user_account_form.html:13
+msgid "Back to user accounts"
+msgstr ""
+
+#: templates/user_account_form.html:18 templates/user_accounts.html:6
+msgid "Access administration"
+msgstr ""
+
+#: templates/user_account_form.html:28
+msgid "Create a viewer account with read-only employee access."
+msgstr ""
+
+#: templates/user_account_form.html:34
+msgid "Account management authorized"
+msgstr ""
+
+#: templates/user_account_form.html:64
+msgid "Viewer account details"
+msgstr ""
+
+#: templates/user_account_form.html:68
+msgid ""
+"Viewer accounts can view employee records, payroll, and approved reports."
+" They cannot manage user accounts."
+msgstr ""
+
+#: templates/user_account_form.html:99
+msgid "Confirm password"
+msgstr ""
+
+#: templates/user_account_form.html:124
+msgid "Create viewer account"
+msgstr ""
+
+#: templates/user_accounts.html:6
+msgid "Review roles and control viewer access to the ABAP workspace."
+msgstr ""
+
+#: templates/user_accounts.html:8
+msgid "Accounts unavailable"
+msgstr ""
+
+#: templates/user_accounts.html:11
+msgid "Current user accounts"
+msgstr ""
+
+#: templates/user_accounts.html:11
+msgid "Password hashes are never displayed."
+msgstr ""
+
+#: templates/user_accounts.html:11
+#, python-format
+msgid "%(num)s account"
+msgid_plural "%(num)s accounts"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/user_accounts.html:12
+msgid "Scrollable user account directory"
+msgstr ""
+
+#: templates/user_accounts.html:12
+msgid "Administrator-visible user account records"
+msgstr ""
+
+#: templates/user_accounts.html:12
+msgid "Access status"
+msgstr ""
+
+#: templates/user_accounts.html:12
+msgid "Account action"
+msgstr ""
+
+#: templates/user_accounts.html:13
+msgid "ABAP account"
+msgstr ""
+
+#: templates/user_accounts.html:13
+#, python-format
+msgid "Deactivate viewer account %(username)s"
+msgstr ""
+
+#: templates/user_accounts.html:13
+msgid "Deactivate"
+msgstr ""
+
+#: templates/user_accounts.html:13
+#, python-format
+msgid "Reactivate viewer account %(username)s"
+msgstr ""
+
+#: templates/user_accounts.html:13
+msgid "Reactivate"
+msgstr ""
+
+#: templates/user_accounts.html:13
+msgid "No status action — protected administrator"
+msgstr ""
+
+#: templates/user_accounts.html:16
+msgid "No user accounts found"
+msgstr ""
+
+#: templates/user_accounts.html:16
+msgid "Create an administrator account before managing access."
+msgstr ""
+
+#: templates/webhook_deliveries.html:8
+msgid "Integration operations"
+msgstr ""
+
+#: templates/webhook_deliveries.html:10
+msgid ""
+"Review recent signed webhook outcomes. Request and response contents are "
+"never displayed."
+msgstr ""
+
+#: templates/webhook_deliveries.html:16
+msgid "Delivery history unavailable"
+msgstr ""
+
+#: templates/webhook_deliveries.html:19
+msgid "Recent delivery records"
+msgstr ""
+
+#: templates/webhook_deliveries.html:19
+msgid "Newest records first; limited to the latest 100 records."
+msgstr ""
+
+#: templates/webhook_deliveries.html:19
+#, python-format
+msgid "%(num)s record"
+msgid_plural "%(num)s records"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/webhook_deliveries.html:20
+msgid "Webhook delivery records"
+msgstr ""
+
+#: templates/webhook_deliveries.html:22
+msgid "Direction"
+msgstr ""
+
+#: templates/webhook_deliveries.html:22
+msgid "Event"
+msgstr ""
+
+#: templates/webhook_deliveries.html:22
+msgid "Correlation"
+msgstr ""
+
+#: templates/webhook_deliveries.html:22
+msgid "Attempts"
+msgstr ""
+
+#: templates/webhook_deliveries.html:22
+msgid "HTTP result"
+msgstr ""
+
+#: templates/webhook_deliveries.html:40
+msgid "No webhook deliveries recorded"
+msgstr ""
+
+#: templates/webhook_deliveries.html:40
+msgid ""
+"Verified inbound callbacks and outbound delivery attempts will appear "
+"here."
+msgstr ""
+
+#: templates/workflow_detail.html:6 templates/workflow_form.html:13
+msgid "Back to workflow directory"
+msgstr ""
+
+#: templates/workflow_detail.html:10 templates/workflow_edit_form.html:18
+#: templates/workflow_form.html:18 templates/workflow_schedule_form.html:11
+#: templates/workflow_task_delete_form.html:6
+#: templates/workflow_task_edit_form.html:5
+#: templates/workflow_task_form.html:11
+#: templates/workflow_task_resequence_form.html:5
+msgid "Workflow automation"
+msgstr ""
+
+#: templates/workflow_detail.html:12
+#, python-format
+msgid "Workflow ID: %(workflow_id)s"
+msgstr ""
+
+#: templates/workflow_detail.html:18
+msgid "Workflow management actions"
+msgstr ""
+
+#: templates/workflow_detail.html:20 templates/workflow_task_form.html:53
+msgid "Add task"
+msgstr ""
+
+#: templates/workflow_detail.html:21
+msgid "Set task order"
+msgstr ""
+
+#: templates/workflow_detail.html:23 templates/workflow_schedule_form.html:64
+msgid "Add schedule"
+msgstr ""
+
+#: templates/workflow_detail.html:26
+msgid "Start execution"
+msgstr ""
+
+#: templates/workflow_detail.html:33
+msgid "Workflow overview"
+msgstr ""
+
+#: templates/workflow_detail.html:33
+msgid "Configuration and record history."
+msgstr ""
+
+#: templates/workflow_detail.html:38 templates/workflows.html:25
+msgid "No description provided."
+msgstr ""
+
+#: templates/workflow_detail.html:44
+msgid "Workflow tasks"
+msgstr ""
+
+#: templates/workflow_detail.html:44
+msgid "Ordered manual steps for this workflow."
+msgstr ""
+
+#: templates/workflow_detail.html:49
+#, python-format
+msgid "Step %(number)s"
+msgstr ""
+
+#: templates/workflow_detail.html:52
+msgid "No instructions provided."
+msgstr ""
+
+#: templates/workflow_detail.html:53
+msgid "Required"
+msgstr ""
+
+#: templates/workflow_detail.html:53
+msgid "Optional"
+msgstr ""
+
+#: templates/workflow_detail.html:55
+msgid "Edit task"
+msgstr ""
+
+#: templates/workflow_detail.html:55
+#, python-format
+msgid "Delete task: %(task_title)s"
+msgstr ""
+
+#: templates/workflow_detail.html:55
+msgid "Delete task"
+msgstr ""
+
+#: templates/workflow_detail.html:59
+msgid "No tasks added"
+msgstr ""
+
+#: templates/workflow_detail.html:59
+msgid "No tasks have been added to this workflow yet."
+msgstr ""
+
+#: templates/workflow_detail.html:63
+msgid "Workflow schedules"
+msgstr ""
+
+#: templates/workflow_detail.html:63
+#, python-format
+msgid "Schedule times use %(time_zone)s."
+msgstr ""
+
+#: templates/workflow_detail.html:64
+#, python-format
+msgid ""
+"ABAP evaluates a due time for %(minutes)s minutes, stores claimed "
+"occurrences in UTC, and starts one tracked run for each enabled due "
+"occurrence."
+msgstr ""
+
+#: templates/workflow_detail.html:70
+#, python-format
+msgid "%(schedule_type)s schedule"
+msgstr ""
+
+#: templates/workflow_detail.html:70 templates/workflow_detail.html:103
+#, python-format
+msgid "Status: %(status)s"
+msgstr ""
+
+#: templates/workflow_detail.html:72 templates/workflow_schedule_form.html:28
+msgid "Schedule ID"
+msgstr ""
+
+#: templates/workflow_detail.html:73
+msgid "Timing"
+msgstr ""
+
+#: templates/workflow_detail.html:73
+msgid "Manual eligibility only"
+msgstr ""
+
+#: templates/workflow_detail.html:73
+#, python-format
+msgid "Daily at %(time)s"
+msgstr ""
+
+#: templates/workflow_detail.html:73
+#, python-format
+msgid "Every %(weekday)s at %(time)s"
+msgstr ""
+
+#: templates/workflow_detail.html:74
+msgid "Next eligible time"
+msgstr ""
+
+#: templates/workflow_detail.html:74
+msgid "Started manually"
+msgstr ""
+
+#: templates/workflow_detail.html:74
+msgid "Disabled"
+msgstr ""
+
+#: templates/workflow_detail.html:80
+msgid "Disable schedule"
+msgstr ""
+
+#: templates/workflow_detail.html:80
+msgid "Enable schedule"
+msgstr ""
+
+#: templates/workflow_detail.html:81
+msgid "Activate the workflow before enabling this schedule."
+msgstr ""
+
+#: templates/workflow_detail.html:87
+msgid "Stored eligibility rules will appear here."
+msgstr ""
+
+#: templates/workflow_detail.html:92
+msgid "Execution history"
+msgstr ""
+
+#: templates/workflow_detail.html:92
+msgid "Recorded runs and task outcomes."
+msgstr ""
+
+#: templates/workflow_detail.html:97
+#, python-format
+msgid "Execution %(execution_id)s"
+msgstr ""
+
+#: templates/workflow_detail.html:100
+msgid "Task outcomes"
+msgstr ""
+
+#: templates/workflow_detail.html:104
+#, python-format
+msgid "Task ID: %(task_id)s"
+msgstr ""
+
+#: templates/workflow_detail.html:104
+msgid "Finished:"
+msgstr ""
+
+#: templates/workflow_detail.html:104
+msgid "Not finished"
+msgstr ""
+
+#: templates/workflow_detail.html:107
+#, python-format
+msgid "Update outcome: %(task_title)s"
+msgstr ""
+
+#: templates/workflow_detail.html:107
+msgid "Task result summary (required)"
+msgstr ""
+
+#: templates/workflow_detail.html:107
+msgid "Mark task completed"
+msgstr ""
+
+#: templates/workflow_detail.html:107
+msgid "Mark task failed"
+msgstr ""
+
+#: templates/workflow_detail.html:110
+msgid "No task execution records were stored for this run."
+msgstr ""
+
+#: templates/workflow_detail.html:113
+msgid "Finish this execution"
+msgstr ""
+
+#: templates/workflow_detail.html:113
+msgid "Result summary"
+msgstr ""
+
+#: templates/workflow_detail.html:113
+msgid "Mark completed"
+msgstr ""
+
+#: templates/workflow_detail.html:113
+msgid "Mark failed"
+msgstr ""
+
+#: templates/workflow_detail.html:118
+msgid "No executions recorded"
+msgstr ""
+
+#: templates/workflow_detail.html:118
+msgid "Completed and in-progress runs will appear here."
+msgstr ""
+
+#: templates/workflow_edit_form.html:13 templates/workflow_schedule_form.html:7
+#: templates/workflow_task_delete_form.html:5
+#: templates/workflow_task_edit_form.html:4 templates/workflow_task_form.html:7
+#: templates/workflow_task_resequence_form.html:4
+msgid "Back to workflow"
+msgstr ""
+
+#: templates/workflow_edit_form.html:23
+msgid "Update this workflow's name, description, or lifecycle status."
+msgstr ""
+
+#: templates/workflow_edit_form.html:46 templates/workflow_form.html:63
+msgid "Workflow details"
+msgstr ""
+
+#: templates/workflow_edit_form.html:49 templates/workflow_form.html:67
+msgid "Workflow ID"
+msgstr ""
+
+#: templates/workflow_edit_form.html:58 templates/workflow_form.html:82
+msgid "Workflow name"
+msgstr ""
+
+#: templates/workflow_edit_form.html:94
+msgid "Save workflow"
+msgstr ""
+
+#: templates/workflow_form.html:28
+msgid "Create a reusable workflow definition in the SQLite database."
+msgstr ""
+
+#: templates/workflow_form.html:34 templates/workflow_schedule_form.html:15
+#: templates/workflow_task_delete_form.html:6
+#: templates/workflow_task_form.html:15
+msgid "Workflow management access authorized"
+msgstr ""
+
+#: templates/workflow_form.html:102
+msgid "Draft"
+msgstr ""
+
+#: templates/workflow_form.html:108
+msgid "Active"
+msgstr ""
+
+#: templates/workflow_form.html:114
+msgid "Inactive"
+msgstr ""
+
+#: templates/workflow_schedule_form.html:13
+#, python-format
+msgid ""
+"Store a run-eligibility rule for %(workflow_name)s. Automatic background "
+"execution is not enabled yet."
+msgstr ""
+
+#: templates/workflow_schedule_form.html:25
+msgid "Schedule details"
+msgstr ""
+
+#: templates/workflow_schedule_form.html:32
+msgid "Schedule type"
+msgstr ""
+
+#: templates/workflow_schedule_form.html:40
+msgid "Scheduled time"
+msgstr ""
+
+#: templates/workflow_schedule_form.html:42
+msgid "Required for daily and weekly schedules. Stored as HH:MM."
+msgstr ""
+
+#: templates/workflow_schedule_form.html:45
+msgid "Day of week"
+msgstr ""
+
+#: templates/workflow_schedule_form.html:47
+msgid "Not applicable"
+msgstr ""
+
+#: templates/workflow_schedule_form.html:52
+msgid "Required only for weekly schedules."
+msgstr ""
+
+#: templates/workflow_schedule_form.html:58
+msgid "Enable this schedule"
+msgstr ""
+
+#: templates/workflow_task_delete_form.html:6
+msgid "Review the affected workflow step before continuing."
+msgstr ""
+
+#: templates/workflow_task_delete_form.html:7
+msgid "Workflow task being deleted"
+msgstr ""
+
+#: templates/workflow_task_delete_form.html:7
+msgid "Task ID:"
+msgstr ""
+
+#: templates/workflow_task_delete_form.html:8
+msgid "This action changes the workflow sequence"
+msgstr ""
+
+#: templates/workflow_task_delete_form.html:8
+msgid ""
+"This cannot be undone. Remaining tasks keep their relative order and are "
+"renumbered from 1. An active workflow's last task cannot be deleted; "
+"first change the workflow to Draft or Inactive."
+msgstr ""
+
+#: templates/workflow_task_delete_form.html:13
+msgid "Delete task and renumber remaining tasks"
+msgstr ""
+
+#: templates/workflow_task_edit_form.html:5
+#, python-format
+msgid ""
+"Task ID: %(task_id)s. Position %(position)s is changed from the "
+"resequence page."
+msgstr ""
+
+#: templates/workflow_task_edit_form.html:9
+#: templates/workflow_task_form.html:36
+msgid "Task title"
+msgstr ""
+
+#: templates/workflow_task_edit_form.html:9
+#: templates/workflow_task_form.html:41
+msgid "Instructions"
+msgstr ""
+
+#: templates/workflow_task_edit_form.html:9
+#: templates/workflow_task_form.html:47
+msgid "Required to complete this workflow"
+msgstr ""
+
+#: templates/workflow_task_edit_form.html:10
+msgid "Save task"
+msgstr ""
+
+#: templates/workflow_task_form.html:13
+#, python-format
+msgid "Add an ordered manual step to %(workflow_name)s."
+msgstr ""
+
+#: templates/workflow_task_form.html:25
+msgid "Task details"
+msgstr ""
+
+#: templates/workflow_task_form.html:28
+msgid "Task ID"
+msgstr ""
+
+#: templates/workflow_task_form.html:32
+msgid "Sequence number"
+msgstr ""
+
+#: templates/workflow_task_resequence_form.html:5
+msgid "Choose the task for each position. Every task must appear exactly once."
+msgstr ""
+
+#: templates/workflow_task_resequence_form.html:10
+msgid "New task order"
+msgstr ""
+
+#: templates/workflow_task_resequence_form.html:15
+msgid "Save order"
+msgstr ""
+
+#: templates/workflow_task_resequence_form.html:17
+msgid "Add tasks before setting their order."
+msgstr ""
+
+#: templates/workflows.html:7
+msgid "Automation"
+msgstr ""
+
+#: templates/workflows.html:7
+msgid "Build, schedule, and monitor reusable business processes."
+msgstr ""
+
+#: templates/workflows.html:13
+msgid "Filter workflows by status"
+msgstr ""
+
+#: templates/workflows.html:16
+#, python-format
+msgid "%(num)s workflow"
+msgid_plural "%(num)s workflows"
+msgstr[0] ""
+msgstr[1] ""
+
+#: templates/workflows.html:23
+msgid "Current workflow definitions and lifecycle status."
+msgstr ""
+
+#: templates/workflows.html:24
+msgid "Scrollable workflow directory"
+msgstr ""
+
+#: templates/workflows.html:24
+msgid "Current workflow records"
+msgstr ""
+
+#: templates/workflows.html:28
+msgid "No workflows found"
+msgstr ""
+
+#: templates/workflows.html:28
+msgid "Workflow records will appear here after they are created."
+msgstr ""
+
+#: templates/workforce_report.html:7
+msgid "Workforce analytics"
+msgstr ""
+
+#: templates/workforce_report.html:7
+msgid "Current employee distribution and department headcounts."
+msgstr ""
+
+#: templates/workforce_report.html:8
+msgid "Download employee CSV"
+msgstr ""
+
+#: templates/workforce_report.html:11
+msgid "Report unavailable"
+msgstr ""
+
+#: templates/workforce_report.html:13
+msgid "Workforce summary"
+msgstr ""
+
+#: templates/workforce_report.html:14
+msgid "Total employees"
+msgstr ""
+
+#: templates/workforce_report.html:14
+msgid "Current workforce records"
+msgstr ""
+
+#: templates/workforce_report.html:15
+msgid "Total departments"
+msgstr ""
+
+#: templates/workforce_report.html:15
+msgid "Represented business units"
+msgstr ""
+
+#: templates/workforce_report.html:16
+msgid "Largest department"
+msgstr ""
+
+#: templates/workforce_report.html:16
+msgid "Highest employee headcount"
+msgstr ""
+
+#: templates/workforce_report.html:17
+msgid "Smallest department"
+msgstr ""
+
+#: templates/workforce_report.html:17
+msgid "Lowest employee headcount"
+msgstr ""
+
+#: templates/workforce_report.html:23
+msgid "Department distribution"
+msgstr ""
+
+#: templates/workforce_report.html:23
+msgid "Relative workforce size across departments."
+msgstr ""
+
+#: templates/workforce_report.html:29
+msgid "Current employees in each department."
+msgstr ""
+
+#: templates/workforce_report.html:30
+msgid "Scrollable department headcount table"
+msgstr ""
+
+#: templates/workforce_report.html:30
+msgid "Current employees in each department"
+msgstr ""
+
+#: templates/workforce_report.html:30
+msgid "Share"
+msgstr ""
+
+#: templates/workforce_report.html:33
+msgid "No employee data is available"
+msgstr ""
+
+#: templates/workforce_report.html:33
+msgid "Add an employee to generate department headcounts."
+msgstr ""
+

@@ -183,7 +183,10 @@ class TestUiFoundations(unittest.TestCase):
         self.assertIn('macro icon(name, label=none', macros)
         self.assertIn('aria-hidden="true"', macros)
         self.assertIn('class="ui-status ui-status--{{ normalized }}"', macros)
-        self.assertIn("<span>{{ value }}</span>", macros)
+        self.assertIn(
+            "<span>{{ label if label is not none else controlled_label(code) }}</span>",
+            macros,
+        )
 
     def test_application_shell_supports_keyboard_navigation(self):
         application_base = (
@@ -342,7 +345,7 @@ class TestUiFoundations(unittest.TestCase):
         self.assertIn("data-local-datetime", dashboard)
         self.assertIn('dateStyle: "medium"', navigation)
         self.assertIn('timeStyle: "short"', navigation)
-        self.assertIn("Recorded timestamp:", navigation)
+        self.assertIn("root.dataset.recordedTimestampLabel", navigation)
 
 
 if __name__ == "__main__":
