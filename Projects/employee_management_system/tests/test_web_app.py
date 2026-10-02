@@ -172,6 +172,33 @@ class TestWebApplication(unittest.TestCase):
         self.assertRegex(japanese_login.text, r'<html\s+lang="ja"\s+dir="ltr"')
         self.assertIn("サインイン", japanese_login.text)
 
+    def test_japanese_shell_supplies_dynamic_labels_and_secure_selector(self):
+        username = "JapaneseShellViewer"
+        password = "JapaneseShellPassword123!"
+        register_user_account(username, password, "viewer", self.database_file)
+        self.sign_in(username, password)
+        csrf_token = csrf_token_from_page(self.client, "/")
+        self.client.post(
+            "/language",
+            data={
+                "language": "ja",
+                "csrf_token": csrf_token,
+                "return_to": "/",
+            },
+        )
+
+        response = self.client.get("/")
+
+        self.assertIn('data-light-theme-label="ライトテーマ"', response.text)
+        self.assertIn('data-dark-theme-label="ダークテーマ"', response.text)
+        self.assertIn('data-language-selector', response.text)
+        self.assertIn('method="post"', response.text)
+        self.assertIn('name="csrf_token"', response.text)
+        self.assertIn("閲覧者", response.text)
+        self.assertNotIn(">Viewer<", response.text)
+        self.assertRegex(response.text, r'/static/theme\.js\?v=[0-9a-f]{12}')
+        self.assertRegex(response.text, r'/static/navigation\.js\?v=[0-9a-f]{12}')
+
     def test_language_selection_rejects_invalid_code_and_external_return(self):
         csrf_token = csrf_token_from_page(self.client, "/login")
         invalid = self.client.post(

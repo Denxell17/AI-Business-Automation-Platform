@@ -189,7 +189,7 @@ VALIDATION_RULE_MESSAGES = {
 CONTROLLED_VALUE_LABELS = {
     "active": "Active",
     "accepted": "Accepted",
-    "admin": "Administrator",
+    "admin": N_("Administrator"),
     "completed": "Completed",
     "contacted": "Contacted",
     "converted": "Converted",
@@ -221,7 +221,7 @@ CONTROLLED_VALUE_LABELS = {
     "thursday": "Thursday",
     "tuesday": "Tuesday",
     "unqualified": "Unqualified",
-    "viewer": "Viewer",
+    "viewer": N_("Viewer"),
     "void": "Void",
     "wednesday": "Wednesday",
     "weekly": "Weekly",

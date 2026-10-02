@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-02 10:57+0800\n"
+"POT-Creation-Date: 2026-10-02 17:46+0800\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -76,6 +76,7 @@ msgid "Create workflow"
 msgstr ""
 
 #: i18n.py:50 templates/application_base.html:19 templates/home.html:13
+#: tests/test_i18n.py:58
 msgid "Dashboard"
 msgstr ""
 
@@ -571,6 +572,14 @@ msgstr ""
 msgid "%(field)s has too many decimal places."
 msgstr ""
 
+#: i18n.py:192
+msgid "Administrator"
+msgstr ""
+
+#: i18n.py:224
+msgid "Viewer"
+msgstr ""
+
 #: templates/activity_log.html:6
 msgid "Security auditing"
 msgstr ""
@@ -726,7 +735,7 @@ msgstr ""
 msgid "User"
 msgstr ""
 
-#: templates/agent_execution_history.html:138
+#: templates/agent_execution_history.html:138 templates/home.html:61
 msgid "Running"
 msgstr ""
 

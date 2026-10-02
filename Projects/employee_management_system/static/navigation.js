@@ -11,10 +11,24 @@ const navigation = document.querySelector(
     "#primary-navigation",
 );
 const root = document.documentElement;
+const languageSelector = document.querySelector(
+    "[data-language-selector]",
+);
 const mobileNavigationQuery = window.matchMedia(
     "(max-width: 760px)",
 );
 let navigationWasOpenedBy = null;
+
+if (languageSelector) {
+    const languageSelect = languageSelector.querySelector(
+        'select[name="language"]',
+    );
+
+    languageSelector.classList.add("is-enhanced");
+    languageSelect?.addEventListener("change", () => {
+        languageSelector.requestSubmit();
+    });
+}
 
 function focusableNavigationItems() {
     if (!navigation) {

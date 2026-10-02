@@ -7,6 +7,7 @@ from babel.messages.pofile import read_po
 from i18n import (
     TRANSLATIONS_DIRECTORY,
     browser_message_label,
+    controlled_value_label,
     request_i18n_context,
     resolve_interface_language,
     translation_for,
@@ -52,11 +53,25 @@ class TestInternationalization(unittest.TestCase):
         )
 
     def test_english_source_is_the_fallback(self):
+        uncatalogued_message = "Uncatalogued future message"
+
         self.assertEqual(translation_for("en").gettext("Dashboard"), "Dashboard")
         self.assertEqual(
-            translation_for("ja").gettext("Uncatalogued future message"),
-            "Uncatalogued future message",
+            translation_for("ja").gettext(uncatalogued_message),
+            uncatalogued_message,
         )
+
+    def test_japanese_regression_labels_are_fully_localized(self):
+        translator = translation_for("ja").gettext
+
+        self.assertEqual(translator("Departments"), "部署")
+        self.assertNotIn("s", translator("Departments"))
+        self.assertEqual(translator("Light theme"), "ライトテーマ")
+        self.assertEqual(translator("Dark theme"), "ダークテーマ")
+        self.assertEqual(translator("Running"), "実行中")
+        self.assertEqual(controlled_value_label("admin", translator), "管理者")
+        self.assertEqual(controlled_value_label("viewer", translator), "閲覧者")
+        self.assertEqual(controlled_value_label("custom-role", translator), "custom-role")
 
     def test_japanese_catalog_is_complete_and_preserves_placeholders(self):
         catalog_path = (

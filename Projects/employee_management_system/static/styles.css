@@ -428,8 +428,9 @@ textarea:disabled,
 
 .language-selector {
     display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
+    grid-template-columns: minmax(0, max-content) auto;
     gap: 0.4rem;
+    justify-content: start;
 }
 
 .language-selector select,
@@ -443,10 +444,27 @@ textarea:disabled,
     font: inherit;
 }
 
+.language-selector.is-enhanced button {
+    display: none;
+}
+
 .language-selector button {
     color: var(--color-link);
     font-weight: 700;
     cursor: pointer;
+}
+
+.sidebar-footer [data-language-selector] {
+    margin-inline-start: 0.65rem;
+}
+
+.sidebar-footer [data-language-selector] select,
+.sidebar-footer [data-language-selector] button {
+    min-height: 1.875rem;
+    padding: 0.125rem 0.5rem;
+    border-radius: 0.35rem;
+    font-size: 0.8125rem;
+    line-height: 1.2;
 }
 
 .account-summary {
@@ -1149,6 +1167,7 @@ textarea:disabled,
 
 .language-selector--login {
     grid-template-columns: minmax(0, 1fr) auto;
+    justify-content: stretch;
     align-items: end;
     margin-bottom: 1rem;
 }

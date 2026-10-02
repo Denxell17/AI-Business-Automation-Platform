@@ -19,10 +19,10 @@
     <title>
         {% block title %}{{ page_title_label(page_title) }}{% endblock %} | ABAP
     </title>
-    <script src="{{ url_for('static', path='/theme.js') }}"></script>
+    <script src="{{ url_for('static', path='/theme.js') }}?v={{ static_asset_version }}"></script>
     <link
         rel="stylesheet"
-        href="{{ url_for('static', path='/styles.css') }}?v={{ stylesheet_version }}"
+        href="{{ url_for('static', path='/styles.css') }}?v={{ static_asset_version }}"
     >
     {% block head %}{% endblock %}
 </head>

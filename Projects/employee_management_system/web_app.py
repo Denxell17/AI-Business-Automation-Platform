@@ -172,8 +172,15 @@ from webhook_contract import verify_inbound_webhook
 APPLICATION_DIRECTORY = Path(__file__).resolve().parent
 TEMPLATES_DIRECTORY = APPLICATION_DIRECTORY / "templates"
 STATIC_DIRECTORY = APPLICATION_DIRECTORY / "static"
-STYLESHEET_VERSION = hashlib.sha256(
-    (STATIC_DIRECTORY / "styles.css").read_bytes()
+STATIC_ASSET_VERSION = hashlib.sha256(
+    b"".join(
+        (STATIC_DIRECTORY / asset_name).read_bytes()
+        for asset_name in (
+            "styles.css",
+            "theme.js",
+            "navigation.js",
+        )
+    )
 ).hexdigest()[:12]
 
 SESSION_COOKIE_NAME = "abap_session"
@@ -292,7 +299,7 @@ templates = Jinja2Templates(
 )
 templates.env.add_extension("jinja2.ext.i18n")
 templates.env.newstyle_gettext = True
-templates.env.globals["stylesheet_version"] = STYLESHEET_VERSION
+templates.env.globals["static_asset_version"] = STATIC_ASSET_VERSION
 templates.env.globals["user_has_permission"] = (
     user_has_permission
 )

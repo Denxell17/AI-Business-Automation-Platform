@@ -314,7 +314,7 @@ class TestUiFoundations(unittest.TestCase):
         self.assertEqual(dashboard.count('class="metric-card '), 4)
         self.assertIn('class="business-metric-strip"', dashboard)
         self.assertEqual(dashboard.count('class="business-metric"'), 5)
-        self.assertIn("?v={{ stylesheet_version }}", base)
+        self.assertIn("?v={{ static_asset_version }}", base)
         self.assertIn(
             "grid-template-columns: repeat(5, minmax(0, 1fr))",
             self.stylesheet,
@@ -346,6 +346,34 @@ class TestUiFoundations(unittest.TestCase):
         self.assertIn('dateStyle: "medium"', navigation)
         self.assertIn('timeStyle: "short"', navigation)
         self.assertIn("root.dataset.recordedTimestampLabel", navigation)
+
+    def test_sidebar_language_selector_is_compact_and_progressive(self):
+        application_base = (
+            TEMPLATE_DIRECTORY / "application_base.html"
+        ).read_text(encoding="utf-8")
+        navigation = (
+            STATIC_DIRECTORY / "navigation.js"
+        ).read_text(encoding="utf-8")
+
+        self.assertIn("data-language-selector", application_base)
+        self.assertIn('method="post"', application_base)
+        self.assertIn('name="csrf_token"', application_base)
+        self.assertIn("languageSelector.requestSubmit()", navigation)
+        self.assertIn(
+            ".language-selector.is-enhanced button",
+            self.stylesheet,
+        )
+        self.assertIn("grid-template-columns: minmax(0, max-content) auto", self.stylesheet)
+        self.assertIn(".sidebar-footer [data-language-selector]", self.stylesheet)
+        self.assertIn("min-height: 1.875rem", self.stylesheet)
+
+        dashboard = (TEMPLATE_DIRECTORY / "home.html").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn(
+            'local_datetime(execution.finished_at, _("Running"))',
+            dashboard,
+        )
 
 
 if __name__ == "__main__":

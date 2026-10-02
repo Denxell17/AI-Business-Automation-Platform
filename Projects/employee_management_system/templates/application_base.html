@@ -64,7 +64,7 @@
 
         <div class="sidebar-footer">
             <button class="theme-toggle" type="button" data-theme-toggle aria-label="{{ _("Use light theme") }}" title="{{ _("Use light theme") }}">{{ icon('theme') }}<span data-theme-label>{{ _("Light theme") }}</span></button>
-            <form class="language-selector" method="post" action="{{ url_for('change_interface_language') }}">
+            <form class="language-selector" method="post" action="{{ url_for('change_interface_language') }}" data-language-selector>
                 <input type="hidden" name="csrf_token" value="{{ csrf_token_for(request) }}">
                 <input type="hidden" name="return_to" value="{{ request.url.path }}">
                 <label class="ui-visually-hidden" for="sidebar-interface-language">{{ _("Interface language") }}</label>
@@ -100,6 +100,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', path='/navigation.js') }}" defer></script>
+<script src="{{ url_for('static', path='/navigation.js') }}?v={{ static_asset_version }}" defer></script>
 {% block application_scripts %}{% endblock %}
 {% endblock %}

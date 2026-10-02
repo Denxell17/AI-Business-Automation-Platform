@@ -58,7 +58,7 @@
                             <td>{{ status(execution.status) }}</td>
                             <th scope="row">{{ execution.workflow_name }}</th>
                             <td>{{ local_datetime(execution.started_at) }}</td>
-                            <td>{{ local_datetime(execution.finished_at, "Running") }}</td>
+                            <td>{{ local_datetime(execution.finished_at, _("Running")) }}</td>
                         </tr>
                         {% endfor %}
                     </tbody>

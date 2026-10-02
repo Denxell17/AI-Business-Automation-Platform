@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PROJECT VERSION\n"
 "Report-Msgid-Bugs-To: EMAIL@ADDRESS\n"
-"POT-Creation-Date: 2026-10-02 10:57+0800\n"
+"POT-Creation-Date: 2026-10-02 17:46+0800\n"
 "PO-Revision-Date: 2026-10-02 10:58+0800\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language: ja\n"
@@ -22,12 +22,13 @@ msgstr ""
 msgid "Activity log"
 msgstr "アクティビティログ"
 
-#: i18n.py:38 templates/employee_form.html:24 templates/employees.html:8 templates/employees.html:41
-#: templates/home.html:94
+#: i18n.py:38 templates/employee_form.html:24 templates/employees.html:8
+#: templates/employees.html:41 templates/home.html:94
 msgid "Add employee"
 msgstr "従業員を追加"
 
-#: i18n.py:39 templates/user_account_form.html:24 templates/user_accounts.html:6
+#: i18n.py:39 templates/user_account_form.html:24
+#: templates/user_accounts.html:6
 msgid "Add viewer account"
 msgstr "閲覧者アカウントを追加"
 
@@ -63,21 +64,25 @@ msgstr "エージェントテンプレートを利用できません"
 msgid "AI Assistant"
 msgstr "AIアシスタント"
 
-#: i18n.py:48 templates/agent_template_form.html:24 templates/agent_template_form.html:207
-#: templates/agent_templates.html:8 templates/agent_templates.html:24
+#: i18n.py:48 templates/agent_template_form.html:24
+#: templates/agent_template_form.html:207 templates/agent_templates.html:8
+#: templates/agent_templates.html:24
 msgid "Create agent template"
 msgstr "エージェントテンプレートを作成"
 
-#: i18n.py:49 templates/home.html:18 templates/home.html:95 templates/workflow_form.html:24
-#: templates/workflow_form.html:140 templates/workflows.html:8 templates/workflows.html:28
+#: i18n.py:49 templates/home.html:18 templates/home.html:95
+#: templates/workflow_form.html:24 templates/workflow_form.html:140
+#: templates/workflows.html:8 templates/workflows.html:28
 msgid "Create workflow"
 msgstr "ワークフローを作成"
 
 #: i18n.py:50 templates/application_base.html:19 templates/home.html:13
+#: tests/test_i18n.py:58
 msgid "Dashboard"
 msgstr "ダッシュボード"
 
-#: i18n.py:51 templates/employee_delete.html:44 templates/employee_profile.html:88
+#: i18n.py:51 templates/employee_delete.html:44
+#: templates/employee_profile.html:88
 msgid "Delete employee"
 msgstr "従業員を削除"
 
@@ -85,11 +90,13 @@ msgstr "従業員を削除"
 msgid "Delete workflow task"
 msgstr "ワークフロータスクを削除"
 
-#: i18n.py:53 templates/employee_edit.html:43 templates/employee_profile.html:76
+#: i18n.py:53 templates/employee_edit.html:43
+#: templates/employee_profile.html:76
 msgid "Edit employee"
 msgstr "従業員を編集"
 
-#: i18n.py:54 templates/workflow_detail.html:19 templates/workflow_edit_form.html:20
+#: i18n.py:54 templates/workflow_detail.html:19
+#: templates/workflow_edit_form.html:20
 msgid "Edit workflow"
 msgstr "ワークフローを編集"
 
@@ -125,7 +132,8 @@ msgstr "サインイン"
 msgid "User accounts"
 msgstr "ユーザーアカウント"
 
-#: i18n.py:63 templates/application_base.html:50 templates/webhook_deliveries.html:9
+#: i18n.py:63 templates/application_base.html:50
+#: templates/webhook_deliveries.html:9
 msgid "Webhook deliveries"
 msgstr "Webhook配信"
 
@@ -155,14 +163,15 @@ msgstr "エージェント実行履歴を読み込めませんでした。"
 
 #: i18n.py:78
 msgid ""
-"Agent template could not be created. Verify the template ID, name, system prompt, model name, and"
-" draft status."
+"Agent template could not be created. Verify the template ID, name, system"
+" prompt, model name, and draft status."
 msgstr "エージェントテンプレートを作成できませんでした。テンプレートID、名前、システムプロンプト、モデル名、下書き状態を確認してください。"
 
 #: i18n.py:79
 msgid ""
-"Agent template could not be updated. Verify the submitted fields and lifecycle transition, or "
-"refresh the page if another update was completed first."
+"Agent template could not be updated. Verify the submitted fields and "
+"lifecycle transition, or refresh the page if another update was completed"
+" first."
 msgstr "エージェントテンプレートを更新できませんでした。入力内容とライフサイクルの変更を確認するか、別の更新が先に完了した場合はページを再読み込みしてください。"
 
 #: i18n.py:80
@@ -347,8 +356,8 @@ msgstr "確認用パスワードが一致しません。"
 
 #: i18n.py:125
 msgid ""
-"Schedule could not be created. Verify its ID, type, time, weekday, and that the workflow is "
-"active."
+"Schedule could not be created. Verify its ID, type, time, weekday, and "
+"that the workflow is active."
 msgstr "スケジュールを作成できませんでした。ID、種類、時刻、曜日、およびワークフローが有効であることを確認してください。"
 
 #: i18n.py:126
@@ -364,7 +373,9 @@ msgid "Task could not be created. Verify the task ID, title, and sequence number
 msgstr "タスクを作成できませんでした。タスクID、タイトル、順序番号を確認してください。"
 
 #: i18n.py:129
-msgid "Task could not be deleted. An active workflow must retain at least one task."
+msgid ""
+"Task could not be deleted. An active workflow must retain at least one "
+"task."
 msgstr "タスクを削除できませんでした。有効なワークフローには1件以上のタスクが必要です。"
 
 #: i18n.py:130
@@ -495,18 +506,20 @@ msgstr "ワークフロータスクを並べ替えできませんでした。"
 msgid "Your form could not be verified."
 msgstr "フォームを検証できませんでした。"
 
-#: i18n.py:166 templates/crm_detail.html:6 templates/crm_directory.html:7 templates/crm_form.html:13
-#: templates/employee_form.html:122 templates/employee_profile.html:125
+#: i18n.py:166 templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:13 templates/employee_form.html:122
+#: templates/employee_profile.html:125
 msgid "Company"
 msgstr "会社"
 
-#: i18n.py:167 templates/crm_detail.html:6 templates/crm_directory.html:7 templates/crm_form.html:11
-#: templates/employee_edit.html:141 templates/employee_form.html:188
-#: templates/employee_profile.html:156
+#: i18n.py:167 templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:11 templates/employee_edit.html:141
+#: templates/employee_form.html:188 templates/employee_profile.html:156
 msgid "Email"
 msgstr "メール"
 
-#: i18n.py:168 templates/crm_directory.html:7 templates/crm_form.html:10 templates/employees.html:33
+#: i18n.py:168 templates/crm_directory.html:7 templates/crm_form.html:10
+#: templates/employees.html:33
 msgid "Name"
 msgstr "名前"
 
@@ -523,16 +536,20 @@ msgstr "電話番号"
 msgid "Quantity"
 msgstr "数量"
 
-#: i18n.py:172 templates/crm_detail.html:6 templates/crm_directory.html:7 templates/crm_form.html:16
+#: i18n.py:172 templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:16
 msgid "Stage"
 msgstr "段階"
 
-#: i18n.py:173 templates/agent_execution_detail.html:108 templates/agent_execution_history.html:81
+#: i18n.py:173 templates/agent_execution_detail.html:108
+#: templates/agent_execution_history.html:81
 #: templates/agent_template_detail.html:189 templates/agent_templates.html:11
-#: templates/crm_detail.html:6 templates/crm_directory.html:7 templates/crm_form.html:17
-#: templates/employees.html:33 templates/home.html:54 templates/invoice_detail.html:4
-#: templates/invoices.html:5 templates/webhook_deliveries.html:22 templates/workflow_detail.html:35
-#: templates/workflow_edit_form.html:68 templates/workflow_form.html:93 templates/workflows.html:14
+#: templates/crm_detail.html:6 templates/crm_directory.html:7
+#: templates/crm_form.html:17 templates/employees.html:33
+#: templates/home.html:54 templates/invoice_detail.html:4
+#: templates/invoices.html:5 templates/webhook_deliveries.html:22
+#: templates/workflow_detail.html:35 templates/workflow_edit_form.html:68
+#: templates/workflow_form.html:93 templates/workflows.html:14
 #: templates/workflows.html:24
 msgid "Status"
 msgstr "状態"
@@ -555,6 +572,14 @@ msgstr "%(field)sは必須です。"
 #, python-format
 msgid "%(field)s has too many decimal places."
 msgstr "%(field)sの小数桁数が多すぎます。"
+
+#: i18n.py:192
+msgid "Administrator"
+msgstr "管理者"
+
+#: i18n.py:224
+msgid "Viewer"
+msgstr "閲覧者"
 
 #: templates/activity_log.html:6
 msgid "Security auditing"
@@ -602,11 +627,13 @@ msgstr "新しいアプリケーション操作とセキュリティ操作がこ
 msgid "Back to Agent Execution history"
 msgstr "エージェント実行履歴に戻る"
 
-#: templates/agent_execution_detail.html:28 templates/agent_execution_history.html:28
+#: templates/agent_execution_detail.html:28
+#: templates/agent_execution_history.html:28
 msgid "Back to Agent Template directory"
 msgstr "エージェントテンプレート一覧に戻る"
 
-#: templates/agent_execution_detail.html:35 templates/agent_execution_detail.html:52
+#: templates/agent_execution_detail.html:35
+#: templates/agent_execution_detail.html:52
 #: templates/agent_execution_history.html:35
 msgid "AI agent operations"
 msgstr "AIエージェント操作"
@@ -627,12 +654,15 @@ msgstr "プロバイダー、依頼者、実行時刻のメタデータ。"
 msgid "Agent Template"
 msgstr "エージェントテンプレート"
 
-#: templates/agent_execution_detail.html:96 templates/agent_template_detail.html:177
-#: templates/agent_template_edit_form.html:84 templates/agent_template_form.html:76
+#: templates/agent_execution_detail.html:96
+#: templates/agent_template_detail.html:177
+#: templates/agent_template_edit_form.html:84
+#: templates/agent_template_form.html:76
 msgid "Template ID"
 msgstr "テンプレートID"
 
-#: templates/agent_execution_detail.html:103 templates/agent_execution_history.html:82
+#: templates/agent_execution_detail.html:103
+#: templates/agent_execution_history.html:82
 #: templates/agent_template_detail.html:184
 msgid "Model"
 msgstr "モデル"
@@ -641,13 +671,13 @@ msgstr "モデル"
 msgid "Requested by user ID"
 msgstr "依頼ユーザーID"
 
-#: templates/agent_execution_detail.html:122 templates/agent_execution_history.html:84
-#: templates/workflow_detail.html:104
+#: templates/agent_execution_detail.html:122
+#: templates/agent_execution_history.html:84 templates/workflow_detail.html:104
 msgid "Started"
 msgstr "開始日時"
 
-#: templates/agent_execution_detail.html:134 templates/agent_execution_history.html:85
-#: templates/home.html:54
+#: templates/agent_execution_detail.html:134
+#: templates/agent_execution_history.html:85 templates/home.html:54
 msgid "Finished"
 msgstr "完了日時"
 
@@ -705,7 +735,7 @@ msgstr "依頼者"
 msgid "User"
 msgstr "ユーザー"
 
-#: templates/agent_execution_history.html:138
+#: templates/agent_execution_history.html:138 templates/home.html:61
 msgid "Running"
 msgstr "実行中"
 
@@ -717,12 +747,15 @@ msgstr "エージェント実行はまだありません"
 msgid "This Agent Template has no stored execution history."
 msgstr "このエージェントテンプレートには保存済みの実行履歴がありません。"
 
-#: templates/agent_template_detail.html:13 templates/agent_template_form.html:13
+#: templates/agent_template_detail.html:13
+#: templates/agent_template_form.html:13
 msgid "Back to agent template directory"
 msgstr "エージェントテンプレート一覧に戻る"
 
-#: templates/agent_template_detail.html:19 templates/agent_template_detail.html:42
-#: templates/agent_template_edit_form.html:22 templates/agent_template_form.html:18
+#: templates/agent_template_detail.html:19
+#: templates/agent_template_detail.html:42
+#: templates/agent_template_edit_form.html:22
+#: templates/agent_template_form.html:18
 msgid "AI agent configuration"
 msgstr "AIエージェント設定"
 
@@ -734,18 +767,20 @@ msgstr "説明は入力されていません。"
 msgid "View execution history"
 msgstr "実行履歴を表示"
 
-#: templates/agent_template_detail.html:92 templates/agent_template_edit_form.html:29
+#: templates/agent_template_detail.html:92
+#: templates/agent_template_edit_form.html:29
 msgid "Edit agent template"
 msgstr "エージェントテンプレートを編集"
 
-#: templates/agent_template_detail.html:115 templates/agent_template_detail.html:160
+#: templates/agent_template_detail.html:115
+#: templates/agent_template_detail.html:160
 msgid "Run Agent Template"
 msgstr "エージェントテンプレートを実行"
 
 #: templates/agent_template_detail.html:119
 msgid ""
-"Submit business input to this Active Agent Template. The complete input and generated result will"
-" be stored in the protected execution record."
+"Submit business input to this Active Agent Template. The complete input "
+"and generated result will be stored in the protected execution record."
 msgstr "この有効なエージェントテンプレートに業務入力を送信します。入力全体と生成結果は保護された実行レコードに保存されます。"
 
 #: templates/agent_template_detail.html:139
@@ -755,8 +790,8 @@ msgstr "実行入力"
 #: templates/agent_template_detail.html:150
 #, python-format
 msgid ""
-"Enter no more than %(limit)s characters. Review sensitive business data before submitting it to "
-"the configured provider."
+"Enter no more than %(limit)s characters. Review sensitive business data "
+"before submitting it to the configured provider."
 msgstr "%(limit)s文字以内で入力してください。設定済みプロバイダーへ送信する前に、機密性の高い業務データを確認してください。"
 
 #: templates/agent_template_detail.html:172
@@ -777,7 +812,8 @@ msgstr "作成日時"
 msgid "Last updated"
 msgstr "最終更新日時"
 
-#: templates/agent_template_detail.html:233 templates/agent_template_edit_form.html:180
+#: templates/agent_template_detail.html:233
+#: templates/agent_template_edit_form.html:180
 #: templates/agent_template_form.html:178
 msgid "System prompt"
 msgstr "システムプロンプト"
@@ -794,11 +830,13 @@ msgstr "エージェントテンプレート詳細に戻る"
 msgid "Update this template and select an allowed lifecycle status."
 msgstr "このテンプレートを更新し、許可されたライフサイクル状態を選択します。"
 
-#: templates/agent_template_edit_form.html:39 templates/agent_template_form.html:34
+#: templates/agent_template_edit_form.html:39
+#: templates/agent_template_form.html:34
 msgid "Agent template management authorized"
 msgstr "エージェントテンプレート管理権限あり"
 
-#: templates/agent_template_edit_form.html:78 templates/agent_template_form.html:70
+#: templates/agent_template_edit_form.html:78
+#: templates/agent_template_form.html:70
 msgid "Template identity"
 msgstr "テンプレート識別情報"
 
@@ -806,11 +844,13 @@ msgstr "テンプレート識別情報"
 msgid "Template IDs remain fixed after creation."
 msgstr "テンプレートIDは作成後に変更できません。"
 
-#: templates/agent_template_edit_form.html:100 templates/agent_template_form.html:98
+#: templates/agent_template_edit_form.html:100
+#: templates/agent_template_form.html:98
 msgid "Template name"
 msgstr "テンプレート名"
 
-#: templates/agent_template_edit_form.html:113 templates/agent_template_form.html:115
+#: templates/agent_template_edit_form.html:113
+#: templates/agent_template_form.html:115
 msgid "Model name"
 msgstr "モデル名"
 
@@ -834,13 +874,16 @@ msgstr "無効なテンプレートは、無効のままにするか有効にで
 msgid "Refresh the page before selecting a lifecycle status."
 msgstr "ライフサイクル状態を選択する前にページを再読み込みしてください。"
 
-#: templates/agent_template_edit_form.html:165 templates/agent_template_form.html:159
+#: templates/agent_template_edit_form.html:165
+#: templates/agent_template_form.html:159
 msgid "Agent instructions"
 msgstr "エージェント指示"
 
-#: templates/agent_template_edit_form.html:169 templates/agent_template_form.html:163
-#: templates/invoice_detail.html:5 templates/invoice_form.html:6 templates/workflow_detail.html:38
-#: templates/workflow_edit_form.html:80 templates/workflow_form.html:121 templates/workflows.html:24
+#: templates/agent_template_edit_form.html:169
+#: templates/agent_template_form.html:163 templates/invoice_detail.html:5
+#: templates/invoice_form.html:6 templates/workflow_detail.html:38
+#: templates/workflow_edit_form.html:80 templates/workflow_form.html:121
+#: templates/workflows.html:24
 msgid "Description"
 msgstr "説明"
 
@@ -848,12 +891,15 @@ msgstr "説明"
 msgid "Review these instructions carefully before activating the template."
 msgstr "テンプレートを有効化する前に、これらの指示をよく確認してください。"
 
-#: templates/agent_template_edit_form.html:204 templates/agent_template_form.html:199
-#: templates/employee_delete.html:105 templates/employee_edit.html:180 templates/employee_form.html:262
+#: templates/agent_template_edit_form.html:204
+#: templates/agent_template_form.html:199 templates/employee_delete.html:105
+#: templates/employee_edit.html:180 templates/employee_form.html:262
 #: templates/user_account_form.html:119 templates/workflow_edit_form.html:92
 #: templates/workflow_form.html:135 templates/workflow_schedule_form.html:63
-#: templates/workflow_task_delete_form.html:12 templates/workflow_task_edit_form.html:10
-#: templates/workflow_task_form.html:52 templates/workflow_task_resequence_form.html:15
+#: templates/workflow_task_delete_form.html:12
+#: templates/workflow_task_edit_form.html:10
+#: templates/workflow_task_form.html:52
+#: templates/workflow_task_resequence_form.html:15
 msgid "Cancel"
 msgstr "キャンセル"
 
@@ -862,7 +908,9 @@ msgid "Save agent template"
 msgstr "エージェントテンプレートを保存"
 
 #: templates/agent_template_form.html:28
-msgid "Define the identity, model, and system instructions for a reusable AI agent."
+msgid ""
+"Define the identity, model, and system instructions for a reusable AI "
+"agent."
 msgstr "再利用可能なAIエージェントの識別情報、モデル、システム指示を定義します。"
 
 #: templates/agent_template_form.html:93
@@ -890,7 +938,9 @@ msgid "Explain what the template is intended to do."
 msgstr "テンプレートの目的を説明してください。"
 
 #: templates/agent_template_form.html:189
-msgid "Define the agent’s responsibilities, boundaries, expected behavior, and output requirements."
+msgid ""
+"Define the agent’s responsibilities, boundaries, expected behavior, and "
+"output requirements."
 msgstr "エージェントの責任、境界、期待される動作、出力要件を定義してください。"
 
 #: templates/agent_templates.html:7
@@ -940,8 +990,10 @@ msgid "Protected AI workspace"
 msgstr "保護されたAIワークスペース"
 
 #: templates/ai_assistant.html:7
-msgid "Ask a focused business question through ABAP's protected provider boundary."
-msgstr "ABAPの保護されたプロバイダー境界を通じて、具体的な業務上の質問をします。"
+msgid ""
+"Ask a focused business question through ABAP's protected provider "
+"boundary."
+msgstr "ABAPの安全に保護されたプロバイダー接続を通じて、具体的な業務課題を質問できます。"
 
 #: templates/ai_assistant.html:8
 msgid "Access authorized"
@@ -949,7 +1001,7 @@ msgstr "アクセス権限あり"
 
 #: templates/ai_assistant.html:16
 msgid "Business question"
-msgstr "業務上の質問"
+msgstr "業務に関する質問"
 
 #: templates/ai_assistant.html:16
 msgid "Describe the outcome or decision you need help with."
@@ -970,14 +1022,16 @@ msgstr "最大%(count)s文字"
 
 #: templates/ai_assistant.html:17
 msgid "This one-off interaction is not stored as conversation history"
-msgstr "この単発のやり取りは会話履歴に保存されません"
+msgstr "このやり取りは会話履歴として保存されません。"
 
 #: templates/ai_assistant.html:18
 msgid "Review before sending"
 msgstr "送信前に確認"
 
 #: templates/ai_assistant.html:18
-msgid "Remove confidential, personal, or regulated information that the external provider does not need."
+msgid ""
+"Remove confidential, personal, or regulated information that the external"
+" provider does not need."
 msgstr "外部プロバイダーに不要な機密情報、個人情報、規制対象情報を削除してください。"
 
 #: templates/ai_assistant.html:19
@@ -1009,7 +1063,8 @@ msgstr "ABAPダッシュボード"
 msgid "AI Business Automation Platform"
 msgstr "AIビジネス自動化プラットフォーム"
 
-#: templates/application_base.html:12 templates/application_base.html:87 templates/base.html:10
+#: templates/application_base.html:12 templates/application_base.html:87
+#: templates/base.html:10
 msgid "Close navigation"
 msgstr "ナビゲーションを閉じる"
 
@@ -1021,8 +1076,8 @@ msgstr "ABAPワークスペースナビゲーション"
 msgid "Workspace"
 msgstr "ワークスペース"
 
-#: templates/application_base.html:20 templates/employees.html:7 templates/home.html:25
-#: templates/workforce_report.html:30
+#: templates/application_base.html:20 templates/employees.html:7
+#: templates/home.html:25 templates/workforce_report.html:30
 msgid "Employees"
 msgstr "従業員"
 
@@ -1030,16 +1085,18 @@ msgstr "従業員"
 msgid "Workflows"
 msgstr "ワークフロー"
 
-#: templates/application_base.html:23 templates/crm_directory.html:4 templates/home.html:164
+#: templates/application_base.html:23 templates/crm_directory.html:4
+#: templates/home.html:164
 msgid "Leads"
 msgstr "リード"
 
-#: templates/application_base.html:24 templates/crm_directory.html:4 templates/home.html:166
+#: templates/application_base.html:24 templates/crm_directory.html:4
+#: templates/home.html:166
 msgid "Customers"
 msgstr "顧客"
 
-#: templates/application_base.html:27 templates/home.html:169 templates/invoices.html:4
-#: templates/invoices.html:5
+#: templates/application_base.html:27 templates/home.html:169
+#: templates/invoices.html:4 templates/invoices.html:5
 msgid "Invoices"
 msgstr "請求書"
 
@@ -1063,15 +1120,18 @@ msgstr "システム状態"
 msgid "API documentation"
 msgstr "APIドキュメント"
 
-#: templates/application_base.html:66 templates/application_base.html:94 templates/base.html:7
+#: templates/application_base.html:66 templates/application_base.html:94
+#: templates/base.html:7
 msgid "Use light theme"
 msgstr "ライトテーマを使用"
 
-#: templates/application_base.html:66 templates/application_base.html:94 templates/base.html:5
+#: templates/application_base.html:66 templates/application_base.html:94
+#: templates/base.html:5
 msgid "Light theme"
 msgstr "ライトテーマ"
 
-#: templates/application_base.html:70 templates/application_base.html:71 templates/login.html:105
+#: templates/application_base.html:70 templates/application_base.html:71
+#: templates/login.html:105
 msgid "Interface language"
 msgstr "表示言語"
 
@@ -1131,8 +1191,8 @@ msgstr "電話"
 msgid "Owner"
 msgstr "担当者"
 
-#: templates/crm_detail.html:7 templates/invoice_detail.html:4 templates/invoice_form.html:5
-#: templates/invoices.html:5
+#: templates/crm_detail.html:7 templates/invoice_detail.html:4
+#: templates/invoice_form.html:5 templates/invoices.html:5
 msgid "Customer"
 msgstr "顧客"
 
@@ -1232,8 +1292,8 @@ msgstr "リードが見つかりません。"
 msgid "No customers found."
 msgstr "顧客が見つかりません。"
 
-#: templates/crm_form.html:9 templates/employee_edit.html:136 templates/employee_form.html:184
-#: templates/employee_profile.html:152
+#: templates/crm_form.html:9 templates/employee_edit.html:136
+#: templates/employee_form.html:184 templates/employee_profile.html:152
 msgid "Contact details"
 msgstr "連絡先詳細"
 
@@ -1245,12 +1305,14 @@ msgstr "未割り当て"
 msgid "Save"
 msgstr "保存"
 
-#: templates/employee_delete.html:14 templates/employee_edit.html:13 templates/employee_form.html:13
-#: templates/employee_payroll.html:26 templates/employee_profile.html:14
+#: templates/employee_delete.html:14 templates/employee_edit.html:13
+#: templates/employee_form.html:13 templates/employee_payroll.html:26
+#: templates/employee_profile.html:14
 msgid "Back to employee directory"
 msgstr "従業員一覧に戻る"
 
-#: templates/employee_delete.html:38 templates/employee_edit.html:37 templates/employee_form.html:18
+#: templates/employee_delete.html:38 templates/employee_edit.html:37
+#: templates/employee_form.html:18
 msgid "Employee management"
 msgstr "従業員管理"
 
@@ -1266,8 +1328,8 @@ msgstr "削除権限あり"
 msgid "Employee being deleted"
 msgstr "削除対象の従業員"
 
-#: templates/employee_delete.html:63 templates/employee_edit.html:66 templates/employee_payroll.html:63
-#: templates/employee_profile.html:50
+#: templates/employee_delete.html:63 templates/employee_edit.html:66
+#: templates/employee_payroll.html:63 templates/employee_profile.html:50
 msgid "Employee ID:"
 msgstr "従業員ID:"
 
@@ -1295,18 +1357,20 @@ msgstr "更新権限あり"
 msgid "Employee being edited"
 msgstr "編集中の従業員"
 
-#: templates/employee_edit.html:97 templates/employee_form.html:96 templates/employee_profile.html:111
+#: templates/employee_edit.html:97 templates/employee_form.html:96
+#: templates/employee_profile.html:111
 msgid "Employment details"
 msgstr "雇用情報"
 
 #: templates/employee_edit.html:102 templates/employee_form.html:100
-#: templates/employee_profile.html:115 templates/employees.html:14 templates/employees.html:33
-#: templates/workforce_report.html:30
+#: templates/employee_profile.html:115 templates/employees.html:14
+#: templates/employees.html:33 templates/workforce_report.html:30
 msgid "Department"
 msgstr "部署"
 
 #: templates/employee_edit.html:116 templates/employee_form.html:111
-#: templates/employee_profile.html:120 templates/workflow_task_resequence_form.html:12
+#: templates/employee_profile.html:120
+#: templates/workflow_task_resequence_form.html:12
 msgid "Position"
 msgstr "役職"
 
@@ -1447,7 +1511,9 @@ msgid "Bonus rate"
 msgstr "賞与率"
 
 #: templates/employee_payroll.html:207
-msgid "Values are estimates calculated from the stored employee record and configured payroll defaults."
+msgid ""
+"Values are estimates calculated from the stored employee record and "
+"configured payroll defaults."
 msgstr "値は、保存された従業員レコードと給与計算の既定値から算出した見積です。"
 
 #: templates/employee_profile.html:100
@@ -1586,7 +1652,7 @@ msgstr "現在のレコード"
 
 #: templates/home.html:29
 msgid "Departments"
-msgstr "部署s"
+msgstr "部署"
 
 #: templates/home.html:29
 msgid "Derived from workforce data"
@@ -1616,7 +1682,8 @@ msgstr "ワークフロー操作"
 msgid "Recent workflow executions from execution history."
 msgstr "実行履歴にある最近のワークフロー実行。"
 
-#: templates/home.html:46 templates/home.html:106 templates/home.html:119 templates/home.html:141
+#: templates/home.html:46 templates/home.html:106 templates/home.html:119
+#: templates/home.html:141
 msgid "View all"
 msgstr "すべて表示"
 
@@ -1686,7 +1753,8 @@ msgstr "クイック操作"
 msgid "Dashboard actions"
 msgstr "ダッシュボード操作"
 
-#: templates/home.html:97 templates/invoice_form.html:3 templates/invoices.html:4
+#: templates/home.html:97 templates/invoice_form.html:3
+#: templates/invoices.html:4
 msgid "Create invoice"
 msgstr "請求書を作成"
 
@@ -1814,7 +1882,8 @@ msgstr "顧客請求書"
 msgid "Invoice summary"
 msgstr "請求書概要"
 
-#: templates/invoice_detail.html:4 templates/invoice_form.html:5 templates/invoices.html:5
+#: templates/invoice_detail.html:4 templates/invoice_form.html:5
+#: templates/invoices.html:5
 msgid "Due date"
 msgstr "支払期限"
 
@@ -1822,7 +1891,8 @@ msgstr "支払期限"
 msgid "On receipt"
 msgstr "受領時"
 
-#: templates/invoice_detail.html:4 templates/invoice_detail.html:5 templates/invoices.html:5
+#: templates/invoice_detail.html:4 templates/invoice_detail.html:5
+#: templates/invoices.html:5
 msgid "Total"
 msgstr "合計"
 
@@ -1908,7 +1978,9 @@ msgid "Line items"
 msgstr "明細"
 
 #: templates/invoice_form.html:6
-msgid "Quantity permits three decimal places; line amounts and tax are rounded half up to cents."
+msgid ""
+"Quantity permits three decimal places; line amounts and tax are rounded "
+"half up to cents."
 msgstr "数量は小数第3位まで入力できます。明細金額と税額はセント単位で四捨五入されます。"
 
 #: templates/invoice_form.html:6
@@ -1929,7 +2001,7 @@ msgstr "顧客請求"
 
 #: templates/invoices.html:4
 msgid "Immutable line snapshots and protected invoice documents."
-msgstr "変更不可の明細スナップショットと保護された請求書ドキュメント。"
+msgstr "明細内容を変更不可のスナップショットとして保持し、請求書文書を安全に保護します。"
 
 #: templates/invoices.html:5
 msgid "Number"
@@ -1985,8 +2057,8 @@ msgstr "閲覧者アカウント詳細"
 
 #: templates/user_account_form.html:68
 msgid ""
-"Viewer accounts can view employee records, payroll, and approved reports. They cannot manage user"
-" accounts."
+"Viewer accounts can view employee records, payroll, and approved reports."
+" They cannot manage user accounts."
 msgstr "閲覧者アカウントは従業員レコード、給与、承認済みレポートを閲覧できます。ユーザーアカウントは管理できません。"
 
 #: templates/user_account_form.html:99
@@ -2074,7 +2146,9 @@ msgid "Integration operations"
 msgstr "連携操作"
 
 #: templates/webhook_deliveries.html:10
-msgid "Review recent signed webhook outcomes. Request and response contents are never displayed."
+msgid ""
+"Review recent signed webhook outcomes. Request and response contents are "
+"never displayed."
 msgstr "最近の署名済みWebhookの結果を確認します。リクエストとレスポンスの内容は表示されません。"
 
 #: templates/webhook_deliveries.html:16
@@ -2124,7 +2198,9 @@ msgid "No webhook deliveries recorded"
 msgstr "Webhook配信は記録されていません"
 
 #: templates/webhook_deliveries.html:40
-msgid "Verified inbound callbacks and outbound delivery attempts will appear here."
+msgid ""
+"Verified inbound callbacks and outbound delivery attempts will appear "
+"here."
 msgstr "検証済みの受信コールバックと送信試行がここに表示されます。"
 
 #: templates/workflow_detail.html:6 templates/workflow_form.html:13
@@ -2133,8 +2209,10 @@ msgstr "ワークフロー一覧に戻る"
 
 #: templates/workflow_detail.html:10 templates/workflow_edit_form.html:18
 #: templates/workflow_form.html:18 templates/workflow_schedule_form.html:11
-#: templates/workflow_task_delete_form.html:6 templates/workflow_task_edit_form.html:5
-#: templates/workflow_task_form.html:11 templates/workflow_task_resequence_form.html:5
+#: templates/workflow_task_delete_form.html:6
+#: templates/workflow_task_edit_form.html:5
+#: templates/workflow_task_form.html:11
+#: templates/workflow_task_resequence_form.html:5
 msgid "Workflow automation"
 msgstr "ワークフロー自動化"
 
@@ -2233,8 +2311,9 @@ msgstr "スケジュール時刻には %(time_zone)s を使用します。"
 #: templates/workflow_detail.html:64
 #, python-format
 msgid ""
-"ABAP evaluates a due time for %(minutes)s minutes, stores claimed occurrences in UTC, and starts "
-"one tracked run for each enabled due occurrence."
+"ABAP evaluates a due time for %(minutes)s minutes, stores claimed "
+"occurrences in UTC, and starts one tracked run for each enabled due "
+"occurrence."
 msgstr "ABAPは期限時刻を%(minutes)s分間評価し、取得した発生をUTCで保存して、有効な各発生につき1件の追跡実行を開始します。"
 
 #: templates/workflow_detail.html:70
@@ -2373,8 +2452,9 @@ msgid "Completed and in-progress runs will appear here."
 msgstr "完了済みおよび進行中の実行がここに表示されます。"
 
 #: templates/workflow_edit_form.html:13 templates/workflow_schedule_form.html:7
-#: templates/workflow_task_delete_form.html:5 templates/workflow_task_edit_form.html:4
-#: templates/workflow_task_form.html:7 templates/workflow_task_resequence_form.html:4
+#: templates/workflow_task_delete_form.html:5
+#: templates/workflow_task_edit_form.html:4 templates/workflow_task_form.html:7
+#: templates/workflow_task_resequence_form.html:4
 msgid "Back to workflow"
 msgstr "ワークフローに戻る"
 
@@ -2403,7 +2483,8 @@ msgid "Create a reusable workflow definition in the SQLite database."
 msgstr "SQLiteデータベースに再利用可能なワークフロー定義を作成します。"
 
 #: templates/workflow_form.html:34 templates/workflow_schedule_form.html:15
-#: templates/workflow_task_delete_form.html:6 templates/workflow_task_form.html:15
+#: templates/workflow_task_delete_form.html:6
+#: templates/workflow_task_form.html:15
 msgid "Workflow management access authorized"
 msgstr "ワークフロー管理権限あり"
 
@@ -2422,8 +2503,8 @@ msgstr "無効"
 #: templates/workflow_schedule_form.html:13
 #, python-format
 msgid ""
-"Store a run-eligibility rule for %(workflow_name)s. Automatic background execution is not enabled"
-" yet."
+"Store a run-eligibility rule for %(workflow_name)s. Automatic background "
+"execution is not enabled yet."
 msgstr "%(workflow_name)s の実行条件を保存します。バックグラウンドでの自動実行はまだ有効ではありません。"
 
 #: templates/workflow_schedule_form.html:25
@@ -2476,8 +2557,9 @@ msgstr "この操作はワークフローの順序を変更します"
 
 #: templates/workflow_task_delete_form.html:8
 msgid ""
-"This cannot be undone. Remaining tasks keep their relative order and are renumbered from 1. An "
-"active workflow's last task cannot be deleted; first change the workflow to Draft or Inactive."
+"This cannot be undone. Remaining tasks keep their relative order and are "
+"renumbered from 1. An active workflow's last task cannot be deleted; "
+"first change the workflow to Draft or Inactive."
 msgstr "この操作は元に戻せません。残りのタスクは相対的な順序を維持し、1から振り直されます。有効なワークフローの最後のタスクは削除できません。先にワークフローを下書きまたは無効に変更してください。"
 
 #: templates/workflow_task_delete_form.html:13
@@ -2486,18 +2568,23 @@ msgstr "タスクを削除し、残りのタスクを振り直す"
 
 #: templates/workflow_task_edit_form.html:5
 #, python-format
-msgid "Task ID: %(task_id)s. Position %(position)s is changed from the resequence page."
+msgid ""
+"Task ID: %(task_id)s. Position %(position)s is changed from the "
+"resequence page."
 msgstr "タスクID：%(task_id)s。位置%(position)sは並べ替えページから変更します。"
 
-#: templates/workflow_task_edit_form.html:9 templates/workflow_task_form.html:36
+#: templates/workflow_task_edit_form.html:9
+#: templates/workflow_task_form.html:36
 msgid "Task title"
 msgstr "タスクタイトル"
 
-#: templates/workflow_task_edit_form.html:9 templates/workflow_task_form.html:41
+#: templates/workflow_task_edit_form.html:9
+#: templates/workflow_task_form.html:41
 msgid "Instructions"
 msgstr "手順"
 
-#: templates/workflow_task_edit_form.html:9 templates/workflow_task_form.html:47
+#: templates/workflow_task_edit_form.html:9
+#: templates/workflow_task_form.html:47
 msgid "Required to complete this workflow"
 msgstr "このワークフローの完了に必須"
 
@@ -2544,7 +2631,7 @@ msgstr "自動化"
 
 #: templates/workflows.html:7
 msgid "Build, schedule, and monitor reusable business processes."
-msgstr "再利用可能な業務プロセスを構築、スケジュール、監視します。"
+msgstr "再利用可能な業務プロセスを構築し、スケジュール設定と監視を行います。"
 
 #: templates/workflows.html:13
 msgid "Filter workflows by status"
@@ -2659,4 +2746,7 @@ msgstr "従業員データがありません"
 #: templates/workforce_report.html:33
 msgid "Add an employee to generate department headcounts."
 msgstr "従業員を追加すると部署別人数が生成されます。"
+
+#~ msgid "Uncatalogued future message"
+#~ msgstr ""
 
