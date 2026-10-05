@@ -241,8 +241,8 @@ a {
 }
 
 :focus-visible {
-    outline: 3px solid var(--color-focus);
-    outline-offset: 3px;
+    outline: 2px solid var(--color-focus);
+    outline-offset: 2px;
 }
 
 button,
@@ -1148,7 +1148,7 @@ textarea:disabled,
 .form-field select:focus,
 .form-field textarea:focus {
     border-color: var(--color-focus);
-    box-shadow: 0 0 0 3px var(--color-focus-soft);
+    box-shadow: none;
 }
 
 .primary-button {
@@ -1824,6 +1824,10 @@ textarea:disabled,
     gap: 1rem;
 }
 
+.employee-form-grid + .form-field {
+    margin-top: 0.5rem;
+}
+
 .form-field {
     display: grid;
     gap: 0.45rem;
@@ -1903,8 +1907,6 @@ textarea:disabled,
 .form-field input:focus,
 .form-field select:focus,
 .form-field textarea:focus {
-    outline: 3px solid var(--color-focus);
-    outline-offset: 2px;
     border-color: var(--color-primary);
 }
 
@@ -2395,9 +2397,10 @@ textarea:disabled,
 .employee-filter-bar { display: grid; gap: .65rem; padding: .85rem; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: var(--radius-panel); }
 .employee-filter-primary { display: grid; grid-template-columns: minmax(16rem, 1.65fr) minmax(12rem, 1fr) auto; gap: .65rem; }
 .search-control, .filter-control { min-height: 2.75rem; display: flex; align-items: center; gap: .6rem; padding: 0 .75rem; background: var(--color-surface-subtle); color: var(--color-muted); border: 1px solid var(--color-border); border-radius: var(--radius-control); }
-.search-control:focus-within, .filter-control:focus-within { border-color: var(--color-focus); box-shadow: 0 0 0 3px var(--color-focus-soft); }
+.search-control:focus-within, .filter-control:focus-within { border-color: var(--color-focus); box-shadow: none; }
 .search-control .ui-icon, .filter-control .ui-icon { width: 1.05rem; height: 1.05rem; flex: 0 0 auto; }
 .search-control input, .filter-control input { width: 100%; padding: 0; background: transparent; color: var(--color-text); border: 0; outline: 0; }
+.search-control input:focus-visible, .filter-control input:focus-visible { outline: 2px solid var(--color-focus); outline-offset: 2px; }
 .advanced-filters { position: relative; }
 .advanced-filters summary { width: max-content; display: flex; align-items: center; gap: .45rem; color: var(--color-link); font-size: .78rem; font-weight: 600; cursor: pointer; }
 .filter-active-dot { width: .45rem; height: .45rem; background: var(--color-link); border-radius: 50%; }

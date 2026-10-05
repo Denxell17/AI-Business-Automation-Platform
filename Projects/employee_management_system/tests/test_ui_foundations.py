@@ -302,6 +302,33 @@ class TestUiFoundations(unittest.TestCase):
             with self.subTest(removed=label):
                 self.assertNotIn(f'_("{label}")', template_text)
 
+    def test_focus_indicator_is_single_thin_and_token_based(self):
+        self.assertIn(
+            ":focus-visible {\n    outline: 2px solid var(--color-focus);\n"
+            "    outline-offset: 2px;\n}",
+            self.stylesheet,
+        )
+        self.assertIn("box-shadow: none;", self.stylesheet)
+        self.assertNotIn(
+            "box-shadow: 0 0 0 3px var(--color-focus-soft)",
+            self.stylesheet,
+        )
+        self.assertNotIn(
+            "outline: 3px solid var(--color-focus)",
+            self.stylesheet,
+        )
+        self.assertIn(
+            ".search-control input:focus-visible, .filter-control input:focus-visible",
+            self.stylesheet,
+        )
+
+    def test_form_grid_following_field_has_shared_row_separation(self):
+        self.assertIn(
+            ".employee-form-grid + .form-field {\n"
+            "    margin-top: 0.5rem;\n}",
+            self.stylesheet,
+        )
+
     def test_light_theme_uses_layered_neutral_surface_tokens(self):
         expected_tokens = (
             "--color-background: #edf1f4",
