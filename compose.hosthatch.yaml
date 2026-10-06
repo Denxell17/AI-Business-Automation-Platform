@@ -1,0 +1,41 @@
+x-production-environment: &production-environment
+  ABAP_ENVIRONMENT: production
+  ABAP_INTEGRATIONS_ENABLED: "false"
+
+services:
+  database:
+    cpus: 0.70
+    mem_limit: 1536m
+    pids_limit: 256
+    shm_size: 256m
+
+  migrate:
+    environment: *production-environment
+    cpus: 0.50
+    mem_limit: 768m
+    pids_limit: 128
+
+  web:
+    environment: *production-environment
+    command:
+      - python
+      - -m
+      - uvicorn
+      - deployment:create_application
+      - --factory
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8000"
+      - --proxy-headers
+      - --forwarded-allow-ips
+      - ${ABAP_FORWARDED_ALLOW_IPS:?Set the exact Docker bridge gateway used by the host Caddy proxy}
+    cpus: 0.90
+    mem_limit: 1536m
+    pids_limit: 256
+
+  worker:
+    environment: *production-environment
+    cpus: 0.35
+    mem_limit: 768m
+    pids_limit: 128
