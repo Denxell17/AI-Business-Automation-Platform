@@ -1,0 +1,11 @@
+[Unit]
+Description=Run ABAP production operations checks every five minutes
+
+[Timer]
+OnBootSec=5min
+OnUnitActiveSec=5min
+AccuracySec=30s
+Unit=abap-operations-check.service
+
+[Install]
+WantedBy=timers.target

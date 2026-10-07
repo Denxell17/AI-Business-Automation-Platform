@@ -327,8 +327,9 @@ database migration itself fails, stop and diagnose it; do not reinitialize
 PostgreSQL or restore over the live database. Restoration must occur only from
 the verified backup, with an explicit recovery plan.
 
-After the HTTPS and isolated restore gates pass, schedule encrypted off-server
-PostgreSQL and document-volume backups, disk-usage alerts, container health
-alerts, and certificate monitoring. Only then design the separate production
-n8n configuration, encryption key, authentication, resource limit, and backup
-plan.
+After the HTTPS and isolated restore gates pass, implement and prove the
+encrypted off-server backups, retention, restore drills, disk/container
+alerts, and certificate monitoring in
+`hosthatch-backup-restore-monitoring-runbook.md`. Only then design the separate
+production n8n configuration, encryption key, authentication, resource limit,
+and backup plan.

@@ -1,0 +1,42 @@
+# Non-secret production operations configuration.
+# Install as /etc/abap/operations.conf owned by root with mode 0600.
+
+ABAP_APP_DIR=/opt/abap/app
+ABAP_ENV_FILE=/etc/abap/production.env
+ABAP_COMPOSE_BASE_FILE=/opt/abap/app/compose.deploy.yaml
+ABAP_COMPOSE_OVERLAY_FILE=/opt/abap/app/compose.hosthatch.yaml
+
+# Replace REGION and BUCKET_NAME when installing. This repository locator is
+# not a credential. Use Backblaze B2's S3-compatible HTTPS endpoint.
+ABAP_RESTIC_REPOSITORY=s3:https://s3.REGION.backblazeb2.com/BUCKET_NAME/abap-production
+ABAP_RESTIC_HOST=abap-production-hosthatch
+ABAP_RESTIC_CACHE_DIR=/var/cache/abap-restic
+
+# These are the only persistent Docker-volume paths used by the operations
+# scripts. The database path is a protected exclusion, never a Restic source.
+ABAP_INVOICE_DOCUMENTS_DIR=/var/lib/docker/volumes/abap-deploy_invoice_documents/_data
+ABAP_ACTIVITY_LOGS_DIR=/var/lib/docker/volumes/abap-deploy_activity_logs/_data
+ABAP_DATABASE_DATA_DIR=/var/lib/docker/volumes/abap-deploy_database_data/_data
+ABAP_DOCKER_ROOT=/var/lib/docker
+
+ABAP_TLS_HOST=app.dennisbasadre.com
+
+# Decimal bytes intentionally match Backblaze's GB accounting.
+ABAP_RESTIC_WARNING_BYTES=7000000000
+ABAP_RESTIC_CRITICAL_BYTES=8500000000
+ABAP_RESTIC_FREE_TIER_BYTES=10000000000
+ABAP_RESTIC_PREFLIGHT_OVERHEAD_BYTES=100000000
+ABAP_STAGING_MAX_BYTES=2000000000
+
+# Preserve production headroom on the staging filesystem. The separate cache
+# allowance is reserved before pg_dump and again before Restic starts.
+ABAP_LOCAL_FREE_RESERVE_BYTES=3000000000
+ABAP_RESTIC_CACHE_OVERHEAD_BYTES=500000000
+
+ABAP_DISK_WARNING_PERCENT=75
+ABAP_DISK_CRITICAL_PERCENT=85
+ABAP_TLS_WARNING_DAYS=21
+ABAP_TLS_CRITICAL_DAYS=7
+ABAP_SWAP_WARNING_PERCENT=10
+ABAP_SWAP_CRITICAL_PERCENT=50
+ABAP_SWAP_WARNING_RUNS=3

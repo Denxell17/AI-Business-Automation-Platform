@@ -273,15 +273,14 @@ The completion program is finished only when:
 | 4 — Leads and Customers Domain | Complete | Day 165 adds normalized SQLite and PostgreSQL lead, customer, note, and CRM audit tables; owner and lifecycle validation; duplicate-safe transactional conversion with an immutable source lead; permission-scoped FastAPI forms, search, detail/history screens, and real dashboard counts. Focused SQLite coverage passed 3 tests. The final full local suite passed 692 tests with 5 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. A separate disposable PostgreSQL 18.6 container applied migration 006 and passed the complete authenticated browser lead creation, edit, note, one-time conversion, customer detail/audit, and immutable-source check. Isolated synthetic Compose project `abap_m4_verify` built the current image, applied migration 006, and reported web readiness. All test containers and disposable volumes were removed. The Milestone 4 exit gate is met. |
 | 5 — Invoices and Documents Domain | Complete | Day 166 adds customer-owned USD invoices with immutable line-item snapshots, due dates, explicit half-up Decimal rounding to integer cents, invoice status transitions, and payment-state history. It also adds a private filesystem document-storage abstraction, metadata integrity hashes, safe generated PDF filenames, permission-checked `attachment` downloads with no-store and nosniff headers, and linked manual workflow runs. The portfolio-safe invoice PDF was visually rendered and reviewed. Focused SQLite invoice coverage passed 3 tests; the final full local suite passed 696 tests with 6 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. A disposable PostgreSQL 18.6 database applied migration 007 and passed invoice creation, protected PDF browser download, and immutable line-item verification. Isolated synthetic Compose project `abap_m5_verify` built the current image with ReportLab, applied migration 007, and reported web readiness. All temporary containers and volumes were removed. The Milestone 5 exit gate is met. |
 | 6 — Selected External Connections | Planned | Qwen2.5 3B Instruct Q4_K_M through a loopback-only llama.cpp server is the approved local AI connection. The provider-independent implementation, deterministic tests, stored metrics, laptop resource verification, repeatable demo, and local-token rotation evidence remain to be completed. |
-| 7 — Production Operations | Not started | Exit gate not evaluated. |
-| 8 — Cloud Deployment and HTTPS | In progress | OCI Always Free capacity retry is active and the pinned deployment package is ready. No cloud deployment, public URL, or TLS configuration is claimed until a VM is available and verified. |
+| 7 — Production Operations | In progress | The HostHatch backup, restore, and monitoring implementation is prepared for review. The automated B2/Restic backup, systemd timers, Better Stack alerts, first scheduled run, and recurring restore evidence remain uninstalled and unverified on production. |
+| 8 — Cloud Deployment and HTTPS | In progress | ABAP is live on HostHatch behind host Caddy and proxied Cloudflare Full (strict). PostgreSQL and the three named volumes remain private and persistent; the pre-deployment backup and isolated PostgreSQL restore gate passed. Production-operations automation and the separate production n8n design remain outstanding. |
 | 9 — Final Portfolio Release | Not started | Exit gate not evaluated. |
 
 ## Immediate Next Action
 
-Begin Milestone 6 with Day 167 from
-`../architecture/local-qwen-provider-plan.md`: establish the pinned
-llama.cpp and Qwen2.5 3B Instruct Q4_K_M baseline outside Git, verify the
-conservative loopback-only laptop profile, and record its resource evidence.
-Then add the provider-independent adapter, deterministic test substitute,
-stored health metrics, and documented local-token rotation behavior.
+Review the repository-side HostHatch backup, restore, systemd, and monitoring
+artifacts. After approval, install them without changing the Compose project or
+volumes, initialize the encrypted B2 Restic repository, prove one isolated
+restore, verify alerts, and observe the first scheduled backup. Production n8n
+remains deferred until this operations gate passes.

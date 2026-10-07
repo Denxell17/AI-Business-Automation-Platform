@@ -1,0 +1,33 @@
+[Unit]
+Description=ABAP encrypted off-server production backup
+Documentation=file:/opt/abap/app/docs/deployment/hosthatch-backup-restore-monitoring-runbook.md
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+Environment=ABAP_OPERATIONS_CONFIG=/etc/abap/operations.conf
+LoadCredential=restic_password:/etc/abap/credentials/restic_password
+LoadCredential=b2_key_id:/etc/abap/credentials/b2_key_id
+LoadCredential=b2_application_key:/etc/abap/credentials/b2_application_key
+LoadCredential=heartbeat_backup_url:/etc/abap/credentials/heartbeat_backup_url
+CacheDirectory=abap-restic
+CacheDirectoryMode=0700
+ExecStart=/usr/local/sbin/abap-backup
+Nice=10
+IOSchedulingClass=best-effort
+IOSchedulingPriority=7
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/var/backups/abap /var/cache/abap-restic /run/lock
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target

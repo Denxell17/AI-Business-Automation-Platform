@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the ABAP production backup daily at 02:15 UTC
+
+[Timer]
+OnCalendar=*-*-* 02:15:00 UTC
+Persistent=true
+AccuracySec=1min
+Unit=abap-backup.service
+
+[Install]
+WantedBy=timers.target

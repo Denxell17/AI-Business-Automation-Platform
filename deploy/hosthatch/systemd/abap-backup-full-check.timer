@@ -1,0 +1,11 @@
+[Unit]
+Description=Run a full ABAP Restic data check monthly
+
+[Timer]
+OnCalendar=*-*-01 04:30:00 UTC
+Persistent=true
+AccuracySec=15min
+Unit=abap-backup-full-check.service
+
+[Install]
+WantedBy=timers.target

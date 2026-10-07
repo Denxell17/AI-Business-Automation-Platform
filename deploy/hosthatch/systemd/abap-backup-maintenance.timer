@@ -1,0 +1,11 @@
+[Unit]
+Description=Run weekly ABAP backup retention and metadata checks
+
+[Timer]
+OnCalendar=Sun *-*-* 03:30:00 UTC
+Persistent=true
+AccuracySec=5min
+Unit=abap-backup-maintenance.service
+
+[Install]
+WantedBy=timers.target

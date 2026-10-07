@@ -1,0 +1,28 @@
+[Unit]
+Description=Check ABAP production host, containers, ports, and TLS
+Documentation=file:/opt/abap/app/docs/deployment/hosthatch-backup-restore-monitoring-runbook.md
+Requires=docker.service
+After=docker.service caddy.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+Environment=ABAP_OPERATIONS_CONFIG=/etc/abap/operations.conf
+LoadCredential=heartbeat_operations_url:/etc/abap/credentials/heartbeat_operations_url
+RuntimeDirectory=abap-operations
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/local/sbin/abap-operations-check
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/run/abap-operations /run/lock
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
+
+[Install]
+WantedBy=multi-user.target
