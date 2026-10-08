@@ -218,12 +218,19 @@ operations_read_credential() {
 
   local -a credential_lines=()
   mapfile -t credential_lines < "$credential_path"
-  (( ${#credential_lines[@]} == 1 )) || \
+  (( ${#credential_lines[@]} == 1 )) || {
     operations_fail "Credential $credential_name must contain exactly one line."
+    return 1
+  }
   local value="${credential_lines[0]}"
-  [[ -n "$value" ]] || operations_fail "Credential $credential_name is empty."
-  [[ "$value" != *$'\r'* ]] || \
+  [[ -n "$value" ]] || {
+    operations_fail "Credential $credential_name is empty."
+    return 1
+  }
+  [[ "$value" != *$'\r'* ]] || {
     operations_fail "Credential $credential_name contains an invalid newline."
+    return 1
+  }
   printf '%s' "$value"
 }
 

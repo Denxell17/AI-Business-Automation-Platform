@@ -83,4 +83,44 @@ invalid_status=$?
 set -e
 [[ "$invalid_status" == 1 ]] || fail_test 'invalid unsigned integer was accepted'
 
-printf 'PASS: HostHatch operations thresholds\n'
+credential_test_directory="$(mktemp -d)"
+readonly credential_test_directory
+trap 'rm -rf -- "$credential_test_directory"' EXIT
+CREDENTIALS_DIRECTORY="$credential_test_directory"
+
+# Credential ownership and modes are mocked here so these content-validation
+# tests behave consistently when run by a non-root developer or CI account.
+stat() {
+  case "${2:-}" in
+    '%u') printf '0\n' ;;
+    '%a') printf '600\n' ;;
+    *) command stat "$@" ;;
+  esac
+}
+
+: > "$credential_test_directory/empty"
+if operations_read_credential empty >/dev/null 2>&1; then
+  fail_test 'empty credential was accepted'
+fi
+operations_heartbeat empty >/dev/null 2>&1 || \
+  fail_test 'invalid optional heartbeat credential caused a hard failure'
+operations_heartbeat missing-heartbeat >/dev/null 2>&1 || \
+  fail_test 'missing optional heartbeat credential caused a hard failure'
+
+printf 'first-line\nsecond-line\n' > "$credential_test_directory/multiline"
+if operations_read_credential multiline >/dev/null 2>&1; then
+  fail_test 'multiline credential was accepted'
+fi
+
+printf 'value-with-carriage-return\r\n' > "$credential_test_directory/carriage-return"
+if operations_read_credential carriage-return >/dev/null 2>&1; then
+  fail_test 'credential containing a carriage return was accepted'
+fi
+
+printf 'valid-credential-value\n' > "$credential_test_directory/valid"
+credential_value="$(operations_read_credential valid)" || \
+  fail_test 'valid credential was rejected'
+[[ "$credential_value" == 'valid-credential-value' ]] || \
+  fail_test 'valid credential value was not returned exactly'
+
+printf 'PASS: HostHatch operations thresholds and credentials\n'
