@@ -1,15 +1,53 @@
 {% extends "application_base.html" %}
+{% from "crm_macros.html" import lead_guidance, lead_lifecycle with context %}
 {% block content %}
 <section class="employee-form-section" aria-labelledby="crm-detail-heading">
   <a class="back-link" href="{{ url_for('lead_directory') if kind == 'lead' else url_for('customer_directory') }}">{{ _("← Back to leads") if kind == 'lead' else _("← Back to customers") }}</a>
-  <p class="section-eyebrow">{{ _("Lead record") if kind == 'lead' else _("Customer record") }}</p><h1 id="crm-detail-heading" class="section-title">{{ record.name }}</h1>
-  <section class="employee-form-card"><h2>{{ _("Identity and contact") }}</h2><dl><dt>{{ _("Email") }}</dt><dd>{{ record.email or '—' }}</dd><dt>{{ _("Phone") }}</dt><dd>{{ record.phone_number or '—' }}</dd><dt>{{ _("Company") }}</dt><dd>{{ record.company or '—' }}</dd><dt>{{ _("Stage") if kind == 'lead' else _("Status") }}</dt><dd>{{ controlled_label(record.stage) if kind == 'lead' else controlled_label(record.status) }}</dd>
-  {% if kind == 'lead' %}<dt>{{ _("Owner") }}</dt><dd>{{ record.owner_username or 'Unassigned' }}</dd>{% if record.converted_customer_id %}<dt>{{ _("Customer") }}</dt><dd><a href="{{ url_for('customer_detail', customer_id=record.converted_customer_id) }}">{{ _("View converted customer") }}</a></dd>{% endif %}
-  {% else %}<dt>{{ _("Source lead") }}</dt><dd><a href="{{ url_for('lead_detail', lead_id=record.source_lead_id) }}">{{ _("View original lead") }}</a></dd>{% endif %}</dl>
-  {% if can_manage_crm %}{% if kind == 'customer' %}<a class="ui-button" href="{{ url_for('customer_edit_form', customer_id=record.customer_id) }}">{{ _("Edit customer") }}</a>{% elif record.stage != 'converted' %}<a class="ui-button" href="{{ url_for('lead_edit_form', lead_id=record.lead_id) }}">{{ _("Edit lead") }}</a>{% endif %}{% endif %}</section>
+  <div>
+    <p class="section-eyebrow">{{ _("Lead record") if kind == 'lead' else _("Customer record") }}</p>
+    <h1 id="crm-detail-heading" class="section-title">{{ record.name }}</h1>
+  </div>
+
   {% if kind == 'lead' %}
-    {% if can_manage_crm and record.stage == 'qualified' %}<form method="post" action="{{ url_for('lead_convert', lead_id=record.lead_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="ui-button ui-button--primary" type="submit">{{ _("Convert to customer") }}</button></form>{% endif %}
-    <section class="employee-form-card"><h2>{{ _("Notes") }}</h2>{% if can_manage_crm and record.stage != 'converted' %}<form method="post" action="{{ url_for('lead_note_create', lead_id=record.lead_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="form-field"><label for="body">{{ _("New note") }}</label><textarea id="body" name="body" maxlength="2000" required></textarea></div><button class="ui-button" type="submit">{{ _("Add note") }}</button></form>{% endif %}<ul>{% for note in notes %}<li><strong>{{ note.username }}</strong> · {{ note.created_at }}<p>{{ note.body }}</p></li>{% else %}<li>{{ _("No notes yet.") }}</li>{% endfor %}</ul></section>
+    {{ lead_lifecycle(record.stage) }}
+    {{ lead_guidance(record.stage) }}
+  {% endif %}
+
+  <section class="employee-form-card">
+    <h2>{{ _("Identity and contact") }}</h2>
+    <dl>
+      <dt>{{ _("Email") }}</dt><dd>{{ record.email or '—' }}</dd>
+      <dt>{{ _("Phone") }}</dt><dd>{{ record.phone_number or '—' }}</dd>
+      <dt>{{ _("Company") }}</dt><dd>{{ record.company or '—' }}</dd>
+      <dt>{{ _("Stage") if kind == 'lead' else _("Status") }}</dt><dd>{{ controlled_label(record.stage) if kind == 'lead' else controlled_label(record.status) }}</dd>
+      {% if kind == 'lead' %}
+        <dt>{{ _("Owner") }}</dt><dd>{{ record.owner_username or _("Unassigned") }}</dd>
+        {% if record.converted_customer_id %}<dt>{{ _("Customer") }}</dt><dd><a href="{{ url_for('customer_detail', customer_id=record.converted_customer_id) }}">{{ _("View converted customer") }}</a></dd>{% endif %}
+      {% else %}
+        <dt>{{ _("Source lead") }}</dt><dd><a href="{{ url_for('lead_detail', lead_id=record.source_lead_id) }}">{{ _("View original lead") }}</a></dd>
+      {% endif %}
+    </dl>
+    <div class="ui-action-group crm-detail-actions">
+      {% if can_manage_crm %}
+        {% if kind == 'customer' %}<a class="ui-button ui-button--secondary" href="{{ url_for('customer_edit_form', customer_id=record.customer_id) }}">{{ _("Edit customer") }}</a>
+        {% elif record.stage != 'converted' %}<a class="ui-button ui-button--secondary" href="{{ url_for('lead_edit_form', lead_id=record.lead_id) }}">{{ _("Edit lead") }}</a>{% endif %}
+      {% endif %}
+      {% if kind == 'customer' and record.status == 'active' and can_manage_invoices %}<a class="ui-button ui-button--primary" href="{{ url_for('invoice_create_form') }}?customer_id={{ record.customer_id }}">{{ _("Create invoice") }}</a>{% endif %}
+    </div>
+  </section>
+
+  {% if kind == 'lead' %}
+    {% if can_manage_crm and record.stage == 'qualified' %}
+      <section class="crm-conversion-callout" aria-labelledby="conversion-heading">
+        <div><h2 id="conversion-heading">{{ _("Ready to become a customer") }}</h2><p>{{ _("Conversion creates one active customer and preserves this lead's history.") }}</p></div>
+        <form method="post" action="{{ url_for('lead_convert', lead_id=record.lead_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><button class="ui-button ui-button--primary" type="submit">{{ _("Convert to customer") }}</button></form>
+      </section>
+    {% endif %}
+    <section class="employee-form-card">
+      <h2>{{ _("Notes") }}</h2>
+      {% if can_manage_crm and record.stage != 'converted' %}<form method="post" action="{{ url_for('lead_note_create', lead_id=record.lead_id) }}"><input type="hidden" name="csrf_token" value="{{ csrf_token }}"><div class="form-field"><label for="body">{{ _("New note") }}</label><textarea id="body" name="body" maxlength="2000" required></textarea></div><button class="ui-button" type="submit">{{ _("Add note") }}</button></form>{% endif %}
+      <ul>{% for note in notes %}<li><strong>{{ note.username }}</strong> · {{ note.created_at }}<p>{{ note.body }}</p></li>{% else %}<li>{{ _("No notes yet.") }}</li>{% endfor %}</ul>
+    </section>
   {% endif %}
   <section class="employee-form-card"><h2>{{ _("Audit history") }}</h2><ul>{% for event in history %}<li>{{ controlled_label(event.event_type) }} · {{ event.username }} · {{ event.created_at }}</li>{% else %}<li>{{ _("No history yet.") }}</li>{% endfor %}</ul></section>
 </section>

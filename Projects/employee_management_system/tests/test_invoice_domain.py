@@ -3,11 +3,12 @@ import sqlite3
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
+from unittest.mock import patch
 
 from fastapi.testclient import TestClient
 from tests.web_auth import sign_in, sign_out
 
-from crm_service import convert_lead, create_lead, update_lead
+from crm_service import convert_lead, create_lead, update_customer, update_lead
 from dashboard_repository import load_dashboard_snapshot
 from database import get_database_connection, load_user_account_by_username
 from document_storage import PrivateFileSystemDocumentStorage
@@ -132,3 +133,76 @@ class TestInvoiceDomain(unittest.TestCase):
             create_invoice(self.viewer, self.customer_id, "INV-1003", "", self.invoice_lines(), self.database_file)
         with self.assertRaises(ValueError):
             self.document_storage.save("../outside.pdf", b"data")
+
+    def test_customer_preselection_and_no_customer_guidance(self):
+        self.sign_in()
+        token = self.csrf("/invoices/new")
+        preselected = self.client.get(
+            f"/invoices/new?customer_id={self.customer_id}"
+        )
+        self.assertEqual(preselected.status_code, 200, preselected.text)
+        self.assertIn(
+            f'value="{self.customer_id}" selected',
+            preselected.text,
+        )
+        with patch("invoice_web.list_invoice_customers", return_value=[]):
+            beyond_picker_limit = self.client.get(
+                f"/invoices/new?customer_id={self.customer_id}"
+            )
+        self.assertEqual(beyond_picker_limit.status_code, 200)
+        self.assertIn(
+            f'value="{self.customer_id}" selected',
+            beyond_picker_limit.text,
+        )
+        with patch("invoice_web.list_invoice_customers", return_value=[]):
+            failed_post = self.client.post("/invoices/new", data={
+                "csrf_token": token,
+                "customer_id": self.customer_id,
+                "invoice_number": "INVALID NUMBER",
+                "due_date": "2026-10-30",
+                "description_1": "Review service",
+                "quantity_1": "1",
+                "unit_price_1": "10.00",
+                "tax_rate_1": "0",
+            })
+        self.assertEqual(failed_post.status_code, 200)
+        self.assertIn("Invoice number is invalid.", failed_post.text)
+        self.assertIn(
+            f'value="{self.customer_id}" selected',
+            failed_post.text,
+        )
+        self.assertEqual(
+            self.client.get("/invoices/new?customer_id=" + "x" * 65).status_code,
+            400,
+        )
+        self.assertEqual(
+            self.client.get(
+                "/invoices/new?customer_id=00000000-0000-0000-0000-000000000000"
+            ).status_code,
+            400,
+        )
+
+        self.assertTrue(update_customer(
+            self.admin,
+            self.customer_id,
+            "Invoice Customer",
+            "customer@example.test",
+            "",
+            "Example Company",
+            "inactive",
+            self.database_file,
+        ))
+        invoice_directory = self.client.get("/invoices")
+        self.assertIn("No customers are ready for invoicing", invoice_directory.text)
+        self.assertIn(">View leads<", invoice_directory.text)
+        empty_form = self.client.get("/invoices/new")
+        self.assertIn("No active customers available", empty_form.text)
+        self.assertNotIn('action="/invoices/new"', empty_form.text)
+        self.assertEqual(
+            self.client.get(
+                f"/invoices/new?customer_id={self.customer_id}"
+            ).status_code,
+            400,
+        )
+        customer_detail = self.client.get(f"/customers/{self.customer_id}")
+        self.assertNotIn(">Create invoice<", customer_detail.text)

@@ -7,7 +7,8 @@ from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from authorization import MANAGE_INVOICES, VIEW_INVOICES, user_has_permission
+from authorization import MANAGE_INVOICES, VIEW_CRM, VIEW_INVOICES, user_has_permission
+from crm_repository import load_customer
 from i18n import LocalizedHTMLResponse as HTMLResponse
 from document_storage import DocumentStorage
 from invoice_repository import (
@@ -42,6 +43,7 @@ def register_invoice_routes(application: FastAPI, templates: Jinja2Templates,
             "page_title": title, "active_page": "invoices", "current_user": actor,
             "csrf_token": csrf_token_for(request),
             "can_manage_invoices": user_has_permission(actor, MANAGE_INVOICES),
+            "can_view_crm": user_has_permission(actor, VIEW_CRM),
             **context,
         })
 
@@ -50,6 +52,23 @@ def register_invoice_routes(application: FastAPI, templates: Jinja2Templates,
         if not csrf_is_valid(request, str(submitted.get("csrf_token", ""))):
             return None
         return submitted
+
+    def invoice_form_customers(selected_customer_id: str) -> list[dict]:
+        customers = list_invoice_customers(database_file)
+        if not selected_customer_id:
+            return customers
+        selected_customer = load_customer(selected_customer_id, database_file)
+        if (selected_customer is None or
+                selected_customer["status"] != "active"):
+            raise ValueError("Invoice customer must be active.")
+        if not any(customer["customer_id"] == selected_customer_id
+                   for customer in customers):
+            customers.insert(0, {
+                "customer_id": selected_customer["customer_id"],
+                "name": selected_customer["name"],
+                "company": selected_customer["company"],
+            })
+        return customers
 
     def lines_from_form(submitted):
         lines = []
@@ -71,17 +90,27 @@ def register_invoice_routes(application: FastAPI, templates: Jinja2Templates,
             return denied
         if len(customer_id) > 64:
             return HTMLResponse("Customer filter is invalid.", status_code=400)
+        customers = list_invoice_customers(database_file)
         return page(request, "invoices.html", "Invoices", actor,
                     invoices=list_invoices(customer_id.strip() or None, database_file),
-                    selected_customer_id=customer_id.strip())
+                    selected_customer_id=customer_id.strip(),
+                    has_active_customers=bool(customers))
 
     @application.get("/invoices/new", response_class=HTMLResponse)
-    def invoice_create_form(request: Request) -> Response:
+    def invoice_create_form(request: Request, customer_id: str = "") -> Response:
         actor, denied = access(request, MANAGE_INVOICES)
         if denied:
             return denied
+        normalized_customer_id = customer_id.strip()
+        if len(normalized_customer_id) > 64:
+            return HTMLResponse("Customer filter is invalid.", status_code=400)
+        try:
+            customers = invoice_form_customers(normalized_customer_id)
+        except ValueError as error:
+            return HTMLResponse(str(error), status_code=400)
         return page(request, "invoice_form.html", "Create invoice", actor,
-                    customers=list_invoice_customers(database_file), form_values={},
+                    customers=customers,
+                    form_values={"customer_id": normalized_customer_id},
                     line_input_count=LINE_INPUT_COUNT, error_message=None)
 
     @application.post("/invoices/new")
@@ -99,8 +128,13 @@ def register_invoice_routes(application: FastAPI, templates: Jinja2Templates,
                 str(submitted.get("due_date", "")), lines_from_form(submitted), database_file,
             )
         except ValueError as error:
+            submitted_customer_id = str(submitted.get("customer_id", "")).strip()
+            try:
+                customers = invoice_form_customers(submitted_customer_id)
+            except ValueError:
+                customers = list_invoice_customers(database_file)
             return page(request, "invoice_form.html", "Create invoice", actor,
-                        customers=list_invoice_customers(database_file), form_values=dict(submitted),
+                        customers=customers, form_values=dict(submitted),
                         line_input_count=LINE_INPUT_COUNT, error_message=str(error))
         log_activity(f"Invoice {invoice_id} created by user {actor['username']}.")
         return RedirectResponse(url=request.url_for("invoice_detail", invoice_id=invoice_id), status_code=303)

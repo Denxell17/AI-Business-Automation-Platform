@@ -1,0 +1,24 @@
+{% macro lead_lifecycle(stage) -%}
+<section class="crm-lifecycle-panel" aria-labelledby="lead-lifecycle-heading">
+  <h2 id="lead-lifecycle-heading">{{ _("Lead lifecycle") }}</h2>
+  <ol class="crm-lifecycle" aria-label="{{ _("Lead lifecycle stages") }}">
+    <li class="{% if stage in ('contacted', 'qualified', 'converted') %}is-complete{% endif %}{% if stage == 'new' %} is-current{% endif %}"{% if stage == 'new' %} aria-current="step"{% endif %}><span aria-hidden="true">1</span><strong>{{ controlled_label('new') }}</strong></li>
+    <li class="{% if stage in ('qualified', 'converted') %}is-complete{% endif %}{% if stage == 'contacted' %} is-current{% endif %}"{% if stage == 'contacted' %} aria-current="step"{% endif %}><span aria-hidden="true">2</span><strong>{{ controlled_label('contacted') }}</strong></li>
+    <li class="{% if stage == 'converted' %}is-complete{% endif %}{% if stage == 'qualified' %} is-current{% endif %}"{% if stage == 'qualified' %} aria-current="step"{% endif %}><span aria-hidden="true">3</span><strong>{{ controlled_label('qualified') }}</strong></li>
+    <li class="{% if stage == 'converted' %}is-current is-complete{% endif %}"{% if stage == 'converted' %} aria-current="step"{% endif %}><span aria-hidden="true">4</span><strong>{{ _("Customer") }}</strong></li>
+  </ol>
+</section>
+{%- endmacro %}
+
+{% macro lead_guidance(stage) -%}
+<div class="ui-alert ui-alert--info crm-guidance">
+  <div>
+    <strong>{{ _("Next step") }}</strong>
+    {% if stage == 'new' %}<p>{{ _("Mark this lead as Contacted after the first outreach.") }}</p>
+    {% elif stage == 'contacted' %}<p>{{ _("Mark this lead as Qualified when it is ready to become a customer.") }}</p>
+    {% elif stage == 'qualified' %}<p>{{ _("This lead is qualified. An authorized user can now convert it to a customer.") }}</p>
+    {% elif stage == 'unqualified' %}<p>{{ _("This lead is unqualified. Move it back to Contacted if engagement resumes.") }}</p>
+    {% else %}<p>{{ _("Conversion is complete. Open the linked customer to continue to invoicing.") }}</p>{% endif %}
+  </div>
+</div>
+{%- endmacro %}

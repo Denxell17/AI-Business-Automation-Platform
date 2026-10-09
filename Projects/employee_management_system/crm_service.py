@@ -2,6 +2,7 @@
 
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import NamedTuple
 from uuid import uuid4
 
 from authorization import MANAGE_CRM, user_has_permission
@@ -26,6 +27,11 @@ ALLOWED_LEAD_STAGE_TRANSITIONS = {
     "unqualified": {"unqualified", "contacted"},
     "converted": {"converted"},
 }
+
+
+class LeadConversionResult(NamedTuple):
+    customer_id: str | None
+    converted_now: bool
 
 
 def _now() -> str:
@@ -114,20 +120,29 @@ def add_lead_note(actor: UserAccount, lead_id: str, body: str,
                                 _now(), database_file)
 
 
-def convert_lead(actor: UserAccount, lead_id: str,
-                 database_file: Path = DATABASE_FILE) -> str | None:
+def convert_lead_with_result(actor: UserAccount, lead_id: str,
+                             database_file: Path = DATABASE_FILE) -> LeadConversionResult:
     _require_manager(actor)
     existing = load_lead(lead_id, database_file)
     if existing is None:
-        return None
+        return LeadConversionResult(None, False)
     if existing["converted_customer_id"]:
-        return existing["converted_customer_id"]
+        return LeadConversionResult(existing["converted_customer_id"], False)
     customer_id = convert_lead_record(lead_id, str(uuid4()), actor["user_id"],
                                       _now(), database_file)
     if customer_id is not None:
-        return customer_id
+        return LeadConversionResult(customer_id, True)
     latest = load_lead(lead_id, database_file)
-    return latest["converted_customer_id"] if latest else None
+    return LeadConversionResult(
+        latest["converted_customer_id"] if latest else None,
+        False,
+    )
+
+
+def convert_lead(actor: UserAccount, lead_id: str,
+                 database_file: Path = DATABASE_FILE) -> str | None:
+    """Convert a qualified lead while preserving the existing service API."""
+    return convert_lead_with_result(actor, lead_id, database_file).customer_id
 
 
 def update_customer(actor: UserAccount, customer_id: str, name: str,

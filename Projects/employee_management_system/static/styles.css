@@ -1817,6 +1817,168 @@ textarea:disabled,
     font-size: 1.125rem;
 }
 
+/* CRM lifecycle guidance reuses the shared surface and semantic color tokens. */
+.crm-lifecycle-panel {
+    padding: 1rem 1.25rem;
+    background: var(--color-background);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-panel);
+}
+
+.crm-lifecycle-panel > h2 {
+    margin: 0 0 0.85rem;
+    font-size: var(--text-section-title);
+}
+
+.crm-lifecycle {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.crm-lifecycle li {
+    position: relative;
+    display: grid;
+    min-width: 0;
+    justify-items: center;
+    gap: 0.35rem;
+    color: var(--color-muted);
+    font-size: var(--text-caption);
+    text-align: center;
+}
+
+.crm-lifecycle li:not(:last-child)::after {
+    content: "";
+    position: absolute;
+    z-index: 0;
+    top: 0.65rem;
+    left: calc(50% + 0.8rem);
+    width: calc(100% - 1.6rem);
+    height: 2px;
+    background: var(--color-border);
+}
+
+.crm-lifecycle li > span {
+    z-index: 1;
+    width: 1.4rem;
+    height: 1.4rem;
+    display: grid;
+    place-items: center;
+    background: var(--color-surface);
+    border: 2px solid var(--color-control-border);
+    border-radius: 50%;
+    color: var(--color-muted);
+    font-size: 0.65rem;
+    font-weight: var(--weight-bold);
+}
+
+.crm-lifecycle li.is-complete:not(:last-child)::after {
+    background: var(--color-success);
+}
+
+.crm-lifecycle li.is-complete > span {
+    background: var(--color-success-soft);
+    border-color: var(--color-success);
+    color: var(--color-success);
+}
+
+.crm-lifecycle li.is-current {
+    color: var(--color-text);
+}
+
+.crm-lifecycle li.is-current > span {
+    background: var(--color-action-soft);
+    border-color: var(--color-action-border);
+    color: var(--color-link);
+}
+
+.crm-guidance strong,
+.crm-guidance p,
+.crm-conversion-callout h2,
+.crm-conversion-callout p,
+.crm-empty-state h2,
+.crm-empty-state p {
+    margin: 0;
+}
+
+.crm-guidance p,
+.crm-conversion-callout p,
+.crm-empty-state p {
+    margin-top: 0.25rem;
+    color: var(--color-muted);
+}
+
+.crm-conversion-callout {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    padding: 1.1rem 1.25rem;
+    background: var(--color-success-soft);
+    border: 1px solid var(--color-success);
+    border-radius: var(--radius-panel);
+}
+
+.crm-conversion-callout h2 {
+    font-size: var(--text-section-title);
+}
+
+.crm-conversion-callout form,
+.crm-conversion-callout .ui-button {
+    flex: 0 0 auto;
+}
+
+.crm-detail-actions:empty {
+    display: none;
+}
+
+.crm-empty-state {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1rem;
+    text-align: left;
+}
+
+.crm-empty-state > .ui-icon {
+    width: 2rem;
+    height: 2rem;
+    flex: 0 0 auto;
+    color: var(--color-link);
+}
+
+.crm-empty-state > div {
+    max-width: 30rem;
+}
+
+.crm-empty-state > .ui-button {
+    flex: 0 0 auto;
+}
+
+@media (max-width: 640px) {
+    .crm-lifecycle-panel {
+        padding-inline: 0.75rem;
+    }
+
+    .crm-lifecycle li {
+        font-size: 0.65rem;
+    }
+
+    .crm-conversion-callout,
+    .crm-empty-state {
+        align-items: stretch;
+        flex-direction: column;
+        text-align: center;
+    }
+
+    .crm-conversion-callout .ui-button,
+    .crm-empty-state > .ui-button {
+        width: 100%;
+    }
+}
+
 .employee-form-grid {
     display: grid;
     grid-template-columns:

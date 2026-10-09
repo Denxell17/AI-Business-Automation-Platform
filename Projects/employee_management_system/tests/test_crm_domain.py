@@ -8,7 +8,14 @@ from fastapi.testclient import TestClient
 from tests.web_auth import sign_in, sign_out
 
 from crm_repository import list_crm_history, load_customer, load_lead
-from crm_service import add_lead_note, convert_lead, create_lead, update_customer, update_lead
+from crm_service import (
+    add_lead_note,
+    convert_lead,
+    convert_lead_with_result,
+    create_lead,
+    update_customer,
+    update_lead,
+)
 from dashboard_repository import load_dashboard_snapshot
 from database import get_database_connection, load_user_account_by_username
 from user_service import register_user_account
@@ -50,8 +57,12 @@ class TestCrmDomain(unittest.TestCase):
                                     "lead@example.test", "", "Example Co", "qualified",
                                     self.admin["user_id"], self.database_file))
         self.assertIsNotNone(add_lead_note(self.admin, lead_id, "Called once", self.database_file))
-        customer_id = convert_lead(self.admin, lead_id, self.database_file)
-        self.assertEqual(convert_lead(self.admin, lead_id, self.database_file), customer_id)
+        conversion = convert_lead_with_result(self.admin, lead_id, self.database_file)
+        customer_id = conversion.customer_id
+        self.assertTrue(conversion.converted_now)
+        duplicate = convert_lead_with_result(self.admin, lead_id, self.database_file)
+        self.assertEqual(duplicate.customer_id, customer_id)
+        self.assertFalse(duplicate.converted_now)
         self.assertEqual(load_lead(lead_id, self.database_file)["stage"], "converted")
         self.assertEqual(load_customer(customer_id, self.database_file)["source_lead_id"], lead_id)
         self.assertTrue(update_customer(self.admin, customer_id, "Example Customer",
@@ -74,10 +85,17 @@ class TestCrmDomain(unittest.TestCase):
         self.assertEqual(self.client.get("/leads", follow_redirects=False).status_code, 303)
         self.sign_in("CrmViewer", "SecureViewerPassword123!")
         self.assertEqual(self.client.get("/leads").status_code, 200)
+        viewer_customers = self.client.get("/customers")
+        self.assertIn("Customers appear here after", viewer_customers.text)
+        self.assertIn(">View leads<", viewer_customers.text)
+        self.assertNotIn('href="http://testserver/leads/new"', viewer_customers.text)
         self.assertEqual(self.client.get("/leads/new").status_code, 403)
         self.assertEqual(self.client.post("/leads/new", data={}).status_code, 403)
         sign_out(self.client)
         self.sign_in()
+        admin_customers = self.client.get("/customers")
+        self.assertIn(">Create lead<", admin_customers.text)
+        self.assertIn('href="http://testserver/leads/new"', admin_customers.text)
         self.assertEqual(self.client.post("/leads/new", data={"name": "No token"}).status_code, 403)
         token = self.csrf("/leads/new")
         response = self.client.post("/leads/new", data={
@@ -99,4 +117,86 @@ class TestCrmDomain(unittest.TestCase):
         token = self.csrf("/leads/new")
         self.client.post("/leads/new", data={"csrf_token": token, "name": "Acme % Client"})
         self.assertIn("Acme % Client", self.client.get("/leads?q=Acme").text)
-        self.assertIn("No leads found", self.client.get("/leads?q=Acme_Unknown").text)
+        self.assertIn("No matching leads found", self.client.get("/leads?q=Acme_Unknown").text)
+
+    def test_browser_lifecycle_guidance_conversion_and_invoice_handoff(self):
+        self.sign_in()
+        token = self.csrf("/leads/new")
+        created = self.client.post("/leads/new", data={
+            "csrf_token": token,
+            "name": "Guided Lead",
+            "email": "guided@example.test",
+            "company": "Guided Company",
+            "owner_user_id": str(self.admin["user_id"]),
+        }, follow_redirects=False)
+        self.assertEqual(created.status_code, 303, created.text)
+        lead_path = created.headers["location"]
+        lead_id = lead_path.rsplit("/", 1)[-1]
+
+        new_detail = self.client.get(lead_path)
+        self.assertIn("Lead lifecycle stages", new_detail.text)
+        self.assertIn("Mark this lead as Contacted", new_detail.text)
+        self.assertNotIn(">Convert to customer<", new_detail.text)
+        new_edit = self.client.get(f"/leads/{lead_id}/edit")
+        self.assertIn("Only valid next stages are shown", new_edit.text)
+        self.assertNotIn('value="qualified"', new_edit.text)
+
+        contacted = self.client.post(f"/leads/{lead_id}/edit", data={
+            "csrf_token": token,
+            "name": "Guided Lead",
+            "email": "guided@example.test",
+            "company": "Guided Company",
+            "owner_user_id": str(self.admin["user_id"]),
+            "stage": "contacted",
+        }, follow_redirects=False)
+        self.assertEqual(contacted.status_code, 303, contacted.text)
+        contacted_edit = self.client.get(f"/leads/{lead_id}/edit")
+        self.assertIn('value="qualified"', contacted_edit.text)
+        self.assertIn("Mark this lead as Qualified", contacted_edit.text)
+
+        qualified = self.client.post(f"/leads/{lead_id}/edit", data={
+            "csrf_token": token,
+            "name": "Guided Lead",
+            "email": "guided@example.test",
+            "company": "Guided Company",
+            "owner_user_id": str(self.admin["user_id"]),
+            "stage": "qualified",
+        }, follow_redirects=False)
+        self.assertEqual(qualified.status_code, 303, qualified.text)
+        qualified_detail = self.client.get(lead_path)
+        self.assertIn("Ready to become a customer", qualified_detail.text)
+        self.assertIn(">Convert to customer<", qualified_detail.text)
+        self.assertEqual(
+            self.client.post(f"/leads/{lead_id}/convert", data={}).status_code,
+            403,
+        )
+
+        sign_out(self.client)
+        self.sign_in("CrmViewer", "SecureViewerPassword123!")
+        viewer_detail = self.client.get(lead_path)
+        self.assertNotIn(">Convert to customer<", viewer_detail.text)
+        self.assertEqual(
+            self.client.post(f"/leads/{lead_id}/convert", data={
+                "csrf_token": token,
+            }).status_code,
+            403,
+        )
+
+        sign_out(self.client)
+        self.sign_in()
+        token = self.csrf(lead_path)
+        converted = self.client.post(f"/leads/{lead_id}/convert", data={
+            "csrf_token": token,
+        }, follow_redirects=False)
+        self.assertEqual(converted.status_code, 303, converted.text)
+        customer_path = converted.headers["location"]
+        customer_id = customer_path.rsplit("/", 1)[-1]
+        customer_detail = self.client.get(customer_path)
+        self.assertIn(">Create invoice<", customer_detail.text)
+        self.assertIn(f"/invoices/new?customer_id={customer_id}", customer_detail.text)
+
+        repeated = self.client.post(f"/leads/{lead_id}/convert", data={
+            "csrf_token": token,
+        }, follow_redirects=False)
+        self.assertEqual(repeated.status_code, 303)
+        self.assertEqual(repeated.headers["location"], customer_path)

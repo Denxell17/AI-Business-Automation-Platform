@@ -6,14 +6,14 @@ from fastapi import FastAPI, Request
 from fastapi.responses import RedirectResponse, Response
 from fastapi.templating import Jinja2Templates
 
-from authorization import MANAGE_CRM, VIEW_CRM, user_has_permission
+from authorization import MANAGE_CRM, MANAGE_INVOICES, VIEW_CRM, user_has_permission
 from i18n import LocalizedHTMLResponse as HTMLResponse
 from crm_repository import (
     list_assignable_owners, list_crm_history, list_customers,
     list_lead_notes, list_leads, load_customer, load_lead,
 )
 from crm_service import (
-    ALLOWED_LEAD_STAGE_TRANSITIONS, add_lead_note, convert_lead,
+    ALLOWED_LEAD_STAGE_TRANSITIONS, add_lead_note, convert_lead_with_result,
     create_lead, update_customer, update_lead,
 )
 from models import CUSTOMER_STATUSES
@@ -36,6 +36,7 @@ def register_crm_routes(application: FastAPI, templates: Jinja2Templates,
             "page_title": title, "active_page": active, "current_user": actor,
             "csrf_token": csrf_token_for(request),
             "can_manage_crm": user_has_permission(actor, MANAGE_CRM),
+            "can_manage_invoices": user_has_permission(actor, MANAGE_INVOICES),
             **context,
         })
 
@@ -167,11 +168,23 @@ def register_crm_routes(application: FastAPI, templates: Jinja2Templates,
             return denied
         if await form_values(request) is None:
             return HTMLResponse("Invalid CSRF token.", status_code=403)
-        customer_id = convert_lead(actor, lead_id, database_file)
-        if customer_id is None:
+        result = convert_lead_with_result(actor, lead_id, database_file)
+        if result.customer_id is None:
             return HTMLResponse("Only qualified leads can be converted.", status_code=409)
-        log_activity(f"Lead {lead_id} converted to customer {customer_id} by user {actor['username']}.")
-        return RedirectResponse(url=request.url_for("customer_detail", customer_id=customer_id), status_code=303)
+        if result.converted_now:
+            log_activity(
+                f"Lead {lead_id} converted to customer {result.customer_id} "
+                f"by user {actor['username']}."
+            )
+        else:
+            log_activity(
+                f"Repeat conversion request for lead {lead_id} returned existing "
+                f"customer {result.customer_id} for user {actor['username']}."
+            )
+        return RedirectResponse(
+            url=request.url_for("customer_detail", customer_id=result.customer_id),
+            status_code=303,
+        )
 
     @application.get("/customers", response_class=HTMLResponse)
     def customer_directory(request: Request, q: str = "") -> Response:
