@@ -41,6 +41,8 @@ from models import (
     VALID_WORKFLOW_SCHEDULE_TYPES,
     VALID_WORKFLOW_SCHEDULE_WEEKDAYS,
 )
+from webhook_contract import build_webhook_envelope
+from webhook_delivery_service import build_outbound_webhook_delivery
 
 
 SCHEDULE_TIME_PATTERN = re.compile(r"(?:[01]\d|2[0-3]):[0-5]\d")
@@ -94,6 +96,7 @@ def create_workflow(
         "name": normalized_name,
         "description": normalized_description,
         "status": normalized_status,
+        "n8n_enabled": False,
         "created_by_user_id": stored_user["user_id"],
         "created_at": timestamp,
         "updated_at": timestamp,
@@ -341,8 +344,12 @@ def update_workflow(
     description: str,
     status: str,
     database_file: Path = DATABASE_FILE,
+    n8n_enabled: bool | None = None,
 ) -> bool:
-    if not current_user["is_active"]:
+    if (
+        not current_user["is_active"]
+        or (n8n_enabled is not None and type(n8n_enabled) is not bool)
+    ):
         return False
 
     stored_user = load_user_account_by_username(
@@ -392,6 +399,11 @@ def update_workflow(
         "name": normalized_name,
         "description": normalized_description,
         "status": normalized_status,
+        "n8n_enabled": (
+            existing_workflow["n8n_enabled"]
+            if n8n_enabled is None
+            else n8n_enabled
+        ),
         "created_by_user_id": existing_workflow[
             "created_by_user_id"
         ],
@@ -477,6 +489,7 @@ def start_scheduled_workflow_execution(
     occurrence: WorkflowScheduleOccurrence,
     started_at: str,
     database_file: Path = DATABASE_FILE,
+    queue_n8n_delivery: bool = False,
 ) -> WorkflowExecution | None:
     """Create one idempotent, occurrence-bound scheduled workflow run."""
     if (
@@ -489,6 +502,7 @@ def start_scheduled_workflow_execution(
         )
         or not isinstance(started_at, str)
         or not started_at.strip()
+        or type(queue_n8n_delivery) is not bool
     ):
         return None
     workflow = load_workflow_by_id(occurrence["workflow_id"], database_file)
@@ -528,8 +542,33 @@ def start_scheduled_workflow_execution(
             }
             for task in tasks
         ]
+    outbound_delivery = None
+    if can_start and queue_n8n_delivery and workflow["n8n_enabled"]:
+        try:
+            occurred_at = datetime.fromisoformat(
+                started_at.replace("Z", "+00:00")
+            )
+        except ValueError:
+            return None
+        if occurred_at.tzinfo is None:
+            return None
+        envelope = build_webhook_envelope(
+            str(uuid4()),
+            execution["execution_id"],
+            "workflow.execution.started",
+            occurred_at,
+            {
+                "execution_id": execution["execution_id"],
+                "workflow_id": execution["workflow_id"],
+                "trigger_type": "schedule",
+            },
+        )
+        outbound_delivery = build_outbound_webhook_delivery(
+            envelope, occurred_at,
+        )
     if not create_scheduled_workflow_execution(
         execution, task_records, database_file,
+        outbound_delivery=outbound_delivery,
     ):
         return None
     return execution

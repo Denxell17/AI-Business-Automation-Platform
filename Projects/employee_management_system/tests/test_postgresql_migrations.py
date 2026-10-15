@@ -28,6 +28,9 @@ class TestPostgresqlMigrations(unittest.TestCase):
                 "007_create_invoice_document_domain.sql",
                 "008_add_user_session_version.sql",
                 "009_add_user_interface_language.sql",
+                "010_add_workflow_n8n_outbox_controls.sql",
+                "011_add_n8n_demo_event_acceptance.sql",
+                "012_move_n8n_callback_authority.sql",
             ],
         )
 
@@ -102,6 +105,42 @@ class TestPostgresqlMigrations(unittest.TestCase):
             "CHECK (interface_language IN ('en', 'ja'))",
             interface_language_sql,
         )
+
+    def test_n8n_outbox_migration_defaults_workflows_to_opted_out(self):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        integration_sql = migration_files[9].read_text(encoding="utf-8-sig")
+
+        self.assertIn(
+            "n8n_enabled BOOLEAN NOT NULL DEFAULT FALSE",
+            integration_sql,
+        )
+        self.assertIn(
+            "webhook_deliveries_completed_at_index",
+            integration_sql,
+        )
+
+    def test_n8n_demo_acceptance_migration_has_atomic_idempotency_and_leases(self):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        integration_sql = migration_files[10].read_text(encoding="utf-8-sig")
+
+        self.assertIn("event_id UUID PRIMARY KEY", integration_sql)
+        self.assertIn("callback_event_id UUID NOT NULL UNIQUE", integration_sql)
+        self.assertIn("attempt_count INTEGER NOT NULL DEFAULT 0", integration_sql)
+        self.assertIn("lease_expires_at TIMESTAMPTZ", integration_sql)
+        self.assertNotIn("raw_body", integration_sql)
+
+    def test_n8n_callback_authority_migration_tracks_atomic_outcomes(self):
+        migration_files = load_postgresql_migration_files(
+            POSTGRESQL_MIGRATIONS_DIRECTORY
+        )
+        integration_sql = migration_files[11].read_text(encoding="utf-8-sig")
+        self.assertIn("outcome_attempt INTEGER NOT NULL DEFAULT 0", integration_sql)
+        self.assertIn("outcome_attempt <= attempt_count", integration_sql)
+        self.assertIn("callback_attempt_count INTEGER NOT NULL DEFAULT 0", integration_sql)
 
     def test_agent_template_migration_contains_expected_contract(
         self,

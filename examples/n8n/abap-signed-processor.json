@@ -1,0 +1,80 @@
+{
+  "name": "ABAP durable synthetic processor",
+  "id": "abapM3Demo000002",
+  "active": false,
+  "nodes": [
+    {
+      "parameters": { "rule": { "interval": [{ "field": "seconds", "secondsInterval": 2 }] } },
+      "id": "45cdfdc9-4a51-4de0-89ef-3d9ae53097a7",
+      "name": "Poll durable accepted events",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1.3,
+      "position": [0, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST", "url": "http://demo-provider:8090/claim",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true, "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify({ 'Content-Type': 'application/json' }) }}",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "{}", "options": { "timeout": 3000 }
+      },
+      "id": "2706c699-8050-4eb0-847a-a4c78647ef48",
+      "name": "Claim durable event", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.4,
+      "position": [240, 0],
+      "credentials": { "httpHeaderAuth": { "id": "abapProviderAuth001", "name": "ABAP private provider authentication" } }
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": { "caseSensitive": true, "leftValue": "", "typeValidation": "strict", "version": 2 },
+          "conditions": [{ "id": "claimed", "leftValue": "={{ $json.claimed }}", "rightValue": true, "operator": { "type": "boolean", "operation": "true", "singleValue": true } }],
+          "combinator": "and"
+        }, "options": {}
+      },
+      "id": "e81153f1-7ccd-46d4-b7d0-46c7d797e7ec",
+      "name": "Event claimed?", "type": "n8n-nodes-base.if", "typeVersion": 2.2,
+      "position": [480, 0]
+    },
+    {
+      "parameters": {
+        "method": "POST", "url": "http://demo-provider:8090/demo-action",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true, "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify({ 'Content-Type': 'application/json' }) }}",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ event_id: $json.event_id }) }}",
+        "options": { "timeout": 3000 }
+      },
+      "id": "29f22f38-8eea-4b0c-8bf7-0f4e92b168b1",
+      "name": "Run deterministic synthetic action", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.4,
+      "position": [720, -80],
+      "credentials": { "httpHeaderAuth": { "id": "abapProviderAuth001", "name": "ABAP private provider authentication" } }
+    },
+    {
+      "parameters": {
+        "method": "POST", "url": "http://demo-provider:8090/outcome",
+        "authentication": "genericCredentialType", "genericAuthType": "httpHeaderAuth",
+        "sendHeaders": true, "specifyHeaders": "json",
+        "jsonHeaders": "={{ JSON.stringify({ 'Content-Type': 'application/json' }) }}",
+        "sendBody": true, "contentType": "raw", "rawContentType": "application/json",
+        "body": "={{ JSON.stringify({ event_id: $('Claim durable event').first().json.event_id, result_status: $json.status }) }}",
+        "options": { "timeout": 15000 }
+      },
+      "id": "35288ca1-a257-4bf5-8866-ad31aa362ea4",
+      "name": "Report synthetic outcome", "type": "n8n-nodes-base.httpRequest", "typeVersion": 4.4,
+      "position": [960, -80],
+      "credentials": { "httpHeaderAuth": { "id": "abapProviderAuth001", "name": "ABAP private provider authentication" } }
+    }
+  ],
+  "connections": {
+    "Poll durable accepted events": { "main": [[{ "node": "Claim durable event", "type": "main", "index": 0 }]] },
+    "Claim durable event": { "main": [[{ "node": "Event claimed?", "type": "main", "index": 0 }]] },
+    "Event claimed?": { "main": [[{ "node": "Run deterministic synthetic action", "type": "main", "index": 0 }], []] },
+    "Run deterministic synthetic action": { "main": [[{ "node": "Report synthetic outcome", "type": "main", "index": 0 }]] }
+  },
+  "settings": { "executionOrder": "v1", "saveDataErrorExecution": "none", "saveDataSuccessExecution": "none" },
+  "versionId": "248b609b-8ef8-46cc-9d79-3894d5c92874",
+  "meta": { "templateCredsSetupCompleted": true }, "pinData": {}
+}

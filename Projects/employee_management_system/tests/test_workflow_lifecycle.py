@@ -70,6 +70,37 @@ class TestWorkflowLifecycle(unittest.TestCase):
 
         self.assertEqual(workflow["name"], "Initial workflow")
         self.assertEqual(workflow["status"], "draft")
+        self.assertFalse(workflow["n8n_enabled"])
+
+    def test_administrator_can_explicitly_opt_workflow_into_n8n(self):
+        self.assertTrue(update_workflow(
+            self.administrator,
+            "WF-LIFECYCLE-001",
+            "Initial workflow",
+            "Original description.",
+            "inactive",
+            self.database_file,
+            n8n_enabled=True,
+        ))
+        workflow = load_workflow_by_id(
+            "WF-LIFECYCLE-001", self.database_file,
+        )
+
+        self.assertTrue(workflow["n8n_enabled"])
+
+        stale_viewer = dict(self.viewer)
+        self.assertFalse(update_workflow(
+            stale_viewer,
+            "WF-LIFECYCLE-001",
+            "Viewer update",
+            "",
+            "inactive",
+            self.database_file,
+            n8n_enabled=False,
+        ))
+        self.assertTrue(load_workflow_by_id(
+            "WF-LIFECYCLE-001", self.database_file,
+        )["n8n_enabled"])
 
     def test_administrator_can_update_existing_workflow(self):
         before_update = load_workflow_by_id(

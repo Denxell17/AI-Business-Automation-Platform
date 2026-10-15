@@ -33,6 +33,7 @@
         <header class="panel-heading"><div><h2 id="workflow-summary-heading">{{ _("Workflow overview") }}</h2><p>{{ _("Configuration and record history.") }}</p></div></header>
         <dl class="workflow-summary-grid">
             <div><dt>{{ _("Status") }}</dt><dd>{{ status(workflow["status"]) }}</dd></div>
+            <div><dt>{{ _("n8n dispatch") }}</dt><dd>{{ status('enabled' if workflow["n8n_enabled"] else 'disabled') }}</dd></div>
             <div><dt>{{ _("Created") }}</dt><dd><time datetime="{{ workflow['created_at'] }}" data-local-datetime>{{ workflow["created_at"] }}</time></dd></div>
             <div><dt>{{ _("Last updated") }}</dt><dd><time datetime="{{ workflow['updated_at'] }}" data-local-datetime>{{ workflow["updated_at"] }}</time></dd></div>
             <div class="workflow-summary-description"><dt>{{ _("Description") }}</dt><dd>{{ workflow["description"] or _("No description provided.") }}</dd></div>

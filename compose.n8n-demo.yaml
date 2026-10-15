@@ -35,34 +35,66 @@ services:
       retries: 3
       start_period: 20s
 
+  n8n-credential-bootstrap:
+    image: n8nio/n8n:2.42.3@sha256:240eaa2a3d491adac5817aa4c3f1c521bb18ec79f6e448517158d5220ee0f37b
+    profiles: ["n8n-demo"]
+    restart: "no"
+    environment:
+      N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      N8N_ENCRYPTION_KEY: ${ABAP_N8N_ENCRYPTION_KEY:?Set an isolated n8n encryption key}
+    volumes:
+      - n8n_demo_data:/home/node/.n8n
+      - ./examples/n8n:/workflows:ro
+    secrets:
+      - abap_n8n_provider_token
+    tmpfs:
+      - /run/abap-bootstrap:rw,noexec,nosuid,nodev,size=16m,uid=1000,gid=1000,mode=0700
+    network_mode: none
+    read_only: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    entrypoint: ["/bin/sh", "-c"]
+    command:
+      - >-
+        node /workflows/build-demo-credential.mjs /run/secrets/abap_n8n_provider_token /run/abap-bootstrap/credential.json &&
+        n8n import:credentials --input=/run/abap-bootstrap/credential.json &&
+        rm -f /run/abap-bootstrap/credential.json
+
   n8n:
-    image: n8nio/n8n:1.121.3
+    image: n8nio/n8n:2.42.3@sha256:240eaa2a3d491adac5817aa4c3f1c521bb18ec79f6e448517158d5220ee0f37b
     profiles: ["n8n-demo"]
     restart: unless-stopped
     environment:
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_PERSONALIZATION_ENABLED: "false"
+      N8N_COMMUNITY_PACKAGES_ENABLED: "false"
+      N8N_UNVERIFIED_PACKAGES_ENABLED: "false"
+      N8N_PUBLIC_API_DISABLED: "true"
       N8N_SECURE_COOKIE: "false"
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
-      N8N_RUNNERS_ENABLED: "true"
-      N8N_BLOCK_ENV_ACCESS_IN_NODE: "false"
+      N8N_BLOCK_ENV_ACCESS_IN_NODE: "true"
       N8N_GIT_NODE_DISABLE_BARE_REPOS: "true"
       DB_SQLITE_POOL_SIZE: "2"
-      NODE_FUNCTION_ALLOW_BUILTIN: crypto
       N8N_ENCRYPTION_KEY: ${ABAP_N8N_ENCRYPTION_KEY:?Set an isolated n8n encryption key}
-      ABAP_OUTBOUND_WEBHOOK_SECRET: ${ABAP_OUTBOUND_WEBHOOK_SECRET:?Set an isolated demo outbound secret}
-      ABAP_INBOUND_WEBHOOK_SECRET: ${ABAP_INBOUND_WEBHOOK_SECRET:?Set a different isolated demo inbound secret}
-      ABAP_CALLBACK_URL: http://web:8000/integrations/webhooks/callback
     volumes:
       - n8n_demo_data:/home/node/.n8n
       - ./examples/n8n:/workflows:ro
+    networks:
+      - default
+      - abap_n8n_private
     entrypoint: ["/bin/sh", "-c"]
     command:
       - >-
-        if ! n8n list:workflow --onlyId | grep -Fxq abapM3Demo000001; then
-          n8n import:workflow --input=/workflows/abap-signed-workflow.json;
-        fi && n8n update:workflow --id=abapM3Demo000001 --active=true && n8n start
+        n8n import:workflow --input=/workflows/abap-signed-workflow.json &&
+        n8n import:workflow --input=/workflows/abap-signed-processor.json &&
+        n8n publish:workflow --id=abapM3Demo000001 &&
+        n8n publish:workflow --id=abapM3Demo000002 &&
+        n8n start
     depends_on:
+      n8n-credential-bootstrap:
+        condition: service_completed_successfully
       web:
         condition: service_healthy
       demo-provider:
@@ -72,6 +104,35 @@ services:
     build: .
     command: ["python", "-m", "n8n_demo_provider"]
     restart: unless-stopped
+    environment:
+      DATABASE_URL: ${DATABASE_URL:?Set the isolated demo PostgreSQL URL with host database}
+      ABAP_OUTBOUND_WEBHOOK_SECRET: ${ABAP_OUTBOUND_WEBHOOK_SECRET:?Set an isolated demo outbound secret}
+      ABAP_INBOUND_WEBHOOK_SECRET: ${ABAP_INBOUND_WEBHOOK_SECRET:?Set a different isolated demo inbound secret}
+      ABAP_CALLBACK_URL: http://web:8000/integrations/webhooks/callback
+      ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS: ${ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS:-300}
+      ABAP_N8N_DEMO_LEASE_SECONDS: ${ABAP_N8N_DEMO_LEASE_SECONDS:-30}
+      ABAP_N8N_DEMO_MAX_ATTEMPTS: ${ABAP_N8N_DEMO_MAX_ATTEMPTS:-3}
+      ABAP_N8N_CALLBACK_MAX_ATTEMPTS: ${ABAP_N8N_CALLBACK_MAX_ATTEMPTS:-3}
+      ABAP_N8N_CALLBACK_TIMEOUT_SECONDS: ${ABAP_N8N_CALLBACK_TIMEOUT_SECONDS:-3}
+      ABAP_N8N_CALLBACK_RETRY_WAIT_SECONDS: ${ABAP_N8N_CALLBACK_RETRY_WAIT_SECONDS:-1}
+    secrets:
+      - abap_n8n_provider_token
+    networks:
+      - default
+      - abap_n8n_private
+    cpus: 0.15
+    mem_limit: 256m
+    pids_limit: 64
+    read_only: true
+    tmpfs:
+      - /tmp:rw,noexec,nosuid,nodev,size=16m,uid=10001,gid=10001,mode=0700
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8090/health', timeout=5)"]
       interval: 15s
@@ -81,3 +142,11 @@ services:
 
 volumes:
   n8n_demo_data:
+
+networks:
+  abap_n8n_private:
+    internal: true
+
+secrets:
+  abap_n8n_provider_token:
+    file: ${ABAP_N8N_PROVIDER_TOKEN_FILE:?Set an absolute path to the provider-token file}

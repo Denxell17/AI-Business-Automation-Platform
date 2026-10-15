@@ -79,6 +79,21 @@
                 <label for="description">{{ _("Description") }}</label>
                 <textarea id="description" name="description" rows="5">{{ form_values.get('description', '') }}</textarea>
             </div>
+            <div class="form-field">
+                <label for="n8n_enabled">
+                    <input
+                        id="n8n_enabled"
+                        name="n8n_enabled"
+                        type="checkbox"
+                        value="true"
+                        {% if form_values.get('n8n_enabled', False) %}checked{% endif %}
+                    >
+                    {{ _("Send scheduled executions to n8n") }}
+                </label>
+                <p class="form-help-text">
+                    {{ _("Off by default. Dispatch also requires the global integration service to be enabled.") }}
+                </p>
+            </div>
         </section>
 
         <div class="employee-form-actions">

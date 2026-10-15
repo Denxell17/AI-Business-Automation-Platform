@@ -16,6 +16,8 @@ from database import (
     DATABASE_FILE,
     claim_due_outbound_webhook_deliveries,
     load_workflow_execution_by_id,
+    purge_expired_webhook_replay_events,
+    purge_terminal_webhook_deliveries,
     record_outbound_webhook_attempt,
 )
 from integration_config import IntegrationSettings, load_integration_settings
@@ -172,6 +174,24 @@ def run_webhook_retry_cycle(
     return outcomes
 
 
+def run_webhook_maintenance_cycle(
+    current_time: datetime,
+    settings: IntegrationSettings,
+    database_file: Path = DATABASE_FILE,
+) -> dict[str, int]:
+    """Prune expired replay claims and old terminal delivery metadata."""
+    now = current_time.astimezone(timezone.utc)
+    delivery_cutoff = now - timedelta(days=settings["delivery_retention_days"])
+    return {
+        "replay_events": purge_expired_webhook_replay_events(
+            _timestamp(now), database_file,
+        ),
+        "deliveries": purge_terminal_webhook_deliveries(
+            _timestamp(delivery_cutoff), database_file,
+        ),
+    }
+
+
 def run_webhook_retry_forever(
     settings: IntegrationSettings,
     database_file: Path = DATABASE_FILE,
@@ -180,9 +200,25 @@ def run_webhook_retry_forever(
 ) -> None:
     """Continue retry cycles until a graceful shutdown is requested."""
     selected_stop_event = stop_event if stop_event is not None else threading.Event()
+    next_maintenance_at: datetime | None = None
     while not selected_stop_event.is_set():
         try:
-            run_webhook_retry_cycle(now(), settings, database_file, stop_event=selected_stop_event)
+            current_time = now()
+            run_webhook_retry_cycle(
+                current_time, settings, database_file,
+                stop_event=selected_stop_event,
+            )
+            if next_maintenance_at is None or current_time >= next_maintenance_at:
+                outcomes = run_webhook_maintenance_cycle(
+                    current_time, settings, database_file,
+                )
+                next_maintenance_at = current_time + timedelta(
+                    seconds=settings["maintenance_interval_seconds"],
+                )
+                retry_worker_logger.info(
+                    "event=webhook_maintenance replay_events=%s deliveries=%s",
+                    outcomes["replay_events"], outcomes["deliveries"],
+                )
         except (OSError, sqlite3.Error, psycopg.Error, ValueError):
             retry_worker_logger.error("event=webhook_retry_cycle_failed")
         selected_stop_event.wait(settings["retry_poll_seconds"])

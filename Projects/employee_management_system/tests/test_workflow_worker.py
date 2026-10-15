@@ -12,6 +12,7 @@ import psycopg
 
 from database import (
     load_user_account_by_username,
+    load_webhook_deliveries,
     load_workflow_executions,
     load_workflow_task_executions,
 )
@@ -121,8 +122,12 @@ class TestWorkflowWorker(unittest.TestCase):
         self.assertEqual(second["started"], 0)
         self.assertEqual(len(load_workflow_executions("WF-WORKER", self.database_file)), 1)
 
-    def test_new_scheduled_execution_dispatches_only_a_minimal_started_event(self):
+    def test_opted_in_scheduled_execution_queues_without_network_io(self):
         self.create_schedule()
+        self.assertTrue(update_workflow(
+            self.admin, "WF-WORKER", "Worker workflow", "", "active",
+            self.database_file, n8n_enabled=True,
+        ))
         integration = load_integration_settings({
             "ABAP_INTEGRATIONS_ENABLED": "true",
             "ABAP_N8N_BASE_URL": "https://automation.example.test",
@@ -131,24 +136,85 @@ class TestWorkflowWorker(unittest.TestCase):
             "ABAP_OUTBOUND_WEBHOOK_SECRET": "outbound-worker-test-only-secret-1234567890",
             "ABAP_INBOUND_WEBHOOK_SECRET": "inbound-worker-test-only-secret-1234567890",
         })
-        with patch("workflow_worker.deliver_outbound_webhook") as deliver:
-            deliver.return_value = {
-                "sent": True, "duplicate": False, "delivery_id": "WHD-TEST",
-                "attempts": 1,
-            }
+        result = run_worker_cycle(
+            self.now(), self.settings, self.database_file,
+            integration_settings_loader=lambda: integration,
+        )
+        deliveries = load_webhook_deliveries(
+            database_file=self.database_file,
+        )
+
+        self.assertEqual(result["started"], 1)
+        self.assertEqual(len(deliveries), 1)
+        self.assertEqual(deliveries[0]["status"], "pending")
+        self.assertEqual(deliveries[0]["event_type"], "workflow.execution.started")
+        self.assertEqual(deliveries[0]["attempt_count"], 0)
+        self.assertEqual(
+            deliveries[0]["correlation_id"],
+            load_workflow_executions("WF-WORKER", self.database_file)[0]["execution_id"],
+        )
+
+    def test_global_disable_preserves_opted_in_workflow_without_outbox(self):
+        self.create_schedule()
+        self.assertTrue(update_workflow(
+            self.admin, "WF-WORKER", "Worker workflow", "", "active",
+            self.database_file, n8n_enabled=True,
+        ))
+
+        result = run_worker_cycle(
+            self.now(), self.settings, self.database_file,
+            integration_settings_loader=lambda: load_integration_settings({}),
+        )
+
+        self.assertEqual(result["started"], 1)
+        self.assertEqual(
+            load_webhook_deliveries(database_file=self.database_file), [],
+        )
+
+    def test_invalid_outbox_rolls_back_scheduled_execution_atomically(self):
+        self.create_schedule()
+        self.assertTrue(update_workflow(
+            self.admin, "WF-WORKER", "Worker workflow", "", "active",
+            self.database_file, n8n_enabled=True,
+        ))
+        integration = load_integration_settings({
+            "ABAP_INTEGRATIONS_ENABLED": "true",
+            "ABAP_N8N_BASE_URL": "https://automation.example.test",
+            "ABAP_N8N_WORKFLOW_PATH": "/webhook/v1/workflow",
+            "ABAP_INTEGRATION_ALLOWED_HOSTS": "automation.example.test",
+            "ABAP_OUTBOUND_WEBHOOK_SECRET": (
+                "outbound-atomic-test-secret-1234567890"
+            ),
+            "ABAP_INBOUND_WEBHOOK_SECRET": (
+                "inbound-atomic-test-secret-1234567890"
+            ),
+        })
+        original_builder = __import__(
+            "workflow_service",
+        ).build_outbound_webhook_delivery
+
+        def mismatched_delivery(*args, **kwargs):
+            delivery = original_builder(*args, **kwargs)
+            delivery["correlation_id"] = "WFE-MISMATCHED"
+            return delivery
+
+        with patch(
+            "workflow_service.build_outbound_webhook_delivery",
+            side_effect=mismatched_delivery,
+        ):
             result = run_worker_cycle(
                 self.now(), self.settings, self.database_file,
+                sleep=lambda _delay: None,
                 integration_settings_loader=lambda: integration,
             )
 
-        envelope = deliver.call_args.args[1]
-        self.assertEqual(result["started"], 1)
-        self.assertEqual(envelope["event_type"], "workflow.execution.started")
+        self.assertEqual(result["failed"], 1)
         self.assertEqual(
-            set(envelope["data"]),
-            {"execution_id", "workflow_id", "trigger_type"},
+            load_workflow_executions("WF-WORKER", self.database_file), [],
         )
-        self.assertEqual(envelope["data"]["trigger_type"], "schedule")
+        self.assertEqual(
+            load_webhook_deliveries(database_file=self.database_file), [],
+        )
 
     def test_start_retry_uses_bounded_exponential_backoff(self):
         self.create_schedule()
@@ -282,6 +348,7 @@ class TestPostgresqlWorkflowWorkerConcurrency(unittest.TestCase):
         ))
         self.assertTrue(update_workflow(
             self.admin, self.workflow_id, "PostgreSQL worker", "", "active",
+            n8n_enabled=True,
         ))
         self.assertTrue(create_workflow_schedule(
             self.admin, self.schedule_id, self.workflow_id, "daily", "09:30", "",
@@ -290,10 +357,28 @@ class TestPostgresqlWorkflowWorkerConcurrency(unittest.TestCase):
         self.settings = load_worker_settings(
             {"ABAP_WORKER_ENABLED": "true", "ABAP_WORKER_CLAIM_LIMIT": "10"}
         )
+        self.integration = load_integration_settings({
+            "ABAP_INTEGRATIONS_ENABLED": "true",
+            "ABAP_N8N_BASE_URL": "https://automation.example.test",
+            "ABAP_N8N_WORKFLOW_PATH": "/webhook/v1/workflow",
+            "ABAP_INTEGRATION_ALLOWED_HOSTS": "automation.example.test",
+            "ABAP_OUTBOUND_WEBHOOK_SECRET": (
+                "outbound-pg-worker-test-secret-1234567890"
+            ),
+            "ABAP_INBOUND_WEBHOOK_SECRET": (
+                "inbound-pg-worker-test-secret-1234567890"
+            ),
+        })
 
     def tearDown(self):
         with psycopg.connect(TEST_DATABASE_URL) as connection:
             with connection.cursor() as cursor:
+                cursor.execute(
+                    "DELETE FROM webhook_deliveries WHERE correlation_id IN "
+                    "(SELECT execution_id FROM workflow_executions "
+                    "WHERE workflow_id = %s)",
+                    (self.workflow_id,),
+                )
                 cursor.execute(
                     """DELETE FROM workflow_task_executions
                        WHERE execution_id IN (
@@ -329,7 +414,11 @@ class TestPostgresqlWorkflowWorkerConcurrency(unittest.TestCase):
 
         with ThreadPoolExecutor(max_workers=2) as workers:
             results = list(workers.map(
-                lambda _value: run_worker_cycle(current_time, self.settings),
+                lambda _value: run_worker_cycle(
+                    current_time,
+                    self.settings,
+                    integration_settings_loader=lambda: self.integration,
+                ),
                 range(2),
             ))
 
@@ -337,6 +426,12 @@ class TestPostgresqlWorkflowWorkerConcurrency(unittest.TestCase):
         self.assertEqual(len(executions), 1)
         self.assertEqual(executions[0]["trigger_type"], "schedule")
         self.assertEqual(sum(result["started"] for result in results), 1)
+        deliveries = [
+            delivery for delivery in load_webhook_deliveries()
+            if delivery["correlation_id"] == executions[0]["execution_id"]
+        ]
+        self.assertEqual(len(deliveries), 1)
+        self.assertEqual(deliveries[0]["status"], "pending")
 
 
 if __name__ == "__main__":

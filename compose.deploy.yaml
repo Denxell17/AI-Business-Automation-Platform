@@ -1,9 +1,30 @@
 name: abap-deploy
 
+x-integration-environment: &integration-environment
+  ABAP_INTEGRATIONS_ENABLED: ${ABAP_INTEGRATIONS_ENABLED:-false}
+  ABAP_N8N_PRIVATE_DEVELOPMENT_NETWORK: ${ABAP_N8N_PRIVATE_DEVELOPMENT_NETWORK:-false}
+  ABAP_N8N_BASE_URL: ${ABAP_N8N_BASE_URL:-}
+  ABAP_N8N_WORKFLOW_PATH: ${ABAP_N8N_WORKFLOW_PATH:-}
+  ABAP_INTEGRATION_ALLOWED_HOSTS: ${ABAP_INTEGRATION_ALLOWED_HOSTS:-}
+  ABAP_OUTBOUND_WEBHOOK_SECRET: ${ABAP_OUTBOUND_WEBHOOK_SECRET:-}
+  ABAP_INBOUND_WEBHOOK_SECRET: ${ABAP_INBOUND_WEBHOOK_SECRET:-}
+  ABAP_WEBHOOK_CONNECT_TIMEOUT_SECONDS: ${ABAP_WEBHOOK_CONNECT_TIMEOUT_SECONDS:-3}
+  ABAP_WEBHOOK_READ_TIMEOUT_SECONDS: ${ABAP_WEBHOOK_READ_TIMEOUT_SECONDS:-15}
+  ABAP_WEBHOOK_MAX_REQUEST_BYTES: ${ABAP_WEBHOOK_MAX_REQUEST_BYTES:-262144}
+  ABAP_WEBHOOK_MAX_RESPONSE_BYTES: ${ABAP_WEBHOOK_MAX_RESPONSE_BYTES:-262144}
+  ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS: ${ABAP_WEBHOOK_SIGNATURE_TTL_SECONDS:-300}
+  ABAP_WEBHOOK_MAX_ATTEMPTS: ${ABAP_WEBHOOK_MAX_ATTEMPTS:-3}
+  ABAP_WEBHOOK_RETRY_POLL_SECONDS: ${ABAP_WEBHOOK_RETRY_POLL_SECONDS:-10}
+  ABAP_WEBHOOK_RETRY_LEASE_SECONDS: ${ABAP_WEBHOOK_RETRY_LEASE_SECONDS:-30}
+  ABAP_WEBHOOK_RETRY_CLAIM_LIMIT: ${ABAP_WEBHOOK_RETRY_CLAIM_LIMIT:-25}
+  ABAP_WEBHOOK_MAINTENANCE_INTERVAL_SECONDS: ${ABAP_WEBHOOK_MAINTENANCE_INTERVAL_SECONDS:-3600}
+  ABAP_WEBHOOK_DELIVERY_RETENTION_DAYS: ${ABAP_WEBHOOK_DELIVERY_RETENTION_DAYS:-90}
+
 x-application: &application
   image: abap:${ABAP_IMAGE_TAG:-day154}
   build: .
   environment:
+    <<: *integration-environment
     DATABASE_BACKEND: postgresql
     DATABASE_URL: ${DATABASE_URL:?Set the deployment PostgreSQL URL with host database}
     ABAP_SESSION_SECRET: ${ABAP_SESSION_SECRET:?Set a random session secret}
@@ -60,6 +81,7 @@ services:
     command: ["python", "-m", "workflow_worker"]
     restart: unless-stopped
     environment:
+      <<: *integration-environment
       DATABASE_BACKEND: postgresql
       DATABASE_URL: ${DATABASE_URL:?Set the deployment PostgreSQL URL with host database}
       ABAP_WORKER_ENABLED: "true"
@@ -75,6 +97,21 @@ services:
         condition: service_completed_successfully
     healthcheck:
       test: ["CMD", "python", "-m", "workflow_worker", "--check"]
+      interval: 15s
+      timeout: 6s
+      retries: 3
+      start_period: 20s
+
+  webhook-retry-worker:
+    <<: *application
+    profiles: ["integrations"]
+    command: ["python", "-m", "webhook_retry_worker"]
+    restart: unless-stopped
+    depends_on:
+      migrate:
+        condition: service_completed_successfully
+    healthcheck:
+      test: ["CMD", "python", "-m", "webhook_retry_worker", "--check"]
       interval: 15s
       timeout: 6s
       retries: 3

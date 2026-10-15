@@ -408,6 +408,7 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
                 "name": "Updated browser workflow",
                 "description": "Updated in the browser.",
                 "status": "inactive",
+                "n8n_enabled": "true",
             },
             follow_redirects=False,
         )
@@ -428,6 +429,10 @@ class TestWorkflowWebLifecycle(unittest.TestCase):
 
         self.assertEqual(workflow["name"], "Updated browser workflow")
         self.assertEqual(workflow["status"], "inactive")
+        self.assertTrue(workflow["n8n_enabled"])
+        self.assertIn("n8n dispatch", self.client.get(
+            "/workflows/WF-WEB-LIFECYCLE"
+        ).text)
 
     def test_edit_rejects_invalid_csrf_token(self):
         self.sign_in(self.admin_username, self.admin_password)

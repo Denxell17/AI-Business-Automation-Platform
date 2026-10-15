@@ -39,3 +39,9 @@ services:
     cpus: 0.35
     mem_limit: 768m
     pids_limit: 128
+
+  webhook-retry-worker:
+    environment: *production-environment
+    cpus: 0.25
+    mem_limit: 512m
+    pids_limit: 96

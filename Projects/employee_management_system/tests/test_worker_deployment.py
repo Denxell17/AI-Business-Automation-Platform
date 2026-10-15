@@ -16,6 +16,20 @@ class TestWorkerDeployment(unittest.TestCase):
         self.assertIn("condition: service_completed_successfully", compose)
         self.assertIn('"workflow_worker", "--check"', compose)
 
+    def test_webhook_retry_worker_is_production_capable_but_opt_in(self):
+        compose = COMPOSE_FILE.read_text(encoding="utf-8")
+
+        self.assertIn("  webhook-retry-worker:", compose)
+        self.assertIn('profiles: ["integrations"]', compose)
+        self.assertIn(
+            'command: ["python", "-m", "webhook_retry_worker"]', compose,
+        )
+        self.assertIn(
+            "ABAP_INTEGRATIONS_ENABLED: ${ABAP_INTEGRATIONS_ENABLED:-false}",
+            compose,
+        )
+        self.assertIn('"webhook_retry_worker", "--check"', compose)
+
 
 if __name__ == "__main__":
     unittest.main()

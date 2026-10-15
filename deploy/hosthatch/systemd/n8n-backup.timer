@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the independent n8n production backup daily at 05:30 UTC
+
+[Timer]
+OnCalendar=*-*-* 05:30:00 UTC
+Persistent=true
+AccuracySec=1min
+Unit=n8n-backup.service
+
+[Install]
+WantedBy=timers.target

@@ -28,6 +28,8 @@ class TestIntegrationConfig(unittest.TestCase):
         self.assertNotEqual(settings["outbound_secret"], settings["inbound_secret"])
         self.assertEqual(settings["connect_timeout_seconds"], 3)
         self.assertEqual(settings["max_request_bytes"], 262144)
+        self.assertEqual(settings["maintenance_interval_seconds"], 3600)
+        self.assertEqual(settings["delivery_retention_days"], 90)
 
     def test_enabled_flag_is_strict(self):
         with self.assertRaisesRegex(ValueError, "ABAP_INTEGRATIONS_ENABLED"):
@@ -158,6 +160,8 @@ class TestIntegrationConfig(unittest.TestCase):
             "ABAP_WEBHOOK_RETRY_POLL_SECONDS": 300,
             "ABAP_WEBHOOK_RETRY_LEASE_SECONDS": 300,
             "ABAP_WEBHOOK_RETRY_CLAIM_LIMIT": 100,
+            "ABAP_WEBHOOK_MAINTENANCE_INTERVAL_SECONDS": 86400,
+            "ABAP_WEBHOOK_DELIVERY_RETENTION_DAYS": 3650,
         }
         for name, maximum in maximums.items():
             for value in ("0", "-1", "slow", str(maximum + 1)):

@@ -36,6 +36,8 @@ class IntegrationSettings(TypedDict):
     retry_poll_seconds: int
     retry_lease_seconds: int
     retry_claim_limit: int
+    maintenance_interval_seconds: int
+    delivery_retention_days: int
 
 
 def _bounded_integer(
@@ -195,6 +197,12 @@ def load_integration_settings(
         ),
         "retry_claim_limit": _bounded_integer(
             selected, "ABAP_WEBHOOK_RETRY_CLAIM_LIMIT", 25, 100,
+        ),
+        "maintenance_interval_seconds": _bounded_integer(
+            selected, "ABAP_WEBHOOK_MAINTENANCE_INTERVAL_SECONDS", 3600, 86400,
+        ),
+        "delivery_retention_days": _bounded_integer(
+            selected, "ABAP_WEBHOOK_DELIVERY_RETENTION_DAYS", 90, 3650,
         ),
     }
     if not enabled:

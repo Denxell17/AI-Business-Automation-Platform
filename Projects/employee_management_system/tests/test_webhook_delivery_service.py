@@ -5,12 +5,18 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 from uuid import uuid4
 
-from database import load_webhook_deliveries, purge_expired_webhook_replay_events
+from database import (
+    load_webhook_deliveries,
+    purge_expired_webhook_replay_events,
+    record_outbound_webhook_attempt,
+)
+from integration_config import load_integration_settings
 from webhook_contract import build_webhook_envelope, signed_webhook_headers
 from webhook_delivery_service import (
     accept_inbound_webhook,
     queue_outbound_webhook_delivery,
 )
+from webhook_retry_worker import run_webhook_maintenance_cycle
 
 
 SECRET = "inbound-webhook-test-secret"
@@ -105,6 +111,38 @@ class TestWebhookDeliveryService(unittest.TestCase):
             ),
             1,
         )
+
+    def test_maintenance_prunes_only_expired_replay_and_terminal_history(self):
+        self.accept(envelope())
+        terminal = envelope()
+        pending = envelope()
+        self.assertTrue(queue_outbound_webhook_delivery(
+            terminal, NOW, self.database_file,
+        ))
+        self.assertTrue(queue_outbound_webhook_delivery(
+            pending, NOW, self.database_file,
+        ))
+        terminal_delivery = next(
+            item for item in load_webhook_deliveries(database_file=self.database_file)
+            if item["event_id"] == terminal["event_id"]
+        )
+        self.assertTrue(record_outbound_webhook_attempt(
+            terminal_delivery["delivery_id"], "succeeded", NOW.isoformat(),
+            202, "", None, self.database_file,
+        ))
+        settings = load_integration_settings({
+            "ABAP_WEBHOOK_DELIVERY_RETENTION_DAYS": "1",
+        })
+
+        result = run_webhook_maintenance_cycle(
+            NOW + timedelta(days=2), settings, self.database_file,
+        )
+        remaining = load_webhook_deliveries(database_file=self.database_file)
+
+        self.assertEqual(result, {"replay_events": 1, "deliveries": 2})
+        self.assertEqual(len(remaining), 1)
+        self.assertEqual(remaining[0]["event_id"], pending["event_id"])
+        self.assertEqual(remaining[0]["status"], "pending")
 
 
 if __name__ == "__main__":

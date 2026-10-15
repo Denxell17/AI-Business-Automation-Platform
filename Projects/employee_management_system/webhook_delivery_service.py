@@ -139,13 +139,25 @@ def prepare_outbound_webhook_delivery(
     database_file: Path = DATABASE_FILE,
 ) -> str | None:
     """Persist a send-ready record without payload, secret, or destination data."""
+    delivery = build_outbound_webhook_delivery(envelope, current_time)
+    if not insert_outbound_webhook_delivery(delivery, database_file):
+        return None
+    return delivery["delivery_id"]
+
+
+def build_outbound_webhook_delivery(
+    envelope: WebhookEnvelope,
+    current_time: datetime,
+) -> WebhookDelivery:
+    """Build metadata for an outbox insert owned by a wider transaction."""
+    validated = validate_webhook_envelope(envelope)
     created_at = _timestamp(current_time)
     delivery: WebhookDelivery = {
         "delivery_id": f"WHD-{uuid4().hex.upper()}",
         "direction": "outbound",
-        "event_id": envelope["event_id"],
-        "correlation_id": envelope["correlation_id"],
-        "event_type": envelope["event_type"],
+        "event_id": validated["event_id"],
+        "correlation_id": validated["correlation_id"],
+        "event_type": validated["event_type"],
         "status": "pending",
         "attempt_count": 0,
         "next_attempt_at": created_at,
@@ -155,9 +167,7 @@ def prepare_outbound_webhook_delivery(
         "updated_at": created_at,
         "completed_at": None,
     }
-    if not insert_outbound_webhook_delivery(delivery, database_file):
-        return None
-    return delivery["delivery_id"]
+    return delivery
 
 
 def queue_outbound_webhook_delivery(

@@ -246,6 +246,9 @@ def initialize_database(
                 status TEXT NOT NULL DEFAULT 'draft' CHECK (
                     status IN ('draft', 'active', 'inactive')
                 ),
+                n8n_enabled INTEGER NOT NULL DEFAULT 0 CHECK (
+                    n8n_enabled IN (0, 1)
+                ),
                 created_by_user_id INTEGER NOT NULL,
                 created_at TEXT NOT NULL,
                 updated_at TEXT NOT NULL,
@@ -254,6 +257,18 @@ def initialize_database(
             )
             """
         )
+        workflow_columns = {
+            row[1]
+            for row in connection.execute(
+                "PRAGMA table_info(workflows)"
+            ).fetchall()
+        }
+        if "n8n_enabled" not in workflow_columns:
+            connection.execute(
+                "ALTER TABLE workflows "
+                "ADD COLUMN n8n_enabled INTEGER NOT NULL DEFAULT 0 "
+                "CHECK (n8n_enabled IN (0, 1))"
+            )
         connection.execute(
             """
             CREATE TABLE IF NOT EXISTS workflow_tasks (
@@ -461,6 +476,11 @@ def initialize_database(
             """CREATE INDEX IF NOT EXISTS
                    idx_webhook_deliveries_status_next_attempt
                ON webhook_deliveries (status, next_attempt_at)"""
+        )
+        connection.execute(
+            """CREATE INDEX IF NOT EXISTS
+                   idx_webhook_deliveries_completed_at
+               ON webhook_deliveries (completed_at)"""
         )
         connection.execute(
             """CREATE TABLE IF NOT EXISTS leads (
@@ -1184,17 +1204,19 @@ def insert_workflow(
                 name,
                 description,
                 status,
+                n8n_enabled,
                 created_by_user_id,
                 created_at,
                 updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 workflow["workflow_id"],
                 workflow["name"],
                 workflow["description"],
                 workflow["status"],
+                workflow.get("n8n_enabled", False),
                 workflow["created_by_user_id"],
                 workflow["created_at"],
                 workflow["updated_at"],
@@ -1224,6 +1246,7 @@ def load_workflows_from_database(
                 name,
                 description,
                 status,
+                n8n_enabled,
                 created_by_user_id,
                 created_at,
                 updated_at
@@ -1242,6 +1265,7 @@ def load_workflows_from_database(
             "name": row["name"],
             "description": row["description"],
             "status": row["status"],
+            "n8n_enabled": bool(row["n8n_enabled"]),
             "created_by_user_id": row[
                 "created_by_user_id"
             ],
@@ -1270,6 +1294,7 @@ def load_workflow_by_id(
                 name,
                 description,
                 status,
+                n8n_enabled,
                 created_by_user_id,
                 created_at,
                 updated_at
@@ -1289,6 +1314,7 @@ def load_workflow_by_id(
         "name": row["name"],
         "description": row["description"],
         "status": row["status"],
+        "n8n_enabled": bool(row["n8n_enabled"]),
         "created_by_user_id": row["created_by_user_id"],
         "created_at": row["created_at"],
         "updated_at": row["updated_at"],
@@ -1310,6 +1336,7 @@ def update_workflow_in_database(
                 name = ?,
                 description = ?,
                 status = ?,
+                n8n_enabled = ?,
                 updated_at = ?
             WHERE workflow_id = ?
             """,
@@ -1317,6 +1344,7 @@ def update_workflow_in_database(
                 workflow["name"],
                 workflow["description"],
                 workflow["status"],
+                workflow.get("n8n_enabled", False),
                 workflow["updated_at"],
                 workflow["workflow_id"],
             ),
@@ -1472,6 +1500,7 @@ def create_scheduled_workflow_execution(
     execution: WorkflowExecution,
     task_records: list[WorkflowTaskExecution],
     database_file: Path = DATABASE_FILE,
+    outbound_delivery: WebhookDelivery | None = None,
 ) -> bool:
     """Atomically create one occurrence-bound run and its task snapshots."""
     if (
@@ -1484,9 +1513,12 @@ def create_scheduled_workflow_execution(
     try:
         connection.execute("BEGIN IMMEDIATE")
         occurrence = connection.execute(
-            """SELECT occurrence_id
-               FROM workflow_schedule_occurrences
-               WHERE occurrence_id = ? AND workflow_id = ?""",
+            """SELECT occurrence.occurrence_id, workflow.n8n_enabled
+               FROM workflow_schedule_occurrences AS occurrence
+               JOIN workflows AS workflow
+                 ON workflow.workflow_id = occurrence.workflow_id
+               WHERE occurrence.occurrence_id = ?
+                 AND occurrence.workflow_id = ?""",
             (execution["schedule_occurrence_id"], execution["workflow_id"]),
         ).fetchone()
         if occurrence is None:
@@ -1522,6 +1554,39 @@ def create_scheduled_workflow_execution(
                     )
                     for record in task_records
                 ],
+            )
+        if outbound_delivery is not None and bool(occurrence[1]):
+            if (
+                execution["status"] != "running"
+                or outbound_delivery["direction"] != "outbound"
+                or outbound_delivery["status"] != "pending"
+                or outbound_delivery["correlation_id"] != execution["execution_id"]
+                or outbound_delivery["event_type"] != "workflow.execution.started"
+            ):
+                connection.rollback()
+                return False
+            connection.execute(
+                """INSERT INTO webhook_deliveries (
+                       delivery_id, direction, event_id, correlation_id,
+                       event_type, status, attempt_count, next_attempt_at,
+                       response_status, failure_code, created_at, updated_at,
+                       completed_at
+                   ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)""",
+                (
+                    outbound_delivery["delivery_id"],
+                    outbound_delivery["direction"],
+                    outbound_delivery["event_id"],
+                    outbound_delivery["correlation_id"],
+                    outbound_delivery["event_type"],
+                    outbound_delivery["status"],
+                    outbound_delivery["attempt_count"],
+                    outbound_delivery["next_attempt_at"],
+                    outbound_delivery["response_status"],
+                    outbound_delivery["failure_code"],
+                    outbound_delivery["created_at"],
+                    outbound_delivery["updated_at"],
+                    outbound_delivery["completed_at"],
+                ),
             )
         connection.commit()
         return True
@@ -1948,6 +2013,32 @@ def purge_expired_webhook_replay_events(
         )
         connection.commit()
         return result.rowcount
+    finally:
+        connection.close()
+
+
+def purge_terminal_webhook_deliveries(
+    completed_before: str,
+    database_file: Path = DATABASE_FILE,
+) -> int:
+    """Remove only old terminal delivery metadata; never remove queued work."""
+    if not isinstance(completed_before, str) or not completed_before.strip():
+        raise ValueError("Webhook delivery retention cutoff is required.")
+    initialize_database(database_file)
+    connection = get_database_connection(database_file)
+    try:
+        cursor = connection.execute(
+            """DELETE FROM webhook_deliveries
+               WHERE status IN ('accepted', 'succeeded', 'failed')
+                 AND completed_at IS NOT NULL
+                 AND completed_at < ?""",
+            (completed_before,),
+        )
+        connection.commit()
+        return cursor.rowcount
+    except (sqlite3.Error, psycopg.Error):
+        connection.rollback()
+        raise
     finally:
         connection.close()
 

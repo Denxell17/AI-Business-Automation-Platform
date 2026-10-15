@@ -147,6 +147,7 @@ class Workflow(TypedDict):
     name: str
     description: str
     status: str
+    n8n_enabled: bool
     created_by_user_id: int
     created_at: str
     updated_at: str

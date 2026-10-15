@@ -2913,6 +2913,7 @@ def create_web_application(
         name: Annotated[str, Form()] = "",
         description: Annotated[str, Form()] = "",
         status: Annotated[str, Form()] = "",
+        n8n_enabled: Annotated[str, Form()] = "false",
     ) -> Response:
         current_user = load_authenticated_session_user(
             request,
@@ -2948,6 +2949,7 @@ def create_web_application(
             "name": name,
             "description": description,
             "status": status,
+            "n8n_enabled": n8n_enabled == "true",
         }
         workflow_updated = update_workflow(
             current_user,
@@ -2956,6 +2958,7 @@ def create_web_application(
             description,
             status,
             database_file,
+            n8n_enabled=n8n_enabled == "true",
         )
 
         if not workflow_updated:
@@ -2979,7 +2982,8 @@ def create_web_application(
 
         log_activity(
             f"Web workflow {normalized_workflow_id} was updated "
-            f"by user {current_user['username']}."
+            f"by user {current_user['username']}; n8n dispatch "
+            f"{'enabled' if n8n_enabled == 'true' else 'disabled'}."
         )
         return RedirectResponse(
             url=request.url_for(
