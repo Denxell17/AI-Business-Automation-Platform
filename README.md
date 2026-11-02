@@ -7,9 +7,11 @@ one protected web workspace. The application is live at
 [app.dennisbasadre.com](https://app.dennisbasadre.com), but it remains a
 portfolio project: no customers or commercial availability are claimed.
 
-![ABAP dashboard design proposal](docs/design/assets/abap-final-dashboard-proposal.png)
+![Current ABAP dashboard with synthetic records](docs/portfolio/assets/abap-dashboard-current-en.webp)
 
-*Current dashboard design proposal, using synthetic portfolio content.*
+*Current application captured November 3, 2026 in an isolated local environment with synthetic records. The manual workflow execution is started-only and remains Running.*
+
+See the [screenshot gallery and evidence boundaries](PORTFOLIO.md#current-application-gallery) and [capture provenance](docs/portfolio/screenshots.md).
 
 ## Source and evidence boundary
 

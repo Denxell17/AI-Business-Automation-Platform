@@ -17,6 +17,44 @@ independent security certification are claimed.
 
 This documentation-only update is based on application commit `3710f0e`; it does not ship the later n8n release `7c307c17` or its migrations and infrastructure. The gallery records a newer isolated working-copy interface, not the runtime in this checkout. Capability and operations statuses below reflect recorded project evidence, not current production verification. The landing page public knowledge assistant has a separate integration boundary from the protected workflow and local Qwen demonstrations.
 
+## Current Application Gallery
+
+These genuine application captures use synthetic demonstration data in an isolated local SQLite environment, captured November 3, 2026. They are not production records or customer results. The approved Soft Graphite interface is shown without visual alteration.
+
+![Current English dashboard](docs/portfolio/assets/abap-dashboard-current-en.webp)
+
+### CRM leads
+
+![CRM lead directory containing three fictional contacts and example.test email addresses.](docs/portfolio/assets/abap-crm-current-en.webp)
+
+Fictional contacts with new and converted lead stages.
+
+### Customer invoices
+
+![Synthetic invoice DEMO-2026-001 with line items totaling USD 900 and a protected document download.](docs/portfolio/assets/abap-invoice-current-en.webp)
+
+Calculated line items, a sent invoice, and a protected PDF download. All amounts are synthetic.
+
+### Tracked workflows
+
+![Manual onboarding workflow with one task and a running execution; n8n dispatch is disabled and no schedules are configured.](docs/portfolio/assets/abap-workflow-current-en.webp)
+
+An active manual workflow with a started-only execution. It remains Running; no completed automation or external dispatch is shown.
+
+### Japanese interface
+
+![ABAP dashboard with Japanese interface labels and unchanged synthetic English business records.](docs/portfolio/assets/abap-dashboard-current-ja.webp)
+
+Localized interface labels with the same synthetic records. Business data and some date formatting remain English.
+
+### Mobile responsiveness
+
+![Full-page mobile ABAP dashboard with stacked summary cards and operational panels.](docs/portfolio/assets/abap-dashboard-mobile-en.webp)
+
+The actual responsive dashboard at a 390 × 844 viewport. Full-page capture; the workflow table scrolls horizontally.
+
+No AI Assistant screenshot is included because an isolated provider response has not been verified. Empty schedules and Agent execution panels reflect the actual demonstration dataset. See [screenshot provenance and privacy review](docs/portfolio/screenshots.md).
+
 ## Business Problem
 
 Small organizations often keep business records and repeatable processes in
