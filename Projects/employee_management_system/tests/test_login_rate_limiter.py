@@ -1,3 +1,4 @@
+import math
 import unittest
 
 from login_rate_limiter import LoginRateLimiter
@@ -54,6 +55,40 @@ class TestLoginRateLimiter(unittest.TestCase):
             self.limiter.record_failure("10.0.0.1", "alice")
         self.clock.advance(31)
         self.assertEqual(self.limiter.retry_after("10.0.0.1", "alice"), 0)
+
+    def test_fractional_clock_cooldown_never_exceeds_configured_duration(self):
+        for source_limit, account_limit in ((2, 50), (50, 2)):
+            with self.subTest(source_limit=source_limit, account_limit=account_limit):
+                self.clock.value = 4.0002
+                limiter = LoginRateLimiter(
+                    "fractional-clock-test-secret",
+                    clock=self.clock,
+                    source_failure_limit=source_limit,
+                    account_failure_limit=account_limit,
+                    cooldown_seconds=60,
+                )
+                self.assertEqual(limiter.record_failure("source", "alice"), 0)
+                self.assertEqual(limiter.record_failure("source", "alice"), 60)
+                self.assertEqual(limiter.retry_after("source", "alice"), 60)
+                self.clock.advance(0.25)
+                self.assertEqual(limiter.retry_after("source", "alice"), 60)
+                self.clock.advance(1.0)
+                self.assertEqual(limiter.retry_after("source", "alice"), 59)
+
+    def test_fractional_clock_enforces_deadline_through_last_instant(self):
+        self.clock.value = 4.0002
+        deadline = self.clock.value + 60
+        limiter = LoginRateLimiter(
+            "deadline-test-secret", clock=self.clock,
+            source_failure_limit=1, cooldown_seconds=60,
+        )
+        limiter.record_failure("source", "alice")
+        self.clock.value = math.nextafter(deadline, -math.inf)
+        self.assertEqual(limiter.retry_after("source", "alice"), 1)
+        self.clock.value = deadline
+        self.assertEqual(limiter.retry_after("source", "alice"), 0)
+        self.clock.value = math.nextafter(deadline, math.inf)
+        self.assertEqual(limiter.retry_after("source", "alice"), 0)
 
     def test_tracking_state_is_bounded(self):
         for index in range(30):
