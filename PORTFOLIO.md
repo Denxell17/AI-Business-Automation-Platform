@@ -3,30 +3,32 @@
 ## Project Summary
 
 The AI Business Automation Platform (ABAP) is a tested FastAPI application for
-secure employee operations, reusable business workflows, and controlled AI
-assistance. It demonstrates how a business application can combine relational
-data, role-based access, auditable operations, database portability, and an AI
-provider behind clear service boundaries.
+secure business records, scheduled workflow automation, controlled AI
+assistance, and recoverable operations. It combines employee management, CRM,
+invoices and protected documents, role-based access, auditable execution,
+PostgreSQL persistence, and provider-independent integration boundaries.
 
-ABAP is a portfolio project rather than a hosted commercial service. The
-repository contains a reproducible deployment package, but no public production
-URL is claimed.
+ABAP is live at [app.dennisbasadre.com](https://app.dennisbasadre.com) as a
+production-hosted portfolio project. Authentication is required for protected
+features; no public demo account, customers, commercial availability, or
+independent security certification are claimed.
 
 ## Business Problem
 
-Small organizations often keep employee data and repeatable processes in
-separate spreadsheets, documents, and informal checklists. That makes access
-control, process consistency, execution history, and operational ownership hard
-to verify.
+Small organizations often keep business records and repeatable processes in
+disconnected tools, documents, and informal checklists. That makes access
+control, process consistency, execution history, integration safety, and
+recovery ownership difficult to verify.
 
-ABAP brings several of those concerns into one protected workspace:
+ABAP brings these concerns into one protected workspace:
 
-- Employee records, payroll views, reports, and CSV exports
-- Reusable workflows with ordered tasks and lifecycle rules
-- Manual execution records with task-level outcomes
-- Stored schedules with timezone-aware eligibility and duplicate-run protection
-- Reusable AI Agent Templates and a one-off AI Assistant
-- User administration, permissions, activity history, and operational probes
+- Employee, lead, customer, invoice, and protected document records
+- Reusable workflows with ordered tasks, schedules, and execution history
+- A dedicated worker with duplicate-safe claims, bounded retries, and recovery
+- Signed integration delivery and callback records
+- Provider-independent Agent Templates and a one-off AI Assistant
+- English and Japanese interfaces, permissions, activity history, and probes
+- Production PostgreSQL, encrypted backups, and documented recovery controls
 
 ## Demonstrable Solution
 
@@ -35,29 +37,33 @@ flowchart LR
     Browser[Authenticated browser] --> Web[FastAPI and Jinja interface]
     Web --> Auth[Sessions, CSRF, and permissions]
     Web --> Services[Business services]
+    Worker[Background worker] --> Services
     Services --> Repositories[Repository boundary]
     Repositories --> SQLite[(SQLite local)]
-    Repositories --> PostgreSQL[(PostgreSQL deployment)]
-    Services --> Provider[AI provider boundary]
-    Provider --> OpenAI[Optional OpenAI adapter]
+    Repositories --> PostgreSQL[(PostgreSQL production)]
+    Services --> Integrations[Provider-independent integration boundary]
+    Integrations --> PrivateDemo[Signed webhooks / private n8n / local Qwen]
     Probes[Health and readiness probes] --> Web
+    PostgreSQL --> Backup[Encrypted Restic backup to private B2]
 ```
 
-The application uses server-rendered pages with an accessible Warm Charcoal
-interface. Administrators can manage data and controlled operations, while
-viewers receive explicitly limited access. Protected requests revalidate the
-saved account instead of trusting stale session identity alone.
+The application uses server-rendered pages with the approved responsive ABAP
+design system, light and dark themes, and user-selectable English and Japanese.
+Administrators manage data and controlled operations, while viewers receive
+explicitly limited access. Protected requests revalidate the saved account
+instead of trusting stale session identity alone.
 
 ## Engineering Highlights
 
 ### Security and data safety
 
-- Signed, HTTP-only sessions with `SameSite=Lax`; deployment enables
-  HTTPS-only cookies and requires a stable secret
+- Signed, HTTP-only sessions with `SameSite=Lax`; production uses HTTPS-only
+  cookies and a stable secret
 - Signed-session CSRF protection for state-changing browser actions
 - Default-deny permission checks and active-account revalidation
 - PBKDF2 password hashing and generic authentication failures
 - Parameterized database operations, foreign keys, transactions, and rollback
+- Environment-backed secrets excluded from source control
 - Safe public errors without database URLs, SQL details, credentials, or raw
   provider exceptions
 - Success and denial activity logging for sensitive operations
@@ -65,105 +71,126 @@ saved account instead of trusting stale session identity alone.
 ### Workflow and automation design
 
 - Draft, Active, and Inactive workflow lifecycles
-- Ordered tasks with transactional resequencing and deletion
-- Historical workflow and task snapshots that remain understandable after
-  definitions change
+- Ordered tasks with transactional resequencing and historical snapshots
 - Manual, daily, and weekly schedule rules interpreted in `Asia/Shanghai`
-- Five-minute recovery window and unique UTC occurrence claims
-- Atomic eligibility rechecks that prevent duplicate scheduled occurrences
+- Duplicate-safe UTC occurrence claims and atomic eligibility checks
+- Dedicated worker process with bounded retries, graceful shutdown, and
+  stale-run recovery
+- Stored workflow, task, delivery, callback, and Agent Execution outcomes
 
-Schedules currently prepare and claim due occurrences. An autonomous background
-worker that continually executes claimed work is outside the implemented scope.
+### Business records and documents
 
-### AI boundary
+- Employee records, payroll views, workforce reports, and CSV export
+- Lead lifecycle, notes, ownership, search, and duplicate-safe conversion
+- Customer records with immutable source-lead references and CRM audit history
+- Customer-owned invoices with Decimal-safe totals and immutable line items
+- Private document storage with validated filenames, integrity hashes,
+  permission-checked downloads, and protected generated PDFs
 
-- Reusable Agent Templates have reviewable lifecycle states
-- Agent executions preserve input, output, status, and safe failure information
-- The one-off Assistant does not persist conversations
-- Provider construction occurs only after authentication, authorization, CSRF,
-  input, and configuration checks
-- Tests use deterministic providers and make no paid API calls
+### Integration and AI boundary
 
-### Database and deployment
+- Versioned HMAC-SHA256 outbound and inbound webhook contracts
+- Allowlisted destinations, separate signing secrets, replay protection,
+  payload limits, timeouts, bounded retries, and sanitized delivery history
+- A pinned private n8n Compose demonstration with no public host port
+- Reusable Agent Templates and a non-persistent one-off AI Assistant
+- Provider-independent adapters, including local Qwen through loopback-only
+  llama.cpp and an optional OpenAI adapter
+- Deterministic tests that do not require paid provider calls
 
-- SQLite supports local development and the environment-independent test suite
-- PostgreSQL supports the production data path through ordered migrations
-- Live PostgreSQL tests cover repository, workflow, AI, and readiness paths
-- The deployment image pins its base image and resolved Python dependencies,
-  runs as a non-root user, and excludes local secrets and data from its context
-- Compose waits for PostgreSQL, runs migrations once, starts the web service,
-  persists data and logs, and monitors `/ready`
-- `/health` reports process liveness independently from `/ready`, which verifies
-  the database and shared core schema
+The signed webhooks, n8n flow, and local Qwen provider are implemented and
+privately tested. Production currently keeps selected integrations disabled;
+their presence in the repository is not a claim that they are publicly enabled.
 
-## Phase 2 Roadmap Audit
+### Production, backup, and recovery
 
-| Planned capability | Status | Evidence or boundary |
+- HostHatch production deployment through Docker Compose and Caddy HTTPS
+- PostgreSQL 18.6, private persistent volumes, ordered migrations, and a
+  non-root application container
+- `/health` process liveness and `/ready` database/schema readiness checks
+- Restic encryption with a private Backblaze B2 repository boundary
+- Documented backup, restore, incident, rollback, and release procedures
+- Public landing page hosted independently from the application server
+
+On October 8, 2026, a production backup and isolated recovery drill succeeded.
+The encrypted Restic snapshot was verified, 22 PostgreSQL tables were restored,
+application records were checked, and the disposable ABAP application passed
+health and readiness checks. This is verified recovery evidence, not a claim
+that every recurring-operations, monitoring, or final-release gate is complete.
+
+## Capability Status
+
+| Capability | Status | Evidence or boundary |
 | --- | --- | --- |
-| Shared ABAP dashboard | Complete | Protected module and resource dashboard |
-| Workflow automation | Complete core | Definitions, lifecycle, task ordering, and manual execution |
-| Tasks | Complete | CRUD, ordering, snapshots, and outcomes |
-| Schedules | Partial | Rules, eligibility, and duplicate-safe claims; no autonomous runner |
-| Execution history | Complete | Workflow, task, and Agent Execution records |
-| Template-based AI agents | Complete core | Templates, lifecycle, execution, and provider boundary |
-| AI assistant | Complete core | Protected one-off assistant; no stored conversations |
-| Employee Management System | Complete | Console and protected web operations |
-| Leads | Planned | No lead model, storage, service, or interface |
-| Customers | Planned | Dashboard card only |
-| Invoices | Planned | Dashboard card only |
-| Documents | Planned | No document model, storage, or interface |
-| Reports and analytics | Complete for workforce | Workforce summaries, payroll analytics, and CSV export |
-| Selected API connections | Partial | OpenAI adapter only; no general integration catalog |
-| Webhooks | Planned | No inbound or outbound webhook contract |
-| Users | Complete | Initial administrator and viewer administration |
-| Roles and permissions | Complete core | Administrator/viewer roles and default-deny permissions |
-| Activity history | Complete core | Protected application activity log |
-| Database backups | Partial | SQLite backup/restore; PostgreSQL uses documented operator tooling |
-| System status | Complete | Public liveness and database-readiness endpoints |
-| Deployment | Complete package | Locally verified image and Compose stack; no public host or TLS supplied |
-| Portfolio documentation | Complete | This case study, audit, demo path, and evidence guide |
+| Employee management | Production-enabled | Protected employee, payroll, reporting, and export workflows |
+| Leads and customers | Production-enabled | Persisted CRM screens, audit history, and duplicate-safe conversion |
+| Invoices and documents | Production-enabled | Customer invoices and permission-checked protected PDFs |
+| Scheduler and worker | Production-enabled | Dedicated worker, retries, stale recovery, and duplicate-safe claims |
+| Execution history | Production-enabled | Workflow, task, delivery, callback, and Agent Execution records |
+| English/Japanese interface | Production-enabled | User-selectable localized browser interface with English fallback |
+| Health and readiness | Production-enabled | Separate `/health` and PostgreSQL/schema-aware `/ready` probes |
+| PostgreSQL deployment and HTTPS | Production-enabled | HostHatch Compose deployment behind Caddy HTTPS |
+| Encrypted backup and recovery | Production-tested | Restic/B2 snapshot and isolated PostgreSQL 18.6 recovery verified on 2026-10-08 |
+| Signed webhooks | Implemented and privately tested | HMAC contracts, replay protection, retries, and stored metadata |
+| n8n automation | Implemented and privately tested | Pinned private Compose demo; not production-enabled |
+| Local Qwen through llama.cpp | Implemented and privately tested | Provider-neutral loopback adapter; kept outside public cloud deployment |
+| Optional OpenAI adapter | Implemented, not production-enabled | Environment-configured provider boundary; no public availability claim |
+| Recurring operations evidence | In progress | Continue observing scheduled backup, retention, and monitoring behavior |
+| Final portfolio release | Planned | Final evidence consolidation, release checklist, and verified release tag |
 
-This audit defines the honest milestone: the secure automation core is a
-portfolio-ready MVP. The broader all-module Phase 2 vision remains incomplete
-until the planned business modules and operational gaps above are delivered.
+## Completion Roadmap Status
+
+- Milestones 1–5: complete
+- Milestone 6: capabilities implemented and privately tested; production
+  enablement is intentionally deferred
+- Milestone 7: in progress; the October 8 backup and isolated recovery gate
+  passed, with remaining operations evidence still to close
+- Milestone 8: in progress; the application and HTTPS are live, while remaining
+  monitoring, integration, and acceptance gates continue
+- Milestone 9: not started
+
+The detailed milestone evidence and remaining exit gates are maintained in the
+[full platform completion roadmap](docs/roadmap/full-platform-completion-roadmap.md).
 
 ## Verification Evidence
 
-- 619 automated tests ran successfully in the pinned deployment image:
-  616 passed and 3 live PostgreSQL tests skipped as designed
-- All 3 live PostgreSQL integration tests passed separately
-- Four focused deployment tests cover rejected configuration, secure cookies,
-  session continuity, and explicit migrations
-- A fresh isolated Compose stack completed PostgreSQL startup, migrations, and
-  web readiness
-- Repeated migrations completed safely
-- During a simulated database outage, `/health` stayed at HTTP 200 while
-  `/ready` returned a safe HTTP 503, then recovered to HTTP 200
-- No real or paid OpenAI request was made during verification
+- The automated suite covers services, repositories, browser routes, security
+  controls, workers, integrations, domains, localization, and deployment
+  boundaries; live PostgreSQL checks remain separate from ordinary local tests
+- Disposable PostgreSQL 18.6 verification covers migrations and the employee,
+  workflow, CRM, invoice, document, AI, and readiness paths
+- The private n8n Compose demonstration completed repeated scheduled,
+  signed round trips without duplicate outcomes
+- Local Qwen support is exercised through the provider-independent llama.cpp
+  adapter and deterministic tests without making it a public cloud dependency
+- Production `/health` and `/ready` checks pass independently
+- The October 8 encrypted Restic/B2 snapshot and isolated 22-table recovery
+  passed application-record, health, and readiness verification
 
-The detailed daily build record is preserved separately in
+The detailed build record is preserved separately in
 [`LEARNING_HISTORY.md`](LEARNING_HISTORY.md). Local run and test instructions
-are in [`README.md`](README.md); detailed Compose operations are in the
-[deployment runbook](docs/deployment/compose-deployment-runbook.md).
+are in [`README.md`](README.md); production and recovery operations are in the
+[deployment documentation](docs/deployment/).
 
 ## Suggested Demonstration
 
-Use a local SQLite instance for a quick portfolio demonstration, or the Day 154
-Compose deployment for PostgreSQL. Use seeded demonstration data only; do not
-show real employee, customer, credential, or API data.
+Use synthetic data in a local or isolated environment. Do not expose real
+employee, customer, invoice, credential, or provider data, and do not create or
+publish demo credentials for the production application.
 
-1. Sign in as an administrator and explain the protected shared dashboard.
-2. Open Employee Management, show filtering, an employee profile, payroll
-   separation, the workforce report, and CSV export.
-3. Open Workflow Automation, show a workflow, ordered tasks, lifecycle rules,
-   a stored schedule, and execution history with task outcomes.
-4. Open Agent Templates, explain Draft review before activation, then show a
-   deterministic or previously completed execution without making a paid call.
-5. Open the AI Assistant page and explain its authorization and non-persistence
-   boundary. A live request is optional and should use an approved test account.
-6. Show the administrator-only Users and Activity History pages.
-7. Open `/health`, then `/ready`, and explain why deployments need both.
-8. Finish with this roadmap matrix and state the unbuilt modules directly.
+1. Sign in as an administrator and explain the protected dashboard, theme, and
+   English/Japanese interface controls.
+2. Show employee records, workforce reporting, and permission boundaries.
+3. Create a lead, convert it once, and inspect the resulting customer history.
+4. Create a customer invoice, generate its protected PDF, and show the guarded
+   download path.
+5. Show a scheduled workflow, worker execution, task outcomes, and audit trail.
+6. Explain signed webhook replay protection and run the private n8n flow only
+   in its isolated demonstration environment.
+7. Explain the provider-neutral AI boundary and local Qwen isolation without
+   presenting it as a production-hosted service.
+8. Open `/health` and `/ready`, then review the October 8 recovery evidence and
+   the remaining roadmap gates.
 
 ## What This Project Demonstrates
 
@@ -171,18 +198,22 @@ show real employee, customer, credential, or API data.
 - FastAPI routes, forms, sessions, templates, validation, and accessibility
 - Secure role-based business operations and auditable state changes
 - SQLite and PostgreSQL integration with repeatable migrations
-- Workflow lifecycle, scheduling rules, and concurrency-aware occurrence claims
-- Safe AI-provider integration with deterministic, cost-free tests
-- Reproducible container packaging and operational readiness contracts
-- Evidence-based project communication that distinguishes implemented behavior
-  from planned scope
+- Background workflow execution and concurrency-aware occurrence claims
+- Replay-resistant signed integration contracts and private n8n automation
+- Provider-independent AI with deterministic tests and isolated local Qwen
+- Bilingual interface delivery with complete request-scoped localization
+- Reproducible container deployment, encrypted backups, and tested recovery
+- Evidence-based communication that separates production-enabled, implemented,
+  privately tested, in-progress, and planned capabilities
 
 ## Next Development Priorities
 
-1. Add an autonomous scheduler/worker with retry, idempotency, and observability.
-2. Implement leads and customers as the next coherent business domain.
-3. Add invoices and documents only after customer ownership is established.
-4. Define authenticated, replay-safe webhook contracts and an integration audit
-   trail before adding external CRM connections.
-5. Add PostgreSQL backup automation, restore drills, log rotation, TLS ingress,
-   and a public demonstration environment when hosting is approved.
+1. Record the remaining recurring backup, retention, monitoring, and alerting
+   evidence without overstating one successful drill as the entire operations
+   milestone.
+2. Close the remaining Milestone 6 and 8 acceptance boundaries before enabling
+   any selected production integration.
+3. Consolidate current screenshots, architecture, test evidence, operational
+   records, and troubleshooting guidance for Milestone 9.
+4. Tag a final verified portfolio release only after every advertised exit gate
+   is satisfied.
