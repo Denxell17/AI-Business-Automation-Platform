@@ -1,9 +1,27 @@
-# Existing n8n timer activation — approval pending
+# Existing n8n timer activation — PASS
+
+## Owner-executed result
+
+Operation `approved-n8n-recurring-timer-20261104-1` returned
+`PASS-existing-timer-active` on November 4. The timer is enabled and active,
+with its next daily event November 5 at 05:30 UTC (13:30 Shanghai). No calendar
+backup was observed: `NOT-RUN-await-next-calendar-event`. There were zero manual
+backup dispatches, direct repository requests or workflow dispatches. Production
+preservation passed. Do not rerun this consumed activation command or force an
+extra backup to obtain the next result. Observe the naturally scheduled run.
+
+Readiness confirms production integration is disabled and its endpoint is unset;
+inbound/outbound HMAC configuration is present. No keys or endpoints were exposed.
+The remaining linked production demonstration therefore needs a separately
+approved narrow integration path. Assistant availability and private RAG are
+unaffected; integration readiness is not permission to activate them globally.
+
+## Historical reviewed activation scope (already executed)
 
 The staging correction is installed and verified; recovery proofs for both n8n
 targets remain valid. No further installation, backup drill or restore is needed.
-The existing timer is still inactive/disabled, so recurring protection is not
-yet enabled. The linked CRM/invoice automation demonstration remains separate.
+The existing timer was inactive/disabled before this executed operation.
+The linked CRM/invoice automation demonstration remains separate.
 
 ## Exact proposed action
 

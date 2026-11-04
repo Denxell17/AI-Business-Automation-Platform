@@ -186,11 +186,15 @@ that every recurring-operations, monitoring, or final-release gate is complete.
 - Milestone 6: complete for the approved cloud/synthetic scope; the Advanced
   Assistant is live with two selectable free models, EN/JA responses, private
   history, confirmation-protected demo interactions and automatic validation renewal.
-- Milestone 7: in progress; recurring n8n backup qualification remains open.
+- Milestone 7: recovery/security gates passed; corrected n8n backup files are
+  installed and the recurring timer is active. Its first scheduled execution
+  remains unobserved (November 5, 05:30 UTC); no new backup success is claimed.
   Restored-application startup, isolation and health checks passed November 4.
   The required vulnerability review and approved
   dependency-only production correction passed November 4.
-- Milestone 8: deployed over HTTPS; linked end-to-end final acceptance remains open.
+- Milestone 8: deployed over HTTPS; the complete linked CRM/invoice/scheduled n8n
+  demonstration passed in isolated Docker. The live public-flow gate remains open
+  pending an explicit scope decision; production integration stays disabled.
 - Milestone 9: portfolio finalization in progress; no final release tag yet.
 
 The [November 4 final acceptance record](docs/deployment/final-platform-acceptance-20261104.md)

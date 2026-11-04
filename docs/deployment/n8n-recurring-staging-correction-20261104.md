@@ -82,3 +82,8 @@ above. Originals were verified before replacement and are preserved under
 Protected staging, production state and unit configuration were preserved.
 No backup, repository request, timer change or service restart occurred.
 The installation command is consumed and must not be rerun.
+
+The separately approved timer activation subsequently PASSED. The timer is
+enabled/active, next event November 5 at 05:30 UTC. No calendar backup ran during
+activation, so the first scheduled execution of the corrected script remains
+unobserved. See [timer result](n8n-recurring-timer-activation-20261104.md).

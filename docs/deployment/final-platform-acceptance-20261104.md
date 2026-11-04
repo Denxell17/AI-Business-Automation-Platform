@@ -9,7 +9,7 @@ below are not represented as passed. No final release tag has been created.
 | Milestone | Delivered evidence | Remaining exit condition |
 | --- | --- | --- |
 | 6 — Selected External Connections | Two approved OpenRouter free cloud models passed authentication, EN/JA, structured business JSON and manual switching. The authenticated synthetic-only assistant is live. Signed ABAP–n8n scheduled round trips, replay protection, timeout/retry handling and stored execution/delivery outcomes passed in isolation. Provider contracts, scopes, failure handling and rotation instructions exist. | The owner's cloud-only correction supersedes laptop Qwen as a required production dependency. Qwen remains an optional local adapter; GoHighLevel remains conditional/deferred. Neither is advertised as production-enabled. The selected connection gate is satisfied for this approved scope. |
-| 7 — Production Operations | Encrypted image/configuration preservation and authenticated PostgreSQL dump parsing passed. Both n8n offline restores, SQLite integrity and credential decryption passed. Daily ABAP backup completed November 4 at 02:16:01 UTC, success/exit 0. Operations, retention and full-check services report success. | The restored-database-to-healthy-application continuation passed (17.305 seconds, health/readiness/login 200, cleanup and production preservation PASS). Qualify the recurring n8n backup service before enabling its timer: current service is failed, timer disabled, protected prior staging must be preserved. The required vulnerability review and approved dependency-only production correction passed; residual-finding triage is documented. No clean production scan is claimed. |
+| 7 — Production Operations | Encrypted image/configuration preservation and authenticated PostgreSQL dump parsing passed. Both n8n offline restores, SQLite integrity and credential decryption passed. Daily ABAP backup completed November 4 at 02:16:01 UTC, success/exit 0. Operations, retention and full-check services report success. | The restored-database-to-healthy-application continuation passed (17.305 seconds, health/readiness/login 200, cleanup and production preservation PASS). The recurring n8n correction is installed and timer active/enabled, next November 5 at 05:30 UTC. No corrected scheduled execution has yet been observed; preserve that qualification limit. The required vulnerability review and approved dependency-only production correction passed; residual-finding triage is documented. No clean production scan is claimed. |
 | 8 — Cloud Deployment and HTTPS | Production ABAP and HTTPS are live. Web-only replacement preserved data/history and other containers. Health/readiness/login returned 200. Migrations 001–016 and private n8n/RAG configuration were preserved. | Consolidate evidence that the final scheduled signed n8n flow is displayed through the HTTPS application and linked to the existing CRM/invoice demonstration. Do not enable integrations globally or alter real workflows just to claim this gate. |
 | 9 — Final Portfolio Release | Existing README, portfolio, genuine synthetic screenshots, architecture/contracts, deployment/incident/recovery guidance and demonstration below are available. Prior PostgreSQL regression snapshots (896, later 907/928), focused security/isolation tests and live provider checks are reused, not rerun. | Close the outstanding gates above, synchronize appropriate source/docs, then tag the verified release. Do not call an accepted disaster-recovery risk a successful restore. |
 
@@ -17,9 +17,10 @@ below are not represented as passed. No final release tag has been created.
 
 The n8n recurring staging correction was also installed successfully November 4
 at 14:26 UTC, with verified originals, unchanged units/containers and no jobs or
-repository requests. Its timer remains disabled pending explicit activation
-approval. The restored-application startup gap is closed; the remaining operational
-step is schedule activation/qualification. See
+repository requests. Its separately approved timer activation PASSED: enabled/active, next November 5
+at 05:30 UTC (13:30 Shanghai). No calendar backup ran during activation.
+The restored-application startup gap is closed; observe the next natural backup
+without forcing a duplicate run. See
 [installation evidence](n8n-recurring-staging-correction-20261104.md).
 
 The approved security image update PASSED November 4 at 13:42:47 UTC, running
@@ -134,6 +135,19 @@ passed; no backup, repository scan, startup diagnostic or recovery drill was rep
 
 This verifies the preserved rollback baseline, not later application writes,
 proxy/TLS rebuilding, full-host recovery or invoice/log payload restoration.
+
+## Linked demonstration result — isolated PASS
+
+The new full synthetic CRM → customer → invoice/PDF → scheduled execution →
+signed n8n action/callback → authenticated linked result display passed in private
+local Docker, using the exact deployed image. One occurrence/execution/event, one
+outbound attempt and one accepted callback; cleanup PASS; zero AI/B2 requests.
+[Detailed evidence](linked-portfolio-demonstration-20261104.md). No production
+demonstration is claimed. The owner explicitly requires a controlled production
+demonstration; isolated-only acceptance was declined. The
+[reviewed temporary HTTPS procedure](controlled-public-linked-demonstration-20261105.md)
+is staged without execution and needs explicit privileged authorization. The
+public-flow gate remains open; no waiver or final release tag is inferred.
 
 ## Concise final demonstration
 
