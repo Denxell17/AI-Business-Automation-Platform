@@ -7,7 +7,7 @@ import runpy
 import sys
 import types
 import unittest
-from unittest.mock import patch
+from unittest.mock import Mock,patch
 ROOT=Path(__file__).resolve().parents[2];sys.path.insert(0,str(ROOT/'scripts'))
 import portfolio_https_demo_support as support
 m=runpy.run_path(str(ROOT/'deploy/hosthatch/run-public-linked-demonstration-once.py'))
@@ -49,6 +49,32 @@ class PublicDemoTests(unittest.TestCase):
         diagnostic=m['docker'].__globals__['LAST_DOCKER_FAILURE']
         self.assertNotIn('SECRET_SENTINEL',str(diagnostic))
         self.assertEqual(diagnostic['error_classes'],['ValueError'])
+    def test_origin_tls_uses_default_trust_hostname_and_does_not_follow_redirect(self):
+        raw=Mock();context=Mock();connection=Mock()
+        connection.getresponse.return_value.status=303
+        connection.getresponse.return_value.read.return_value=b''
+        with patch.object(m['ssl'],'create_default_context',return_value=context) as trust, \
+             patch.object(m['ssl'],'_create_unverified_context',side_effect=AssertionError('TLS bypass forbidden')), \
+             patch.object(m['socket'],'create_connection',return_value=raw) as connect, \
+             patch.object(m['http'].client,'HTTPSConnection',return_value=connection):
+            self.assertEqual(m['origin_https']('/protected'),(303,b''))
+        trust.assert_called_once_with()
+        connect.assert_called_once_with(('127.0.0.1',443),timeout=15)
+        context.wrap_socket.assert_called_once_with(raw,server_hostname='app.dennisbasadre.com')
+        connection.request.assert_called_once_with('GET','/protected',headers={'Host':'app.dennisbasadre.com'})
+        connection.close.assert_called_once();raw.close.assert_called_once()
+    def test_origin_certificate_failure_cannot_be_ignored(self):
+        raw=Mock();context=Mock();connection=Mock()
+        context.wrap_socket.side_effect=m['ssl'].SSLCertVerificationError('synthetic invalid certificate')
+        with patch.object(m['ssl'],'create_default_context',return_value=context), \
+             patch.object(m['socket'],'create_connection',return_value=raw), \
+             patch.object(m['http'].client,'HTTPSConnection',return_value=connection):
+            with self.assertRaisesRegex(m['Stop'],'origin_tls_certificate_verification_failed'):m['origin_https']('/health')
+        connection.request.assert_not_called();raw.close.assert_called_once()
+    def test_origin_smoke_failure_identifies_exact_endpoint(self):
+        statuses={'/health':200,'/ready':503,'/login':200}
+        with patch.dict(m['origin_smoke'].__globals__,origin_https=lambda path:(statuses[path],b'')):
+            with self.assertRaisesRegex(m['Stop'],'origin_ready_status_503'):m['origin_smoke']()
     def network_fixture(self):
         return {'Config':{'Labels':{'com.docker.compose.project':'owned'}},'HostConfig':{'PortBindings':{}},
                 'NetworkSettings':{'Networks':{'owned_default':{'IPAddress':'172.22.0.2'}}}}

@@ -6,6 +6,7 @@ One disposable stack; one temporary Caddy route; native production login gate.
 """
 import copy
 import hashlib
+import http.client
 import ipaddress
 import json
 import os
@@ -13,6 +14,8 @@ from pathlib import Path
 import re
 import shutil
 import signal
+import socket
+import ssl
 import stat
 import subprocess
 import sys
@@ -63,13 +66,27 @@ def stable(rows,project):
     return sorted((r['Id'],r['Image'],r['State']['Running'],r['RestartCount'],
         sha(json.dumps([r['Config'],r['HostConfig'],r['NetworkSettings']['Networks']],sort_keys=True).encode()))
         for r in rows if r['Config'].get('Labels',{}).get('com.docker.compose.project')!=project)
-class NoRedirect(urllib.request.HTTPRedirectHandler):
-    def redirect_request(self,*args):return None
-def public_http(path):
-    client=urllib.request.build_opener(urllib.request.ProxyHandler({}),NoRedirect())
+def origin_https(path):
+    """Local ops check; public acceptance still requires the signed-in browser."""
+    host='app.dennisbasadre.com';context=ssl.create_default_context()
+    connection=http.client.HTTPSConnection(host,timeout=15,context=context);raw=None
     try:
-        with client.open('https://app.dennisbasadre.com'+path,timeout=15) as r:return r.status,r.read(200000)
-    except urllib.error.HTTPError as e:return e.code,b''
+        raw=socket.create_connection(('127.0.0.1',443),timeout=15)
+        connection.sock=context.wrap_socket(raw,server_hostname=host)
+        connection.request('GET',path,headers={'Host':host})
+        response=connection.getresponse();return response.status,response.read(200000)
+    except ssl.SSLCertVerificationError:raise Stop('origin_tls_certificate_verification_failed') from None
+    except (TimeoutError,socket.timeout):raise Stop('origin_https_timeout') from None
+    finally:
+        connection.close()
+        if raw is not None:raw.close()
+
+def origin_smoke():
+    result={}
+    for path in ['/health','/ready','/login']:
+        result[path]=origin_https(path)[0]
+        need(result[path]==200,'origin_'+path.strip('/')+'_status_'+str(result[path]))
+    return result
 def caddy_command(*args,data=None):
     p=subprocess.run(['/usr/bin/caddy',*args],input=data,capture_output=True,timeout=30,
         env={'PATH':'/usr/bin:/bin','HOME':'/nonexistent','LC_ALL':'C'})
@@ -140,7 +157,7 @@ def main():
     need(auth=='127.0.0.1:8000','existing_public_app_upstream_changed')
     for image in [fixture.APP,fixture.PG,fixture.N8N]:need(json.loads(docker('image','inspect',image))[0]['Id']==image,'cached_fixture_image_missing')
     docker('compose','version')
-    for path in ['/health','/ready','/login']:need(public_http(path)[0]==200,'baseline_public_smoke_failed')
+    baseline_origin=origin_smoke()
     run=uuid.uuid4().hex[:16];project='abap-portfolio-'+run;prefix='/portfolio-demo-'+run;marker=uuid.uuid4().hex
     need(prefix not in json.dumps(original),'demo_prefix_already_present')
     baseline=stable(rows,project)
@@ -148,7 +165,8 @@ def main():
     work.mkdir(mode=0o700);identity=(work.stat().st_dev,work.stat().st_ino)
     report={'operation':'approved-public-linked-demonstration-20261104-1','status':'running','stage':'create_disposable_stack',
         'b2_requests':0,'ai_requests':0,'production_database_writes':False,'existing_n8n_workflows_modified':False,
-        'production_web_recreated':False,'run':run,'project':project,'temporary_prefix':prefix}
+        'production_web_recreated':False,'run':run,'project':project,'temporary_prefix':prefix,
+        'baseline_origin_tls_smoke':baseline_origin,'authenticated_public_browser_required':True}
     save(report,True);proxy_changed=False;started=time.monotonic();configuration=None;proxy_restored=False
     def compose(*args,data=None,timeout=60):
         return docker('compose','--env-file','/dev/null','-p',project,'-f',str(work/'compose.json'),*args,data=data,timeout=timeout)
@@ -202,8 +220,8 @@ def main():
         caddy_load(temporary)
         need(caddy_config()==temporary,'temporary_proxy_load_mismatch')
         urls={'customer':prefix+'/customers/'+state['customer'],'invoice':prefix+'/invoices/'+state['invoice'],'workflow':prefix+'/workflows/WF-PORTFOLIO'}
-        status,_=public_http(urls['invoice']);need(status in {302,303,401,403},'anonymous_demo_access_not_denied')
-        report.update(stage='await_authenticated_browser',anonymous_access_denied=True,
+        status,_=origin_https(urls['invoice']);need(status in {302,303,401,403},'anonymous_demo_access_not_denied')
+        report.update(stage='await_authenticated_browser',anonymous_origin_access_denied=True,
             public_urls={k:'https://app.dennisbasadre.com'+v for k,v in urls.items()});save(report)
         print(json.dumps({'event':'awaiting_authenticated_browser','public_urls':report['public_urls'],
             'instructions':'Keep this terminal open. Visit all three links while signed in to the existing ABAP account. Automatic cleanup follows verification or 10-minute timeout.'}),flush=True)
@@ -247,9 +265,9 @@ def main():
         try:
             report['production_state_preservation']='PASS' if stable(inventory(),project)==baseline else 'FAIL'
             report['host_proxy_process_preserved']=proxy_process()==pid
-            report['final_public_smoke']={p:public_http(p)[0] for p in ['/health','/ready','/login']}
+            report['final_origin_tls_smoke']=origin_smoke()
             need(report['production_state_preservation']=='PASS' and report['host_proxy_process_preserved']
-                 and all(v==200 for v in report['final_public_smoke'].values()),'final_production_smoke_failed')
+                 and all(v==200 for v in report['final_origin_tls_smoke'].values()),'final_production_smoke_failed')
         except BaseException:errors.append('final_production_verification_blocked')
         if errors or report.get('original_proxy_configuration_restored') is False:report['status']='BLOCKED-final-cleanup-or-production-comparison'
         report['cleanup_errors']=errors;report['duration_seconds']=round(time.monotonic()-started,3);save(report)

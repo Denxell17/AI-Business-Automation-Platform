@@ -146,7 +146,10 @@ outbound attempt and one accepted callback; cleanup PASS; zero AI/B2 requests.
 demonstration is claimed. The owner explicitly requires a controlled production
 demonstration; isolated-only acceptance was declined. The
 [reviewed temporary HTTPS procedure](controlled-public-linked-demonstration-20261105.md)
-is staged without execution and needs explicit privileged authorization. The
+was explicitly approved, but its first execution stopped before any changes
+because Cloudflare rejected the VPS's automated baseline requests. Corrected
+verified-origin operational checks passed read-only; the same bounded operation
+now awaits authenticated execution. Public-browser proof remains mandatory. The
 public-flow gate remains open; no waiver or final release tag is inferred.
 
 ## Concise final demonstration

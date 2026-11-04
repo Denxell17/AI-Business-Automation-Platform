@@ -1,4 +1,28 @@
-# Controlled public linked demonstration — approval pending
+# Controlled public linked demonstration — approved, corrected execution pending
+
+## First execution: blocked before any demonstration changes
+
+The owner ran the approved controller on November 5 Shanghai time. It returned
+`BLOCKED-before-demonstration / baseline_public_smoke_failed`, before creating
+the receipt, workspace, containers or temporary route. Read-only diagnosis found
+Cloudflare returned 403 to the VPS's automated public requests for health,
+readiness and login. The exact Cloudflare rule is not established. All three
+application endpoints returned 200 locally; origin HTTPS certificate/hostname
+verification also passed. No application outage is inferred from the edge 403.
+
+The minimum correction uses the existing origin at loopback with the real public
+hostname and default trusted TLS verification for operational health and anonymous
+origin-gate checks. It follows no redirects and never disables certificate or
+hostname verification. Cloudflare settings remain unchanged. **Actual public
+acceptance still requires the three signed-in browser page reads through HTTPS.**
+Origin checks are labeled explicitly, never reported as public-browser evidence.
+
+Three new focused tests passed: default TLS trust/SNI and no redirect following,
+fail-closed invalid certificates, and exact failed health endpoint reporting.
+The corrected function was executed read-only on the VPS: all three verified-TLS
+checks returned 200. No privileged demonstration was repeated. The existing
+approval covers the same bounded operation; authenticated sudo execution is still
+required. Do not rerun the superseded command.
 
 The owner requires the secured public-application demonstration; isolated-only
 acceptance was explicitly declined. The complete private CRM → customer → invoice
@@ -60,10 +84,10 @@ public RAG and free-model safeguards remain unchanged.
 
 ## Reviewed package, staged without execution
 
-Controller: `/tmp/abap-public-demo.OkBmJwzd/run-public-linked-demonstration-once.py`.
-SHA-256: `5b6cc1032e538c314cee45bbe8997af2df01409c72b042e80668eece7d0a4b41`.
+Controller: `/tmp/abap-public-demo-origin.SXEIXURE/run-public-linked-demonstration-once.py`.
+SHA-256: `300742cadd30c9ecc695b3efa045ceaa96432c79b767ca99dbdf81b668864456`.
 Manifest SHA-256: `1bc12adeec721cfb0d1a5055913196714e92170cc7e304bf064b74f64c724cd1`.
-Package SHA-256: `8318f564f1c315717df7ef62b6724e99f7eb329d9469601c4001b9e0933923d3`.
-Local/remote hashes and syntax match. Root execution requires separate explicit
-approval. The sanitized root-only single-use receipt will be
+Package SHA-256: `ff47c1aee5c8ddc9fd1dc27069610d2af62b00792bab6828a8057bc2b4318c96`.
+Local/remote hashes and syntax match. This resumes the already approved scope;
+no privilege bypass or automatic rerun is performed. The sanitized root-only receipt will be
 `/var/backups/abap/approved-public-linked-demonstration-20261104-1.json`.
