@@ -15,6 +15,13 @@ below are not represented as passed. No final release tag has been created.
 
 ## Completed dependency-only production maintenance
 
+The n8n recurring staging correction was also installed successfully November 4
+at 14:26 UTC, with verified originals, unchanged units/containers and no jobs or
+repository requests. Its timer remains disabled pending explicit activation
+approval. The restored-application startup gap is closed; the remaining operational
+step is schedule activation/qualification. See
+[installation evidence](n8n-recurring-staging-correction-20261104.md).
+
 The approved security image update PASSED November 4 at 13:42:47 UTC, running
 image `sha256:e4b1f0fd69637bbbf8201cc4fc3424629fea989f974d1444a88c7863e3eff78c`.
 Health/readiness/login returned 200; the public RAG UI marker, both approved model

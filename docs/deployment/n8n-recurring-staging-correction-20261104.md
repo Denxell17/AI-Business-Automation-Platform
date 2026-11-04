@@ -65,12 +65,20 @@ execution or global integration enablement. The legacy production canary script
 targets an old release and changes shared web/worker settings and n8n publication;
 it must not be run unchanged against the current deployed assistant.
 
-## Reviewed upload (not executed)
+## Reviewed upload and executed installation — PASS
 
 Installer: `/tmp/abap-n8n-recurring.mxuadNx4/install-n8n-recurring-staging-fix.py`.
 SHA-256: `5b9749e6dc2845bfeff31b435ebbda529d5fa7d4d1d63a9c0ca380b416160f52`.
 Backup script: `9fd130ea7fd55d07219c8ea6fd51b30647d0e5aa851749b02e2e3e8f87159077`.
 State helper: `1f53303333b264cbc6c3d884ca8fc67155952465e8544909543dbd3359643808`.
 All remote hashes match local reviewed bytes; uploaded shell syntax passed.
-The inventory helper is unchanged at `4306de30…`. Installation requires explicit
-approval and authenticated sudo; no privileged installation has been attempted.
+The inventory helper is unchanged at `4306de30…`.
+
+The owner executed the approved installation November 4 at 14:26 UTC.
+Receipt `approved-n8n-recurring-staging-install-20261104-1` returned
+`PASS-two-files-installed-timer-still-disabled`. Installed hashes match those
+above. Originals were verified before replacement and are preserved under
+`/var/backups/abap/n8n-recurring-before-20261104T142635Z-89bb779b`.
+Protected staging, production state and unit configuration were preserved.
+No backup, repository request, timer change or service restart occurred.
+The installation command is consumed and must not be rerun.
