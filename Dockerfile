@@ -6,7 +6,9 @@ COPY Projects/employee_management_system/requirements-deploy.txt /tmp/requiremen
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 RUN groupadd --gid 10001 abap && useradd --uid 10001 --gid abap --no-create-home abap
 COPY Projects/employee_management_system/ /app/
-RUN mkdir -p /app/logs /app/data/documents /app/exports \
+RUN find /app -type d -exec chmod 0555 {} + \
+    && find /app -type f -exec chmod 0444 {} + \
+    && mkdir -p /app/logs /app/data/documents /app/exports \
     && chown -R abap:abap /app/logs /app/data /app/exports \
     && chmod 0750 /app/logs /app/data /app/data/documents /app/exports
 USER abap

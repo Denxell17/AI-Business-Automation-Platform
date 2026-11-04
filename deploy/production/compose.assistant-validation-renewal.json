@@ -1,0 +1,18 @@
+{
+  "services": {
+    "web": {
+      "environment": {
+        "ABAP_ASSISTANT_CLOUD_VALIDATION_FILE": "/run/assistant-validation/cloud-validation.json"
+      },
+      "volumes": [
+        {
+          "type": "bind",
+          "source": "/etc/abap/credentials/advanced-assistant",
+          "target": "/run/assistant-validation",
+          "read_only": true,
+          "bind": { "create_host_path": false }
+        }
+      ]
+    }
+  }
+}

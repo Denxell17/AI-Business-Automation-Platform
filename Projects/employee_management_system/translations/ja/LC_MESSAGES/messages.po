@@ -2827,3 +2827,145 @@ msgstr "従業員を追加すると部署別人数が生成されます。"
 #~ msgid "No invoices found."
 #~ msgstr "請求書が見つかりません。"
 
+
+#: templates/advanced_assistant.html:1
+msgid "History is private to your account, retained for seven days, and is not sent to the model. Each question is independent."
+msgstr "履歴はご自身のアカウント専用で、7日間保存されます。履歴はモデルに送信されず、各質問は独立しています。"
+
+#: templates/advanced_assistant.html:1
+msgid "Business tools show up to 30 authorized records. Workflow start records a manual run only; n8n dispatch is unavailable."
+msgstr "業務ツールはアクセスが許可されたレコードを最大30件表示します。ワークフロー開始は手動実行の記録のみで、n8nへの送信は行いません。"
+
+#: templates/advanced_assistant.html:1
+msgid "The request could not complete. Check model availability, permissions, input, and daily limits before retrying."
+msgstr "リクエストを完了できませんでした。モデルの利用状況、権限、入力内容、1日の上限をご確認ください。"
+
+#: templates/advanced_assistant.html:1
+msgid "Model and provider"
+msgstr "モデルとプロバイダー"
+
+#: templates/advanced_assistant.html:1
+msgid "Configured; availability checked on request"
+msgstr "設定済み・リクエスト時に利用可否を確認"
+
+#: templates/advanced_assistant.html:1
+msgid "Unavailable"
+msgstr "利用不可"
+
+#: templates/advanced_assistant.html:1
+msgid "No assistant models are configured."
+msgstr "アシスタントのモデルが設定されていません。"
+
+#: templates/advanced_assistant.html:1
+msgid "AI response language (independent of interface language)"
+msgstr "AIの回答言語（画面の表示言語とは別の設定）"
+
+#: templates/advanced_assistant.html:1
+msgid "Allow this request to retrieve authorized business data and send minimized results to the selected model provider."
+msgstr "このリクエストで、許可された業務データの取得と、必要最小限の結果のモデルプロバイダーへの送信を許可します。"
+
+#: templates/advanced_assistant.html:1
+msgid "Remote billing and quota settings must be verified by the operator. No automatic model fallback. Daily limits: 100 model calls per user, 1000 globally (UTC). A data summary uses two calls."
+msgstr "外部サービスの課金・利用枠設定は運用担当者による確認が必要です。モデルの自動切り替えは行いません。1日の上限（UTC）はユーザーあたり100回、全体で1000回です。データ要約には2回のモデル呼び出しを使用します。"
+
+#: templates/advanced_assistant.html:1
+msgid "Working… Please wait."
+msgstr "処理中です。しばらくお待ちください。"
+
+#: templates/advanced_assistant.html:1
+msgid "Conversation history and action reviews"
+msgstr "会話履歴と操作の確認"
+
+#: templates/advanced_assistant.html:1
+msgid "Proposed action — review exact parameters"
+msgstr "操作案 — 正確なパラメーターをご確認ください"
+
+#: templates/advanced_assistant.html:1
+msgid "Action status"
+msgstr "操作の状態"
+
+#: templates/advanced_assistant.html:1
+msgid "Expires after 10 minutes. Confirmation applies a business change. Invoice drafts are not sent; customer preparation converts a qualified lead."
+msgstr "有効期限は10分です。承認すると業務データが変更されます。請求書の下書きは送信されません。顧客の準備では適格なリードを顧客に変換します。"
+
+#: templates/advanced_assistant.html:1
+msgid "Confirm this exact action"
+msgstr "この内容の操作を承認"
+
+#: templates/advanced_assistant.html:1
+msgid "Authorized tool result"
+msgstr "権限に基づくツールの結果"
+
+#: templates/advanced_assistant.html:1
+msgid "No conversation history."
+msgstr "会話履歴はありません。"
+
+#: templates/advanced_assistant.html:1
+msgid "Clear history and cancel pending actions"
+msgstr "履歴を削除し、未承認の操作を取り消す"
+
+msgid "Business tools show up to 30 authorized records. Approved n8n workflows queue a signed delivery after confirmation."
+msgstr "業務ツールは許可されたレコードを最大30件表示します。承認されたn8nワークフローは、操作の確認後に署名付き送信キューに登録されます。"
+
+msgid "Cloud free-tier quotas are shared and limited. ABAP applies separate configurable limits. Select another eligible cloud model manually when a provider is unavailable. No paid fallback. A data summary uses two calls."
+msgstr "クラウドの無料利用枠には共有の上限があります。ABAPには別の設定可能な上限があります。利用できない場合は、別の利用可能なクラウドモデルを手動で選択してください。有料モデルへの自動切り替えはありません。データ要約には2回の呼び出しを使用します。"
+
+msgid "Live validated (last 24h)"
+msgstr "24時間以内に実接続を検証済み"
+
+msgid "Unverified or unavailable"
+msgstr "未検証または利用不可"
+
+msgid "Provider quota or availability cooldown"
+msgstr "プロバイダーの利用枠または可用性の待機期間中"
+
+msgid "ABAP request budget reached. Provider quotas are separate; select another eligible model if its budget permits."
+msgstr "ABAPのリクエスト上限に達しました。プロバイダーの利用枠は別です。利用枠が残っている別のモデルを選択してください。"
+
+msgid "ABAP concurrency limit reached. Try again shortly."
+msgstr "ABAPの同時処理上限に達しました。しばらくしてから再試行してください。"
+
+msgid "Provider quota or model cooldown active. Select another eligible cloud model."
+msgstr "プロバイダーの利用枠またはモデルの待機期間中です。別の利用可能なクラウドモデルを選択してください。"
+
+msgid "Model unavailable or quota exhausted. Select another configured model."
+msgstr "モデルが利用できないか利用枠に達しました。別の設定済みモデルを選択してください。"
+
+msgid "Invalid request, unavailable model, or daily call limit reached."
+msgstr "リクエストが無効、モデルが利用不可、または呼び出し上限に達しています。"
+
+msgid "Too many requests. Try again shortly."
+msgstr "リクエストが多すぎます。しばらくしてから再試行してください。"
+
+msgid "Requested data or action is not permitted."
+msgstr "要求されたデータまたは操作は許可されていません。"
+
+msgid "Assistant model configuration is unavailable."
+msgstr "アシスタントのモデル設定を利用できません。"
+
+msgid "Action expired, already handled, or could not complete. Review business records before proposing again."
+msgstr "操作は期限切れ、処理済み、または完了できませんでした。再提案する前に業務レコードを確認してください。"
+
+msgid "No eligible cloud model is available. Free-provider quotas may be exhausted. Try again later."
+msgstr "利用可能なクラウドモデルがありません。無料プロバイダーの利用枠が上限に達した可能性があります。後で再試行してください。"
+
+msgid "Synthetic demonstration only. Real records, free-form input and live workflows are unavailable. Demo actions affect isolated fictional records only."
+msgstr "架空データのデモ専用です。実際のレコード、自由入力、実際のワークフローは利用できません。デモ操作は隔離された架空レコードだけに適用されます。"
+
+msgid "Expires after 10 minutes. Confirmation creates an isolated synthetic lead; no real business data changes."
+msgstr "有効期限は10分です。承認すると隔離された架空の見込み客を作成します。実際の業務データは変更されません。"
+
+msgid "Explain the ABAP platform using public information only."
+msgstr "公開情報だけでABAPプラットフォームを説明してください。"
+
+msgid "Summarize the synthetic leads demonstration."
+msgstr "架空の見込み客デモを要約してください。"
+
+msgid "Summarize the synthetic invoices demonstration."
+msgstr "架空の請求書デモを要約してください。"
+
+msgid "Summarize the synthetic workflows demonstration."
+msgstr "架空のワークフローデモを要約してください。"
+
+msgid "Prepare a synthetic demo lead for confirmation."
+msgstr "承認用の架空のデモ見込み客を準備してください。"

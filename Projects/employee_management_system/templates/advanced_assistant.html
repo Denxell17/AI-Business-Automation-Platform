@@ -1,0 +1,61 @@
+{% extends "application_base.html" %}
+{% block content %}
+<section class="data-page assistant-page" aria-labelledby="assistant-heading">
+  <header class="data-page-heading"><div><h1 id="assistant-heading">{{ _("AI Assistant") }}</h1>
+    <p>{{ _("History is private to your account, retained for seven days, and is not sent to the model. Each question is independent.") }}</p>
+    {% if demo_only %}<p role="note">{{ _("Synthetic demonstration only. Real records, free-form input and live workflows are unavailable. Demo actions affect isolated fictional records only.") }}</p>{% else %}<p>{{ _("Business tools show up to 30 authorized records. Approved n8n workflows queue a signed delivery after confirmation.") }}</p>{% endif %}</div></header>
+  {% if error %}<div class="ui-alert ui-alert--danger" role="alert">{{ _(error) }}</div>{% endif %}
+  <div class="assistant-layout">
+    <form class="assistant-composer" action="{{ url_for('advanced_assistant_ask') }}" method="post" data-assistant-form>
+      <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+      <div class="form-field"><label for="assistant-model">{{ _("Model and provider") }}</label>
+        <select id="assistant-model" name="model_id" required>
+          {% for model in models %}<option value="{{ model.id }}" {% if model.id == selected_model %}selected{% endif %} {% if not model.available %}disabled{% endif %}>{{ model.model }} — {{ model.provider }} ({{ _(model.status) if model.status is defined else (_("Configured; availability checked on request") if model.available else _("Unavailable")) }})</option>{% endfor %}
+        </select>
+      </div>
+      {% if models and not (models | selectattr('available') | list) %}<p role="status">{{ _("No eligible cloud model is available. Free-provider quotas may be exhausted. Try again later.") }}</p>{% endif %}
+      {% if not models %}<p role="status">{{ _("No assistant models are configured.") }}</p>{% endif %}
+      <div class="form-field"><label for="response-language">{{ _("AI response language (independent of interface language)") }}</label>
+        <select name="response_language" id="response-language"><option value="en">English</option><option value="ja" {% if response_language == 'ja' %}selected{% endif %}>日本語</option></select>
+      </div>
+      <div class="form-field"><label for="assistant-question">{{ _("Business question") }}</label>
+        {% if demo_only %}<select id="assistant-question" name="question" required>{% for prompt in demo_questions %}<option value="{{ prompt }}">{{ _(prompt) }}</option>{% endfor %}</select>{% else %}<textarea id="assistant-question" name="question" rows="6" maxlength="6000" required></textarea>{% endif %}
+      </div>
+      {% if not demo_only %}<label><input type="checkbox" name="share_data" value="yes"> {{ _("Allow this request to retrieve authorized business data and send minimized results to the selected model provider.") }}</label>{% endif %}
+      <p>{{ _("Cloud free-tier quotas are shared and limited. ABAP applies separate configurable limits. Select another eligible cloud model manually when a provider is unavailable. No paid fallback. A data summary uses two calls.") }}</p>
+      <p>{{ usage_summary.day_utc }} UTC — {{ usage_summary.model_calls }} / {{ usage_summary.limit }}</p>
+      <button class="ui-button ui-button--primary" type="submit" {% if not (models | selectattr('available') | list) %}disabled{% endif %}>{{ _("Ask AI Assistant") }}</button>
+      <p role="status" data-assistant-status hidden>{{ _("Working… Please wait.") }}</p>
+    </form>
+    <section class="assistant-response" aria-labelledby="assistant-history"><h2 id="assistant-history">{{ _("Conversation history and action reviews") }}</h2>
+      {% for entry in entries %}
+        {% if entry.kind == 'action' %}
+          <article class="assistant-response-content">
+            <h3>{{ _("Proposed action — review exact parameters") }}</h3>
+            <pre>{{ entry.payload | tojson(indent=2) }}</pre>
+            <p>{{ _("Action status") }}: {{ entry.state }}</p>
+            {% if entry.state == 'pending' %}
+            {% if demo_only %}<p>{{ _("Expires after 10 minutes. Confirmation creates an isolated synthetic lead; no real business data changes.") }}</p>{% else %}<p>{{ _("Expires after 10 minutes. Confirmation applies a business change. Invoice drafts are not sent; customer preparation converts a qualified lead.") }}</p>{% endif %}
+            <form method="post" action="{{ url_for('advanced_assistant_confirm', identity=entry.entry_id) }}">
+              <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+              <button class="ui-button ui-button--primary" type="submit" name="decision" value="confirm">{{ _("Confirm this exact action") }}</button>
+              <button class="ui-button" type="submit" name="decision" value="cancel">{{ _("Cancel") }}</button>
+            </form>{% endif %}
+          </article>
+        {% else %}
+          <article class="assistant-response-content">
+            <h3>{{ _("Business question") }}</h3><pre>{{ entry.payload.question }}</pre>
+            <h3>{{ _("Assistant response") }} — {{ entry.payload.model }}</h3><pre>{{ entry.payload.answer }}</pre>
+            {% if entry.payload.tool_result %}<details><summary>{{ _("Authorized tool result") }}</summary><pre>{{ entry.payload.tool_result | tojson(indent=2) }}</pre></details>{% endif %}
+          </article>
+        {% endif %}
+      {% else %}<p>{{ _("No conversation history.") }}</p>{% endfor %}
+      <form method="post" action="{{ url_for('advanced_assistant_clear') }}">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+        <button class="ui-button" type="submit">{{ _("Clear history and cancel pending actions") }}</button>
+      </form>
+    </section>
+  </div>
+</section>
+<script src="{{ url_for('static', path='advanced-assistant.js') }}" defer></script>
+{% endblock %}

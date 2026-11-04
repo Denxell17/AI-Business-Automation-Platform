@@ -1,0 +1,11 @@
+[Unit]
+Description=Check hourly whether approved assistant model evidence needs renewal
+
+[Timer]
+OnCalendar=hourly
+RandomizedDelaySec=120
+Persistent=true
+Unit=abap-assistant-validation.service
+
+[Install]
+WantedBy=timers.target

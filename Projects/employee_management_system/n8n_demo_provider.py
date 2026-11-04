@@ -94,7 +94,7 @@ def _validate_started_event(envelope: dict[str, Any]) -> tuple[str, str]:
         or set(data) != {"execution_id", "workflow_id", "trigger_type"}
         or not isinstance(data["execution_id"], str)
         or not isinstance(data["workflow_id"], str)
-        or data["trigger_type"] != "schedule"
+        or data["trigger_type"] not in {"schedule", "manual"}
         or envelope["correlation_id"] != data["execution_id"]
     ):
         raise ValueError("Webhook event is not a supported scheduled execution.")
@@ -227,7 +227,7 @@ class N8nDemoEventStore:
                   JOIN workflow_executions AS execution
                     ON execution.execution_id = event.correlation_id
                    AND execution.workflow_id = event.workflow_id
-                   AND execution.trigger_type = 'schedule'
+                   AND (execution.trigger_type = 'schedule' OR (execution.trigger_type = 'manual' AND EXISTS (SELECT 1 FROM webhook_deliveries outbox WHERE outbox.correlation_id = execution.execution_id AND outbox.direction = 'outbound' AND outbox.event_type = 'workflow.execution.started')))
                  WHERE event.event_id = %s AND event.status = 'processing'
                    AND event.lease_expires_at > %s
                    AND EXISTS (
@@ -264,7 +264,7 @@ class N8nDemoEventStore:
                        SELECT 1 FROM workflow_executions AS execution
                         WHERE execution.execution_id = n8n_demo_events.correlation_id
                           AND execution.workflow_id = n8n_demo_events.workflow_id
-                          AND execution.trigger_type = 'schedule'
+                          AND (execution.trigger_type = 'schedule' OR (execution.trigger_type = 'manual' AND EXISTS (SELECT 1 FROM webhook_deliveries outbox WHERE outbox.correlation_id = execution.execution_id AND outbox.direction = 'outbound' AND outbox.event_type = 'workflow.execution.started')))
                           AND (
                               execution.status = 'running'
                               OR (n8n_demo_events.result_status IS NOT NULL

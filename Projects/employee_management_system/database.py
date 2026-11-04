@@ -53,6 +53,9 @@ def get_sqlite_database_connection(
 def initialize_database(
     database_file: Path = DATABASE_FILE,
 ) -> None:
+    from business_transaction import current_connection
+    if current_connection(database_file) is not None:
+        return
     settings = load_database_settings()
 
     if settings["backend"] == DATABASE_BACKEND_POSTGRESQL:
@@ -1796,7 +1799,11 @@ def record_verified_inbound_workflow_result(
             """UPDATE workflow_executions
                SET status = ?, finished_at = ?, result_summary = ?
                WHERE execution_id = ?
-                 AND trigger_type = 'schedule'
+                 AND (trigger_type = 'schedule' OR (trigger_type = 'manual' AND EXISTS (
+                     SELECT 1 FROM webhook_deliveries outbox
+                     WHERE outbox.correlation_id = workflow_executions.execution_id
+                       AND outbox.direction = 'outbound'
+                       AND outbox.event_type = 'workflow.execution.started')))
                  AND status = 'running'""",
             (result_status, finished_at, result_summary, execution_id),
         )
@@ -2086,7 +2093,11 @@ def fail_stale_scheduled_workflow_execution(
         cursor = connection.execute(
             """UPDATE workflow_executions
                SET status = 'failed', finished_at = ?, result_summary = ?
-               WHERE execution_id = ? AND trigger_type = 'schedule'
+               WHERE execution_id = ? AND (trigger_type = 'schedule' OR (trigger_type = 'manual' AND EXISTS (
+                     SELECT 1 FROM webhook_deliveries outbox
+                     WHERE outbox.correlation_id = workflow_executions.execution_id
+                       AND outbox.direction = 'outbound'
+                       AND outbox.event_type = 'workflow.execution.started')))
                  AND status = 'running' AND started_at < ?""",
             (finished_at, result_summary, execution_id, stale_before),
         )

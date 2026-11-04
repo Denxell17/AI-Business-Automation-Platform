@@ -31,6 +31,9 @@ class TestPostgresqlMigrations(unittest.TestCase):
                 "010_add_workflow_n8n_outbox_controls.sql",
                 "011_add_n8n_demo_event_acceptance.sql",
                 "012_move_n8n_callback_authority.sql",
+                "014_advanced_assistant.sql",
+                "015_assistant_cloud_controls.sql",
+                "016_assistant_demo_leads.sql",
             ],
         )
 

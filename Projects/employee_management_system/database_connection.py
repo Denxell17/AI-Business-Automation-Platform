@@ -150,6 +150,10 @@ def open_configured_database_connection(
     sqlite_file: Path = DEFAULT_SQLITE_DATABASE_FILE,
 ):
     """Open either SQLite or PostgreSQL from validated settings."""
+    from business_transaction import current_connection
+    shared = current_connection(sqlite_file)
+    if shared is not None:
+        return shared
     selected_settings = (
         settings if settings is not None
         else load_database_settings()

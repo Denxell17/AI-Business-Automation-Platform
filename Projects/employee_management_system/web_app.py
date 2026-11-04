@@ -1144,6 +1144,9 @@ def create_web_application(
     def ai_assistant_page(
         request: Request,
     ) -> Response:
+        from advanced_assistant_web import advanced_enabled
+        if advanced_enabled():
+            return RedirectResponse(request.url_for('advanced_assistant_page'), status_code=303)
         current_user = load_authenticated_session_user(
             request,
             database_file,
@@ -1197,6 +1200,9 @@ def create_web_application(
         csrf_token: Annotated[str, Form()],
         question: Annotated[str, Form()] = "",
     ) -> Response:
+        from advanced_assistant_web import advanced_enabled
+        if advanced_enabled():
+            return RedirectResponse(request.url_for('advanced_assistant_page'), status_code=303)
         current_user = load_authenticated_session_user(
             request,
             database_file,
@@ -4835,6 +4841,11 @@ def create_web_application(
             status_code=200,
         )
 
+    from advanced_assistant_web import register_advanced_assistant_routes
+    register_advanced_assistant_routes(
+        application, templates, database_file, get_or_create_csrf_token,
+        csrf_token_is_valid, selected_provider_abuse_protection, log_activity,
+    )
     return application
 
 

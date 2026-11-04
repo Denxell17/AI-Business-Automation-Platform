@@ -2826,3 +2826,145 @@ msgstr ""
 msgid "Add an employee to generate department headcounts."
 msgstr ""
 
+
+#: templates/advanced_assistant.html:1
+msgid "History is private to your account, retained for seven days, and is not sent to the model. Each question is independent."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Business tools show up to 30 authorized records. Workflow start records a manual run only; n8n dispatch is unavailable."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "The request could not complete. Check model availability, permissions, input, and daily limits before retrying."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Model and provider"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Configured; availability checked on request"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Unavailable"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "No assistant models are configured."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "AI response language (independent of interface language)"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Allow this request to retrieve authorized business data and send minimized results to the selected model provider."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Remote billing and quota settings must be verified by the operator. No automatic model fallback. Daily limits: 100 model calls per user, 1000 globally (UTC). A data summary uses two calls."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Working… Please wait."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Conversation history and action reviews"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Proposed action — review exact parameters"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Action status"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Expires after 10 minutes. Confirmation applies a business change. Invoice drafts are not sent; customer preparation converts a qualified lead."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Confirm this exact action"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Authorized tool result"
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "No conversation history."
+msgstr ""
+
+#: templates/advanced_assistant.html:1
+msgid "Clear history and cancel pending actions"
+msgstr ""
+
+msgid "Business tools show up to 30 authorized records. Approved n8n workflows queue a signed delivery after confirmation."
+msgstr ""
+
+msgid "Cloud free-tier quotas are shared and limited. ABAP applies separate configurable limits. Select another eligible cloud model manually when a provider is unavailable. No paid fallback. A data summary uses two calls."
+msgstr ""
+
+msgid "Live validated (last 24h)"
+msgstr ""
+
+msgid "Unverified or unavailable"
+msgstr ""
+
+msgid "Provider quota or availability cooldown"
+msgstr ""
+
+msgid "ABAP request budget reached. Provider quotas are separate; select another eligible model if its budget permits."
+msgstr ""
+
+msgid "ABAP concurrency limit reached. Try again shortly."
+msgstr ""
+
+msgid "Provider quota or model cooldown active. Select another eligible cloud model."
+msgstr ""
+
+msgid "Model unavailable or quota exhausted. Select another configured model."
+msgstr ""
+
+msgid "Invalid request, unavailable model, or daily call limit reached."
+msgstr ""
+
+msgid "Too many requests. Try again shortly."
+msgstr ""
+
+msgid "Requested data or action is not permitted."
+msgstr ""
+
+msgid "Assistant model configuration is unavailable."
+msgstr ""
+
+msgid "Action expired, already handled, or could not complete. Review business records before proposing again."
+msgstr ""
+
+msgid "No eligible cloud model is available. Free-provider quotas may be exhausted. Try again later."
+msgstr ""
+
+msgid "Synthetic demonstration only. Real records, free-form input and live workflows are unavailable. Demo actions affect isolated fictional records only."
+msgstr ""
+
+msgid "Expires after 10 minutes. Confirmation creates an isolated synthetic lead; no real business data changes."
+msgstr ""
+
+msgid "Explain the ABAP platform using public information only."
+msgstr ""
+
+msgid "Summarize the synthetic leads demonstration."
+msgstr ""
+
+msgid "Summarize the synthetic invoices demonstration."
+msgstr ""
+
+msgid "Summarize the synthetic workflows demonstration."
+msgstr ""
+
+msgid "Prepare a synthetic demo lead for confirmation."
+msgstr ""

@@ -1,0 +1,24 @@
+[Unit]
+Description=Renew the approved free assistant model evidence when due
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+Group=root
+UMask=0077
+RuntimeDirectory=abap-assistant-validation
+RuntimeDirectoryMode=0700
+RuntimeDirectoryPreserve=yes
+ExecStart=/usr/bin/python3 -I -B /usr/local/lib/abap/renew-assistant-model-validation.py
+TimeoutStartSec=210
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/etc/abap/credentials/advanced-assistant /run/abap-assistant-validation
+ReadOnlyPaths=/etc/abap/credentials/advanced-assistant/openrouter-key
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+LockPersonality=true
