@@ -711,8 +711,11 @@ class TestWebApplication(unittest.TestCase):
         self.assertEqual(foreign.status_code, 403)
 
     def test_login_rate_limit_preserves_generic_failure(self):
+        clock = [4.0002]
+        deadline = clock[0] + 60
         limiter = LoginRateLimiter(
             "rate-limit-test-secret",
+            clock=lambda: clock[0],
             source_failure_limit=2,
             account_failure_limit=50,
             cooldown_seconds=60,
@@ -739,6 +742,25 @@ class TestWebApplication(unittest.TestCase):
                 data=data,
                 headers={"X-Forwarded-For": "203.0.113.20"},
             )
+
+            # Valid credentials must not reach authentication before expiry.
+            valid_data = dict(data, password=self.password)
+            with patch("web_app.authenticate_user_account") as authenticate:
+                for now, expected in (
+                    (4.0002, "60"),
+                    (4.0002 + 1.25, "59"),
+                    (deadline - 0.25, "1"),
+                ):
+                    clock[0] = now
+                    blocked = client.post("/login", data=valid_data)
+                    self.assertEqual(blocked.status_code, 429)
+                    self.assertEqual(blocked.headers["retry-after"], expected)
+                    self.assertIn("Username or password is incorrect.", blocked.text)
+                authenticate.assert_not_called()
+            clock[0] = deadline
+            allowed = client.post("/login", data=valid_data, follow_redirects=False)
+            self.assertEqual(allowed.status_code, 303)
+            self.assertNotIn("retry-after", allowed.headers)
 
         self.assertEqual(first.status_code, 401)
         self.assertEqual(limited.status_code, 429)

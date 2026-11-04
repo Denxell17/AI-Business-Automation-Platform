@@ -13,6 +13,18 @@ portfolio project: no customers or commercial availability are claimed.
 
 See the [screenshot gallery and evidence boundaries](PORTFOLIO.md#current-application-gallery) and [capture provenance](docs/portfolio/screenshots.md).
 
+## Source and evidence boundary
+
+The earlier documentation-only candidate was based on application commit
+`3710f0eaf28c4ea8200a4e2072810e24662b7105`. This branch now also includes the
+n8n integration release `7c307c17`, the synthetic-only Advanced ABAP AI Assistant,
+and its automatic model-validation renewal. Screenshots retain the isolated,
+synthetic capture provenance described in the gallery; they are not production
+records. The dated assistant deployment and maintenance results are recorded in
+[the release procedure](docs/deployment/advanced-assistant-final-release-procedure.md)
+and [maintenance record](docs/deployment/advanced-assistant-maintenance.md).
+Git synchronization itself does not deploy changes or perform a fresh production audit.
+
 ## The problem it explores
 
 Small teams often run people data and recurring processes through spreadsheets,
@@ -122,9 +134,10 @@ of scope for that workflow.
 The PostgreSQL-backed application is deployed on HostHatch through Docker
 Compose and Caddy HTTPS. The production web service and worker use migrations,
 persistent private data volumes, readiness checks, secure cookies, and a
-non-root application container. The public deployment keeps n8n and other
-external integrations disabled; the n8n workflow and local Qwen provider are
-implemented and privately tested capabilities, not public production services.
+non-root application container. Protected-workflow integrations and local Qwen have separate deployment gates;
+private demonstration evidence does not establish public availability. The
+landing page public knowledge assistant is a separate integration, preserved
+by the landing release and not live-verified in this documentation review.
 
 On October 8, 2026, a production Restic backup to private Backblaze B2 storage
 and an isolated PostgreSQL 18.6 recovery drill succeeded. The encrypted

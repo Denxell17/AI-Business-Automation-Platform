@@ -89,6 +89,13 @@ class LoginRateLimiter:
             self._states.popitem(last=False)
         return state
 
+    def _remaining_cooldown(self, blocked_until: float, now: float) -> int:
+        """Round up without letting deadline arithmetic add a cooldown second."""
+        return min(
+            self._cooldown_seconds,
+            max(0, math.ceil(blocked_until - now)),
+        )
+
     def _retry_after(self, key: str, window: int, now: float) -> int:
         state = self._states.get(key)
         if state is None:
@@ -98,7 +105,7 @@ class LoginRateLimiter:
             del self._states[key]
             return 0
         self._states.move_to_end(key)
-        return max(0, math.ceil(state.blocked_until - now))
+        return self._remaining_cooldown(state.blocked_until, now)
 
     def retry_after(self, source: str, username: str) -> int:
         now = self._clock()
@@ -127,7 +134,7 @@ class LoginRateLimiter:
                 )
             retry_after = max(
                 retry_after,
-                max(0, math.ceil(state.blocked_until - now)),
+                self._remaining_cooldown(state.blocked_until, now),
             )
         return retry_after
 

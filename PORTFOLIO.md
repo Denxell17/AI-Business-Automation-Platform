@@ -13,6 +13,10 @@ production-hosted portfolio project. Authentication is required for protected
 features; no public demo account, customers, commercial availability, or
 independent security certification are claimed.
 
+## Release evidence boundary
+
+The earlier documentation-only update used application commit `3710f0e`. This branch now includes the later n8n integration source, synthetic-only Advanced ABAP AI Assistant and automatic validation renewal. The gallery retains its isolated synthetic capture provenance. Historical capability and operations sections below are dated evidence, not a fresh production audit; current assistant status is recorded in [the release procedure](docs/deployment/advanced-assistant-final-release-procedure.md) and [maintenance record](docs/deployment/advanced-assistant-maintenance.md). The landing page public knowledge assistant retains a separate integration boundary.
+
 ## Current Application Gallery
 
 These genuine application captures use synthetic demonstration data in an isolated local SQLite environment, captured November 3, 2026. They are not production records or customer results. The approved Soft Graphite interface is shown without visual alteration.
