@@ -33,6 +33,18 @@ admission deadline; elapsed daily reset alone is insufficient.
 
 ## Exact remaining application recovery operation
 
+### Latest restore-only result — PASS
+
+The separately approved one-file retrieval and restore-only diagnostic succeeded:
+exactly one 72,058-byte dump retrieval, matching the pinned SHA-256, followed by
+one PostgreSQL restore with exit 0 and zero client stderr. The exact dump is now
+retained root-only at `/var/backups/abap/recovery-cache/database.dump`; no further
+retrieval is required for that artifact. Cleanup and production preservation
+passed; no image import or application startup was performed. The earlier failure
+remains historically unexplained; startup SQLSTATE 57P03 from readiness probing
+is not proof of its cause. Do not repeat the successful restore or call this an
+executed full application recovery. See `single-dump-restore-diagnostic-20261104.md`.
+
 ### Executed result — consumed; do not rerun
 
 The owner executed the refreshed proof-bound command. Exactly two targeted reads
@@ -58,8 +70,9 @@ reusable plaintext recovery copy is claimed. Both single-use recovery receipts
 are consumed. No new B2 request, restore attempt or privileged diagnostic is
 authorized by this result.
 
-The specific remaining recovery gap is successful restore of the authenticated
-dump followed by the preserved application's startup/health checks. Any further
+The historical gap below is now partially closed: the authenticated dump restored
+successfully in the later restore-only diagnostic. The preserved application's
+startup/health checks against that restored database were not executed. Any further
 operation needs separate approval, useful sanitized PostgreSQL error categories,
 and an explicit strategy for avoiding another retrieval after a failed restore.
 Do not repeat completed image import or startup diagnostics as separate gates.

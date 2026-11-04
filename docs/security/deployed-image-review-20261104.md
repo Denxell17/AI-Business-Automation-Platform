@@ -69,6 +69,20 @@ and is excluded from Git. The public record contains only sanitized findings.
 
 ## Required production approval
 
+The image-only updater is prepared at
+`deploy/production/apply-web-security-image-once.py`, staged without execution at
+`/tmp/abap-web-security.UKdbSEWq/apply-web-security-image-once.py`.
+Updater SHA-256:
+`455341d5758ff095d4e97e8ef6c34b49d21357e3aa2d3d4cf3e9e0a80895602a`.
+The uploaded archive is 114,463,232 bytes with SHA-256
+`7d55f80f021d0e55461c33cb5beab2d157c920cdd7be374ef315a55858bc94aa`.
+All uploaded checksums and syntax passed. Three new image-only boundary tests
+passed; existing candidate package/startup/PDF/security results were reused.
+The local candidate's full image configuration matches the original and its
+base layers are preserved. The updater rejects runtime configuration/mount drift,
+preserves all prior images and files, and restores the original ordered web
+configuration if a deployment check fails. No privileged update has run.
+
 Approve one image-only, web-only security update after the already-approved
 recovery operation has finished. Verify the original image and configuration,
 load the checksum-verified local candidate, append an image-only Compose overlay
