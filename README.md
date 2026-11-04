@@ -178,10 +178,14 @@ and [environment configuration contract](docs/deployment/environment-configurati
 
 ABAP is an actively developed, production-hosted portfolio project, not a
 finished commercial platform. Completion-roadmap Milestones 1–5 are complete.
-Milestone 6 connections are implemented and privately tested but remain
-disabled in production. Milestones 7–8 remain in progress while their remaining
-operations, monitoring, integration, and release gates are completed; Milestone
-9 has not started. The detailed build journey has been preserved in a separate
+Milestone 6 is complete for the approved cloud/synthetic scope: the authenticated
+Advanced AI Assistant is live with two selectable free models and automatic
+validation renewal. Milestones 7–8 remain in progress while the documented
+recovery, recurring backup and linked integration acceptance items are completed;
+Milestone 9 portfolio finalization is in progress. The dependency-only security
+update passed production checks on November 4. See the
+[current acceptance record](docs/deployment/final-platform-acceptance-20261104.md).
+The detailed build journey has been preserved in a separate
 learning-history export so this repository can stay focused on the product and
 its engineering evidence.
 

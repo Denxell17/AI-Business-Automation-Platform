@@ -18,9 +18,9 @@ ARCHIVE_SHA='7d55f80f021d0e55461c33cb5beab2d157c920cdd7be374ef315a55858bc94aa'
 ARCHIVE_SIZE=114463232
 HELPER_SHA='042411390709fcb874833d3691c884b49dc7794ae87cce8a31d9e784458b63d0'
 ROOT=Path('/var/backups/abap')
-RECEIPT=ROOT/'approved-web-security-image-20261104-1.json'
+RECEIPT=ROOT/'approved-web-security-image-20261104-2.json'
 RELEASE=Path('/opt/abap-advanced-assistant/releases/20261104-r2')
-OVERLAY=RELEASE/'security-web-20261104.json'
+OVERLAY=RELEASE/'security-web-20261104-r2.json'
 OLD_FILES=['disabled-web.json','activation-web.json','validation-renewal.json']
 MODELS=['openrouter:nvidia/nemotron-3.5-lightning:free','openrouter:cohere/north-mini-code:free']
 OVERLAY_BYTES=(json.dumps({'services':{'web':{'image':TAG}}},indent=2)+'\n').encode()
@@ -33,6 +33,25 @@ def image_only(before,after):
     expected=json.loads(json.dumps(before))
     expected['services']['web']['image']=TAG
     need(after==expected,'change_beyond_web_image_rejected')
+
+def runtime_comparison(before,after):
+    """Compose may reorder mounts; retain every field and reject real drift."""
+    def normalized(config):
+        result=json.loads(json.dumps(config))
+        mounts=result.get('Mounts')
+        if isinstance(mounts,list):
+            targets=[m.get('Target') for m in mounts if isinstance(m,dict)]
+            need(len(targets)==len(mounts) and all(targets) and len(set(targets))==len(targets),
+                 'ambiguous_runtime_mount_targets')
+            result['Mounts']=sorted(mounts,key=lambda m:json.dumps(m,sort_keys=True))
+        return result
+    keys=set(before)|set(after)
+    # Only Docker field names, never runtime values, paths or credentials.
+    names=lambda values:sorted(k if isinstance(k,str) and k.isidentifier() and len(k)<=64 else 'unknown_field' for k in values)
+    raw=names(k for k in keys if before.get(k)!=after.get(k) or (k in before)!=(k in after))
+    left,right=normalized(before),normalized(after)
+    semantic=names(k for k in keys if left.get(k)!=right.get(k) or (k in left)!=(k in right))
+    return {'raw_differing_fields':raw,'material_differing_fields':semantic,'equivalent':left==right}
 
 def checkpoint(report,first=False):
     flags=os.O_WRONLY|os.O_CREAT|os.O_NOFOLLOW|(os.O_EXCL if first else os.O_TRUNC)
@@ -76,7 +95,7 @@ def main():
     existing=p.docker('image','ls','--no-trunc','--quiet',TAG).decode().split()
     need(not existing or existing==[NEW],'existing_candidate_tag_must_not_be_overwritten')
     rag=b'public-rag-chat.js' in p.http('/login')[1]
-    report={'operation':'approved-web-security-image-20261104-1','status':'running','stage':'load_security_image',
+    report={'operation':'approved-web-security-image-20261104-2','status':'running','stage':'load_security_image',
             'started_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),
             'migrations_run':False,'credentials_changed':False,'timers_changed':False,'b2_requests':0,
             'baseline':p.baseline_smoke(rag),'baseline_models':models(p,web['Id'])}
@@ -93,7 +112,8 @@ def main():
         p.compose(files,'up','-d','--no-deps','--no-build','--pull','never','web',timeout=120)
         current=p.service(p.inventory(),'web');need(current['Image']==NEW,'deployed_image_mismatch')
         need(p.envmap(current['Config']['Env'])==env,'runtime_environment_changed')
-        need(current['HostConfig']==web['HostConfig'],'web_runtime_configuration_changed')
+        report['runtime_comparison']=runtime_comparison(web['HostConfig'],current['HostConfig']);checkpoint(report)
+        need(report['runtime_comparison']['equivalent'],'web_runtime_configuration_changed')
         fields=['Type','Name','Source','Destination','RW','Propagation']
         mounts=lambda row:sorted(json.dumps({k:v.get(k) for k in fields},sort_keys=True) for v in row['Mounts'])
         need(mounts(current)==mounts(web),'web_mounts_changed')

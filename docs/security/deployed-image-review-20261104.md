@@ -96,3 +96,54 @@ On failure, omit the new image overlay and recreate only web from the unchanged
 R2 configuration; verify its original image and health. No migrations, credential
 rotation, global integration activation, backup or pruning is part of this update.
 The unrelated heading fix remains undeployed.
+
+### Approved maintenance result and narrowly corrected retry
+
+The November 4 12:02 UTC update stopped at `replace_web_only` with
+`web_runtime_configuration_changed`. Automatic web rollback PASSED; health,
+readiness and login returned 200 and the public RAG marker remained present.
+No migrations, credentials, timers or B2 operations changed. The security
+candidate is not the running production image. The first single-use command
+must not be rerun.
+
+The first receipt did not retain differing HostConfig fields, so the exact
+production difference is UNKNOWN. A local create-only Compose fixture (synthetic
+secret files, no started containers) independently reproduced changing
+`HostConfig.Mounts` order with identical mount contents. Fixture resources were
+removed. This establishes a defect in strict list-order comparison, without
+proving which field differed in the production attempt.
+
+The corrected updater sorts only HostConfig mount entries with unique target
+paths, retaining every entry and option. All other runtime settings remain
+strictly compared; the independent effective mount comparison remains intact.
+Raw and material differing Docker field names are checkpointed without values,
+paths or secrets. Six focused boundary/redaction tests passed. No image rebuild,
+scan, provider probe, recovery or broad tests were repeated.
+
+A separate single-use retry is staged, not executed, at
+`/tmp/abap-web-security-r2.R1bhAzKp/apply-web-security-image-once.py`.
+SHA-256: `5658037ccd6b9e884d461bdb6dd236597f67027e1c5e72ce55586799eb12606e`.
+The helper and reused archive checksums match the reviewed originals. The retry
+uses a new receipt and overlay, preserving the failed operation's evidence.
+It requires operator authorization/execution and retains automatic web rollback
+on any material difference or failed essential health/model check.
+
+### Final production result — PASS
+
+The owner executed the checksum-verified second command on November 4,
+13:42:38–13:42:47 UTC. Receipt `approved-web-security-image-20261104-2`
+reported `PASS-web-only-security-update`, stage `complete`.
+The deployed immutable image is
+`sha256:e4b1f0fd69637bbbf8201cc4fc3424629fea989f974d1444a88c7863e3eff78c`.
+The actual runtime comparison reported raw differences only in `Mounts`, no
+material differences, and equivalence true. This confirms order-only differences
+in the successful second attempt; the first attempt's exact differences were not
+retained and remain unknown.
+
+Health, readiness and login returned 200; the public RAG UI marker was preserved.
+Both approved free models remained available through existing validation proof;
+no new conversation/provider probe was forced. Other containers, original
+environment and OpenRouter key were preserved. No migrations, credential/timer
+changes or B2 requests occurred. The previously documented scanner findings and
+triage remain applicable; no new scan or clean-scan claim is made. Both maintenance
+commands are consumed and must not be rerun.

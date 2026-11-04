@@ -31,4 +31,32 @@ class WebSecurityUpdateTests(unittest.TestCase):
         with self.assertRaises(m['Stop']):m['image_only'](self.before,self.after)
         self.assertEqual(self.before['services']['web']['image'],'old')
 
+    def test_mount_order_only_is_equivalent_without_losing_options(self):
+        mounts=[{'Type':'bind','Source':'/private/a','Target':'/run/a','ReadOnly':True},
+                {'Type':'bind','Source':'/private/b','Target':'/run/b','ReadOnly':True}]
+        before={'Mounts':mounts,'ReadonlyRootfs':True}
+        after={'Mounts':list(reversed(mounts)),'ReadonlyRootfs':True}
+        result=m['runtime_comparison'](before,after)
+        self.assertEqual(result,{'raw_differing_fields':['Mounts'],'material_differing_fields':[],'equivalent':True})
+        self.assertEqual(before['Mounts'],mounts)
+        self.assertNotIn('/private',str(result))
+
+    def test_real_runtime_changes_fail_and_only_field_names_are_reported(self):
+        before={'Mounts':[{'Target':'/run/a','Source':'SECRET','ReadOnly':True}],
+                'Privileged':False,'ReadonlyRootfs':True,'NetworkMode':'private','Memory':1024}
+        for field in ['Mounts','Privileged','ReadonlyRootfs','NetworkMode','Memory']:
+            after=copy.deepcopy(before)
+            if field=='Mounts':after[field][0]['ReadOnly']=False
+            elif field=='Privileged':after[field]=True
+            else:after[field]='changed'
+            result=m['runtime_comparison'](before,after)
+            self.assertFalse(result['equivalent'])
+            self.assertEqual(result['material_differing_fields'],[field])
+            self.assertNotIn('SECRET',str(result))
+
+    def test_duplicate_targets_and_added_fields_are_not_hidden(self):
+        with self.assertRaises(m['Stop']):
+            m['runtime_comparison']({'Mounts':[{'Target':'/x'},{'Target':'/x'}]}, {'Mounts':[]})
+        self.assertFalse(m['runtime_comparison']({}, {'Mounts':[]})['equivalent'])
+
 if __name__=='__main__':unittest.main()
