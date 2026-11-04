@@ -152,6 +152,14 @@ verified-origin operational checks passed read-only; the same bounded operation
 now awaits authenticated execution. Public-browser proof remains mandatory. The
 public-flow gate remains open; no waiver or final release tag is inferred.
 
+The next executed attempt stopped at disposable startup; cleanup, production
+preservation and before/after health checks passed. The exported n8n source
+directory's umask-induced 0700 permission defect was reproduced and corrected
+locally with one targeted file-access check. The same procedure now retains safe
+per-service failure metadata. Only a corrected disposable-demo retry remains;
+no previous successful tests or production environment are rebuilt. The first
+scheduled n8n backup result remains pending until observed.
+
 ## Concise final demonstration
 
 Use isolated synthetic CRM/invoice records and existing private test-provider

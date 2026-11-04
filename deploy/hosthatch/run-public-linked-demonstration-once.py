@@ -26,7 +26,7 @@ import urllib.request
 import uuid
 
 ROOT=Path('/var/backups/abap')
-RECEIPT=ROOT/'approved-public-linked-demonstration-20261104-1.json'
+RECEIPT=ROOT/'approved-public-linked-demonstration-20261105-2.json'
 CURRENT='sha256:e4b1f0fd69637bbbf8201cc4fc3424629fea989f974d1444a88c7863e3eff78c'
 DOCKER_CONFIG_PATH='/nonexistent/.docker'
 LAST_DOCKER_FAILURE=None
@@ -66,6 +66,28 @@ def stable(rows,project):
     return sorted((r['Id'],r['Image'],r['State']['Running'],r['RestartCount'],
         sha(json.dumps([r['Config'],r['HostConfig'],r['NetworkSettings']['Networks']],sort_keys=True).encode()))
         for r in rows if r['Config'].get('Labels',{}).get('com.docker.compose.project')!=project)
+def startup_failures(rows):
+    result=[]
+    for row in rows:
+        state=row['State']
+        if state['Status']!='exited' or not state['ExitCode']:continue
+        name=row['Config']['Labels'].get('com.docker.compose.service')
+        if name not in {'web','database','demo-provider','n8n'}:name='unclassified'
+        record={'service':name,'exit_code':state['ExitCode'],'oom_killed':bool(state.get('OOMKilled'))}
+        try:
+            p=subprocess.run(['/usr/bin/docker','--host','unix:///var/run/docker.sock','logs','--tail','30',row['Id']],
+                capture_output=True,timeout=5,env={'PATH':'/usr/bin:/bin','HOME':'/nonexistent'})
+            text=(p.stdout+p.stderr)[-32768:].lower()
+            record['log_categories']=[category for category,patterns in [
+                ('permission_denied',[b'eacces',b'permission denied']),
+                ('missing_module_or_file',[b'modulenotfounderror',b'cannot find module',b'enoent']),
+                ('readonly_filesystem',[b'erofs',b'read-only file system']),
+                ('out_of_memory',[b'heap out of memory',b'allocation failed']),
+                ('database_connection_failure',[b'connection refused',b'operationalerror'])]
+                if any(pattern in text for pattern in patterns)]
+        except (OSError,subprocess.TimeoutExpired):record['logs']='bounded_log_read_unavailable'
+        result.append(record)
+    return result
 def origin_https(path):
     """Local ops check; public acceptance still requires the signed-in browser."""
     host='app.dennisbasadre.com';context=ssl.create_default_context()
@@ -163,7 +185,7 @@ def main():
     baseline=stable(rows,project)
     work=Path('/run')/project;need(not work.exists() and not work.is_symlink(),'disposable_workspace_exists')
     work.mkdir(mode=0o700);identity=(work.stat().st_dev,work.stat().st_ino)
-    report={'operation':'approved-public-linked-demonstration-20261104-1','status':'running','stage':'create_disposable_stack',
+    report={'operation':'approved-public-linked-demonstration-20261105-2','status':'running','stage':'create_disposable_stack',
         'b2_requests':0,'ai_requests':0,'production_database_writes':False,'existing_n8n_workflows_modified':False,
         'production_web_recreated':False,'run':run,'project':project,'temporary_prefix':prefix,
         'baseline_origin_tls_smoke':baseline_origin,'authenticated_public_browser_required':True}
@@ -174,6 +196,9 @@ def main():
         (work/'.docker').mkdir(mode=0o700);DOCKER_CONFIG_PATH=str(work/'.docker')
         for name,data in payload.items():
             path=work/name;path.parent.mkdir(mode=0o755,parents=True,exist_ok=True);write_new(path,data,0o444)
+        # umask 0077 also masks mkdir(0755). Only this public source mount needs
+        # explicit traversal for n8n's non-root user; work itself stays 0700.
+        os.chmod(work/'examples/n8n',0o755)
         fixture.ROOT=work;configuration=fixture.fixture_configuration(work)
         db_alias=isolate_database(configuration,run)
         # Keep the disposable database namespace explicit and unique.
@@ -196,8 +221,12 @@ def main():
                 compose('exec','-T','n8n','node','-e',"fetch('http://127.0.0.1:5678/healthz/readiness').then(r=>{if(!r.ok)process.exit(1)}).catch(()=>process.exit(1))",timeout=10)
                 break
             except Stop:
+                readiness_failure=LAST_DOCKER_FAILURE
                 owned=[r for r in inventory() if r['Config'].get('Labels',{}).get('com.docker.compose.project')==project]
-                need(not any(r['State']['Status']=='exited' and r['State']['ExitCode'] for r in owned),'disposable_service_exited')
+                failed=startup_failures(owned)
+                if failed:
+                    report['startup_failures']=failed;report['readiness_probe_failure']=readiness_failure;save(report)
+                    raise Stop('disposable_service_exited')
                 need(time.monotonic()<deadline,'disposable_readiness_timeout');time.sleep(2)
         report['stage']='linked_synthetic_acceptance';save(report)
         case=(fixture.CASE+support.COOKIE_TAIL).replace("'@database:'",repr('@'+db_alias+':'))

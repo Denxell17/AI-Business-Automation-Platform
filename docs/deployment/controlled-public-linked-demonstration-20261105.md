@@ -1,5 +1,35 @@
 # Controlled public linked demonstration — approved, corrected execution pending
 
+## Startup attempt: cleaned up; narrow permission correction
+
+The owner executed the origin-corrected procedure. It stopped at
+`wait_disposable_readiness / disposable_service_exited` after 16.843 seconds.
+Disposable cleanup and production preservation PASSED; the host proxy process
+was preserved and all before/after origin TLS checks returned 200. No temporary
+route was loaded, production web recreated, business database written, existing
+n8n workflow modified, B2 request made or AI request sent. The failed operation's
+single-use receipt remains preserved and consumed.
+
+A definite startup defect was reproduced without starting a database or n8n
+server: under the controller's `umask 0077`, `mkdir(mode=0755)` creates the
+exported workflow directory as 0700. The pinned n8n image runs as `node`; a
+targeted Linux volume/subpath check returned `EACCES` for its non-root reader.
+Explicitly setting only that mounted source directory to 0755 made it readable,
+while the containing private workspace stayed 0700. The controller now applies
+that one-directory correction. No credential directory is made public.
+
+The original per-container logs were removed during successful cleanup, so no
+unsupported claim is made about other exited services. The same controller now
+records failing service, exit code, OOM flag and bounded fixed log categories
+before cleanup, without raw messages, arguments or secrets. A single targeted
+redaction check passed. No previous successful suite, complete environment,
+recovery, security scan or linked acceptance test was repeated.
+
+The corrected retry uses a new receipt, preserving the old failure; it has not
+been executed. It recreates only the failed disposable demo because its prior
+resources were correctly removed, using the same cached images and reviewed
+payload. No production deployment or environment rebuild is involved.
+
 ## First execution: blocked before any demonstration changes
 
 The owner ran the approved controller on November 5 Shanghai time. It returned
@@ -84,10 +114,10 @@ public RAG and free-model safeguards remain unchanged.
 
 ## Reviewed package, staged without execution
 
-Controller: `/tmp/abap-public-demo-origin.SXEIXURE/run-public-linked-demonstration-once.py`.
-SHA-256: `300742cadd30c9ecc695b3efa045ceaa96432c79b767ca99dbdf81b668864456`.
+Controller: `/tmp/abap-public-demo-startup.AVuYx8T7/run-public-linked-demonstration-once.py`.
+SHA-256: `566af041a74077ef9f67cc69fd02a9b0247b9752b080d799c97b5b8720cf94f0`.
 Manifest SHA-256: `1bc12adeec721cfb0d1a5055913196714e92170cc7e304bf064b74f64c724cd1`.
-Package SHA-256: `ff47c1aee5c8ddc9fd1dc27069610d2af62b00792bab6828a8057bc2b4318c96`.
+Package SHA-256: `2d8c4a7a434ead33e946c26ec9b3f7396f7ef92105c6ed9c1b8edb1df1f333d7`.
 Local/remote hashes and syntax match. This resumes the already approved scope;
 no privilege bypass or automatic rerun is performed. The sanitized root-only receipt will be
-`/var/backups/abap/approved-public-linked-demonstration-20261104-1.json`.
+`/var/backups/abap/approved-public-linked-demonstration-20261105-2.json`.
