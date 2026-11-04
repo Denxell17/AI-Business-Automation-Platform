@@ -3,6 +3,7 @@ FROM python:3.14.8-slim-trixie@sha256:a2b82f3c48559aa0a8446d9af49826b6e2b2016f4c
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1
 WORKDIR /app
 COPY Projects/employee_management_system/requirements-deploy.txt /tmp/requirements.txt
+COPY Projects/employee_management_system/requirements-security.txt /tmp/requirements-security.txt
 RUN pip install --no-cache-dir -r /tmp/requirements.txt
 RUN groupadd --gid 10001 abap && useradd --uid 10001 --gid abap --no-create-home abap
 COPY Projects/employee_management_system/ /app/

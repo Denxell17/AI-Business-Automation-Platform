@@ -1,0 +1,10 @@
+# Apply only reviewed dependency corrections to the exact existing deployed image.
+# The build caller must resolve and verify the preserved base image identity first.
+ARG ABAP_SECURITY_BASE=abap:assistant-synthetic-20261104-r2
+FROM ${ABAP_SECURITY_BASE}
+USER root
+COPY Projects/employee_management_system/requirements-security.txt /tmp/abap-security-requirements.txt
+RUN python -m pip install --no-cache-dir --upgrade --no-deps -r /tmp/abap-security-requirements.txt \
+    && python -m pip check \
+    && rm /tmp/abap-security-requirements.txt
+USER abap

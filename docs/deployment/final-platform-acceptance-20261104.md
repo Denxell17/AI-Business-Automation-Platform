@@ -9,7 +9,7 @@ below are not represented as passed. No final release tag has been created.
 | Milestone | Delivered evidence | Remaining exit condition |
 | --- | --- | --- |
 | 6 — Selected External Connections | Two approved OpenRouter free cloud models passed authentication, EN/JA, structured business JSON and manual switching. The authenticated synthetic-only assistant is live. Signed ABAP–n8n scheduled round trips, replay protection, timeout/retry handling and stored execution/delivery outcomes passed in isolation. Provider contracts, scopes, failure handling and rotation instructions exist. | The owner's cloud-only correction supersedes laptop Qwen as a required production dependency. Qwen remains an optional local adapter; GoHighLevel remains conditional/deferred. Neither is advertised as production-enabled. The selected connection gate is satisfied for this approved scope. |
-| 7 — Production Operations | Encrypted image/configuration preservation and authenticated PostgreSQL dump parsing passed. Both n8n offline restores, SQLite integrity and credential decryption passed. Daily ABAP backup completed November 4 at 02:16:01 UTC, success/exit 0. Operations, retention and full-check services report success. | Finish the existing isolated ABAP restored-database-to-healthy-application continuation and document its rollback evidence. Qualify the recurring n8n backup service before enabling its timer: current service is failed, timer disabled, protected prior staging must be preserved. Complete the roadmap's dependency/container vulnerability review; no clean scan is claimed. |
+| 7 — Production Operations | Encrypted image/configuration preservation and authenticated PostgreSQL dump parsing passed. Both n8n offline restores, SQLite integrity and credential decryption passed. Daily ABAP backup completed November 4 at 02:16:01 UTC, success/exit 0. Operations, retention and full-check services report success. | Finish the existing isolated ABAP restored-database-to-healthy-application continuation and document its rollback evidence. Qualify the recurring n8n backup service before enabling its timer: current service is failed, timer disabled, protected prior staging must be preserved. The required vulnerability review completed; promote the validated dependency-only correction with explicit approval and documented residual-finding triage. No clean production scan is claimed. |
 | 8 — Cloud Deployment and HTTPS | Production ABAP and HTTPS are live. Web-only replacement preserved data/history and other containers. Health/readiness/login returned 200. Migrations 001–016 and private n8n/RAG configuration were preserved. | Consolidate evidence that the final scheduled signed n8n flow is displayed through the HTTPS application and linked to the existing CRM/invoice demonstration. Do not enable integrations globally or alter real workflows just to claim this gate. |
 | 9 — Final Portfolio Release | Existing README, portfolio, genuine synthetic screenshots, architecture/contracts, deployment/incident/recovery guidance and demonstration below are available. Prior PostgreSQL regression snapshots (896, later 907/928), focused security/isolation tests and live provider checks are reused, not rerun. | Close the outstanding gates above, synchronize appropriate source/docs, then tag the verified release. Do not call an accepted disaster-recovery risk a successful restore. |
 
@@ -128,10 +128,13 @@ recovery still requires authenticated sudo and a fresh capacity proof. Recurring
 n8n installation/qualification/activation needs a concrete separately approved
 operation; the failed legacy wrapper must not simply be enabled.
 
-Automatic approval review rejected running Docker Scout against the private image
-because package/image metadata may be sent to Docker's service. No scan ran and
-no report is claimed. Approval for that specific metadata egress, or an available
-offline vulnerability database, is required to complete the existing review gate.
+After automatic approval review initially blocked Docker Scout metadata egress,
+the owner explicitly approved that limited review. The review completed and
+identified critical/high advisories. A dependency-only local candidate built and
+passed focused validation; its scan reports zero critical entries and two remaining
+high entries requiring the documented triage. Production promotion requires
+explicit approval and acknowledgment of the disputed residual zlib finding. See
+`../security/deployed-image-review-20261104.md`; no clean production scan is claimed.
 
 The landing-page assistant section is locally implemented in its separate
 repository. Publishing it still requires the owner's review approval. Its public
