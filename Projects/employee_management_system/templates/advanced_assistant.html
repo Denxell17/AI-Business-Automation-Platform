@@ -27,7 +27,8 @@
       <button class="ui-button ui-button--primary" type="submit" {% if not (models | selectattr('available') | list) %}disabled{% endif %}>{{ _("Ask AI Assistant") }}</button>
       <p role="status" data-assistant-status hidden>{{ _("Working… Please wait.") }}</p>
     </form>
-    <section class="assistant-response" aria-labelledby="assistant-history"><h2 id="assistant-history">{{ _("Conversation history and action reviews") }}</h2>
+    <section class="assistant-response" aria-labelledby="assistant-history">
+      <header><h2 id="assistant-history">{{ _("Conversation history and action reviews") }}</h2></header>
       {% for entry in entries %}
         {% if entry.kind == 'action' %}
           <article class="assistant-response-content">
