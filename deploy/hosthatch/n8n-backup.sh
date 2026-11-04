@@ -2,155 +2,111 @@
 set -Eeuo pipefail
 umask 0077
 
+# Explicit selectors live in n8n_backup_state.py:
+# standalone: com.docker.compose.project=n8n, com.docker.compose.service=n8n
+# public RAG: project=abap-public-rag-production, service=public-rag-n8n
 readonly OPERATIONS_LIB="${ABAP_OPERATIONS_LIB:-/usr/local/lib/abap/abap-operations-lib.sh}"
-readonly N8N_VOLUME_PATH="/var/lib/docker/volumes/n8n_n8n_data/_data"
+readonly STATE_HELPER="${ABAP_N8N_STATE_HELPER:-/usr/local/lib/abap/n8n_backup_state.py}"
 readonly STAGING_PARENT="/var/backups/n8n"
-readonly STAGING_DIRECTORY="$STAGING_PARENT/staging"
-readonly SHARED_LOCK="/run/lock/abap-production-backup.lock"
-
-[[ -r "$OPERATIONS_LIB" ]] || { printf 'ERROR: operations library is unavailable.\n' >&2; exit 1; }
-# shellcheck source=abap-operations-lib.sh
+readonly RUN_PARENT="$STAGING_PARENT/runs"
+[[ "$EUID" -eq 0 ]] || { printf 'ERROR: root is required.\n' >&2; exit 1; }
+[[ -r "$OPERATIONS_LIB" && -r "$STATE_HELPER" ]] || { printf 'ERROR: backup dependencies unavailable.\n' >&2; exit 1; }
 source "$OPERATIONS_LIB"
 operations_load_config
 operations_configure_restic
-readonly N8N_RESTIC_HOST="${ABAP_RESTIC_HOST}-n8n"
-
-[[ "$EUID" -eq 0 ]] || { operations_fail "The n8n backup must run as root."; exit 1; }
-for command_name in docker flock install python3 readlink restic sha256sum stat; do
+for command_name in docker flock install python3 restic stat du readlink; do
   operations_require_command "$command_name"
 done
-[[ -d "$N8N_VOLUME_PATH" && ! -L "$N8N_VOLUME_PATH" ]] || {
-  operations_fail "The expected n8n data volume is unavailable."
-  exit 1
+# Acquire the existing shared lock BEFORE staging or interacting with backup state.
+exec 9>/run/lock/abap-production-backup.lock
+flock -n 9 || { operations_fail "Another production backup operation is running."; exit 1; }
+if [[ -e "$STAGING_PARENT" || -L "$STAGING_PARENT" ]]; then
+  [[ -d "$STAGING_PARENT" && ! -L "$STAGING_PARENT" && "$(stat -c %u "$STAGING_PARENT")" == 0 && "$(stat -c %a "$STAGING_PARENT")" == 700 ]] || {
+    operations_fail "Protected staging parent failed validation."; exit 1;
+  }
+else
+  install -d -o root -g root -m 0700 "$STAGING_PARENT"
+fi
+[[ "$(readlink -f -- "$STAGING_PARENT")" == "$STAGING_PARENT" ]] || { operations_fail "Staging parent is not canonical."; exit 1; }
+# The earlier one-off /staging capture stays protected and is never reused.
+if [[ ! -e "$RUN_PARENT" && ! -L "$RUN_PARENT" ]]; then
+  install -d -o root -g root -m 0700 "$RUN_PARENT"
+fi
+[[ -d "$RUN_PARENT" && ! -L "$RUN_PARENT" && "$(readlink -f -- "$RUN_PARENT")" == "$RUN_PARENT" &&
+   "$(stat -c %u "$RUN_PARENT")" == 0 && "$(stat -c %a "$RUN_PARENT")" == 700 ]] || {
+  operations_fail "Protected run parent failed validation."; exit 1;
 }
-[[ "$(readlink -f -- "$N8N_VOLUME_PATH")" == "$N8N_VOLUME_PATH" ]] || {
-  operations_fail "The n8n data volume resolves outside its approved path."
-  exit 1
-}
-
-mapfile -t n8n_containers < <(
-  docker ps --filter label=com.docker.compose.service=n8n --format '{{.ID}}'
-)
-(( ${#n8n_containers[@]} == 1 )) || {
-  operations_fail "Exactly one running Compose n8n service is required."
-  exit 1
-}
-readonly n8n_container="${n8n_containers[0]}"
-
-# Require the live environment key (when present) to match the key in the
-# protected n8n config that is included in the volume snapshot. No key value is
-# written or printed.
-python3 -c '
-import json, pathlib, sys
-inspection = json.load(sys.stdin)[0]
-config_path = pathlib.Path(sys.argv[1])
-config = json.loads(config_path.read_text(encoding="utf-8"))
-stored = config.get("encryptionKey")
-if not isinstance(stored, str) or not stored:
-    raise SystemExit("ERROR: n8n config has no usable encryption key.")
-configured = None
-for item in inspection.get("Config", {}).get("Env", []):
-    if item.startswith("N8N_ENCRYPTION_KEY="):
-        configured = item.split("=", 1)[1]
-        break
-if configured is not None and configured != stored:
-    raise SystemExit("ERROR: live and stored n8n encryption keys do not match.")
-' "$N8N_VOLUME_PATH/config" < <(docker inspect "$n8n_container")
-
-install -d -o root -g root -m 0700 "$STAGING_PARENT" "$STAGING_DIRECTORY"
-find "$STAGING_DIRECTORY" -xdev -mindepth 1 -delete
-install -d -o root -g root -m 0700 "$ABAP_RESTIC_CACHE_DIR"
-exec 9>"$SHARED_LOCK"
-flock -n 9 || { operations_fail "An ABAP or n8n backup operation is running."; exit 1; }
-
+readonly run_tag="run-$(python3 -I -c 'import uuid;print(uuid.uuid4().hex)')"
+readonly STAGING_DIRECTORY="$RUN_PARENT/$run_tag"
+python3 -I -B "$STATE_HELPER" check
+current_raw_bytes="$(operations_restic_raw_bytes)"
+(( current_raw_bytes < ABAP_RESTIC_CRITICAL_BYTES )) || { operations_fail "Repository storage threshold reached."; exit 1; }
+permitted_bytes="$(operations_permitted_staging_bytes "$STAGING_PARENT")"
+(( permitted_bytes >= 2097152 )) || { operations_fail "Insufficient protected staging headroom."; exit 1; }
+python3 -I -B "$STATE_HELPER" create-run --bundle "$STAGING_DIRECTORY" --run-id "$run_tag"
 backup_complete=false
-container_stopped=false
-run_tag="run-$(date -u +'%Y%m%dT%H%M%SZ')"
-
-finish_backup() {
+finish() {
   local status=$?
-  if [[ "$container_stopped" == true ]]; then
-    if ! docker start "$n8n_container" >/dev/null; then
-      printf 'CRITICAL: n8n could not be restarted.\n' >&2
-      status=1
-    fi
-  fi
-  find "$STAGING_DIRECTORY" -xdev -mindepth 1 -delete 2>/dev/null || status=1
   if (( status == 0 )) && [[ "$backup_complete" == true ]]; then
+    python3 -I -B "$STATE_HELPER" cleanup --bundle "$STAGING_DIRECTORY" --run-id "$run_tag" || status=1
+  fi
+  if (( status == 0 )); then
     operations_heartbeat heartbeat_n8n_backup_url
   else
+    printf 'ERROR: backup incomplete; any protected staging is retained for review.\n' >&2
     operations_heartbeat heartbeat_n8n_backup_url /fail
   fi
   exit "$status"
 }
-trap finish_backup EXIT
+trap finish EXIT
 trap 'exit 129' HUP
 trap 'exit 130' INT
 trap 'exit 143' TERM
-
-current_raw_bytes="$(operations_restic_raw_bytes)"
-(( current_raw_bytes < ABAP_RESTIC_CRITICAL_BYTES )) || {
-  operations_fail "Restic storage is already at the critical threshold."
-  exit 1
-}
-
-image_reference="$(docker inspect --format '{{.Config.Image}}' "$n8n_container")"
-image_id="$(docker inspect --format '{{.Image}}' "$n8n_container")"
-cat >"$STAGING_DIRECTORY/RECOVERY-MANIFEST.txt" <<EOF
-format=abap-n8n-production-backup-v1
-captured_at_utc=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-container_image=$image_reference
-container_image_id=$image_id
-volume=n8n_n8n_data
-database=sqlite
-restore_rule=restore-only-to-isolated-resources
-EOF
-sha256sum "$STAGING_DIRECTORY/RECOVERY-MANIFEST.txt" >"$STAGING_DIRECTORY/SHA256SUMS"
-
-container_stopped=true
-docker stop --time 30 "$n8n_container" >/dev/null
-
-restic backup \
-  --host "$N8N_RESTIC_HOST" \
-  --one-file-system \
-  --tag n8n-production \
-  --tag automated \
-  --tag "$run_tag" \
-  "$N8N_VOLUME_PATH" \
-  "$STAGING_DIRECTORY"
-
-restic snapshots --host "$N8N_RESTIC_HOST" --tag "$run_tag" --json \
-  | python3 -c '
-import json, sys
-snapshots = json.load(sys.stdin)
-if len(snapshots) != 1:
-    raise SystemExit(1)
-tags = set(snapshots[0].get("tags") or [])
-raise SystemExit(0 if {"n8n-production", sys.argv[1]} <= tags else 1)
-' "$run_tag"
-
-docker start "$n8n_container" >/dev/null
-container_stopped=false
-for _ in $(seq 1 30); do
-  state="$(docker inspect --format '{{if .State.Health}}{{.State.Health.Status}}{{else}}{{.State.Status}}{{end}}' "$n8n_container")"
-  [[ "$state" == healthy || "$state" == running ]] && break
-  [[ "$state" == unhealthy || "$state" == exited || "$state" == dead ]] && break
-  sleep 2
+# A strict per-instance cap preserves the combined existing staging budget.
+per_instance_bytes=$(( (permitted_bytes - 1048576) / 2 ))
+for target in standalone public-rag-production; do
+  python3 -I -B "$STATE_HELPER" capture --target "$target" \
+    --bundle "$STAGING_DIRECTORY/$target" --limit-bytes "$per_instance_bytes"
 done
-[[ "$state" == healthy || "$state" == running ]] || {
-  operations_fail "n8n did not return to the running state."
-  exit 1
-}
-
-restic forget \
-  --host "$N8N_RESTIC_HOST" \
-  --tag n8n-production \
-  --group-by host,paths \
-  --keep-daily 14 \
-  --keep-weekly 8 \
-  --keep-monthly 12
-
-final_raw_bytes="$(operations_restic_raw_bytes)"
-operations_report_restic_budget "$final_raw_bytes"
+staged_bytes="$(du -sb "$STAGING_DIRECTORY" | awk '{print $1}')"
+operations_require_uint staged_bytes "$staged_bytes"
+operations_require_local_headroom "$STAGING_PARENT" "$staged_bytes" 'Encrypted backup'
+projected_bytes=$(( current_raw_bytes + staged_bytes + ABAP_RESTIC_PREFLIGHT_OVERHEAD_BYTES ))
+(( projected_bytes < ABAP_RESTIC_CRITICAL_BYTES )) || { operations_fail "Repository growth threshold would be exceeded."; exit 1; }
+for target in standalone public-rag-production; do
+  if [[ "$target" == standalone ]]; then
+    host="${ABAP_RESTIC_HOST}-n8n"
+  else
+    host="${ABAP_RESTIC_HOST}-n8n-public-rag-production"
+  fi
+  # Restic encryption/repository/credentials remain the established operations settings.
+  restic backup --host "$host" --one-file-system --tag n8n-production \
+    --tag "$target" --tag automated --tag "$run_tag" "$STAGING_DIRECTORY/$target" \
+    >/dev/null 2>/dev/null || { operations_fail "Encrypted snapshot failed; existing snapshots untouched."; exit 1; }
+  snapshot_id="$(restic snapshots --host "$host" --tag "$run_tag" --json 2>/dev/null | python3 -I -c '
+import json,re,sys
+rows=json.load(sys.stdin)
+if len(rows)!=1 or not re.fullmatch("[0-9a-f]{64}",rows[0].get("id","")): raise SystemExit(1)
+print(rows[0]["id"])
+')"
+  # Verify that database, persistent key configuration and recovery manifest were included.
+  restic ls --json "$snapshot_id" 2>/dev/null | python3 -I -c '
+import json,sys
+prefix=sys.argv[1]
+required={prefix+"/capture.json",prefix+"/data/database.sqlite",prefix+"/data/config",prefix+"/runtime.json"}
+found=set()
+for line in sys.stdin:
+ item=json.loads(line)
+ if item.get("type")=="file": found.add(item.get("path"))
+if not required <= found: raise SystemExit(1)
+' "$STAGING_DIRECTORY/$target"
+  printf 'N8N_SNAPSHOT_VERIFIED: target=%s id=%s\n' "$target" "$snapshot_id"
+done
+# Deliberately no forget/prune: keep existing 14/8/12 policy recorded in captures.
+# Retention application is a separate approved operation, never part of this repair run.
+python3 -I -B "$STATE_HELPER" check
+# Reuse the conservative pre-write growth bound under the shared backup lock.
+# Avoid a second full-repository metadata scan after two successful snapshots.
+operations_report_restic_budget "$projected_bytes"
 backup_complete=true
-printf 'N8N_BACKUP_OK: encrypted snapshot %s confirmed.\n' "$run_tag"
+printf 'N8N_BACKUP_OK: both production targets captured; no containers stopped or started.\n'

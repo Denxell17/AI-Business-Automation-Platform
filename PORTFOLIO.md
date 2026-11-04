@@ -186,8 +186,9 @@ that every recurring-operations, monitoring, or final-release gate is complete.
 - Milestone 6: complete for the approved cloud/synthetic scope; the Advanced
   Assistant is live with two selectable free models, EN/JA responses, private
   history, confirmation-protected demo interactions and automatic validation renewal.
-- Milestone 7: in progress; restored-application startup and recurring n8n backup
-  qualification remain open. The required vulnerability review and approved
+- Milestone 7: in progress; recurring n8n backup qualification remains open.
+  Restored-application startup, isolation and health checks passed November 4.
+  The required vulnerability review and approved
   dependency-only production correction passed November 4.
 - Milestone 8: deployed over HTTPS; linked end-to-end final acceptance remains open.
 - Milestone 9: portfolio finalization in progress; no final release tag yet.

@@ -1,5 +1,28 @@
 # Remaining acceptance — cached startup and existing evidence
 
+## Executed result — application recovery PASS
+
+The owner executed the approved command on November 4. Operation
+`approved-cached-application-startup-20261104-1` returned
+`PASS-application-startup-continuation`; application verification took 17.305 seconds.
+The pinned rollback image started against the retained, restored PostgreSQL 18
+dump. All 13 baseline migrations matched, seven required relations existed,
+and no foreign keys were unvalidated. Health, readiness and login returned 200.
+The fresh database role was read-only; no workers, integrations, published ports,
+production mounts or outbound route were present. Both owned containers were
+removed, with zero remaining and production preservation PASS. There were zero
+B2 requests, image imports, backup jobs or service changes. This command is
+consumed; do not repeat the application recovery check.
+
+Configuration overrides and full-host/file-payload limitations below remain
+explicit. This closes the restored-application startup gap, not those broader
+capabilities which were never part of the approved continuation.
+
+The same receipt confirms the exact installed backup/helper hashes, historic
+service failure, disabled timer, nonempty protected staging, and two repository
+budget reads in the installed script. Linked, completed and signed-roundtrip
+CRM/invoice execution counts were all zero. Those two acceptance items remain open.
+
 Prepared after the accepted security deployment (`062bbb3`). No security scans,
 dependency reviews, retrievals, backup jobs or successful tests are repeated.
 

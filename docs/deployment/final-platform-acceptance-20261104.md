@@ -9,7 +9,7 @@ below are not represented as passed. No final release tag has been created.
 | Milestone | Delivered evidence | Remaining exit condition |
 | --- | --- | --- |
 | 6 — Selected External Connections | Two approved OpenRouter free cloud models passed authentication, EN/JA, structured business JSON and manual switching. The authenticated synthetic-only assistant is live. Signed ABAP–n8n scheduled round trips, replay protection, timeout/retry handling and stored execution/delivery outcomes passed in isolation. Provider contracts, scopes, failure handling and rotation instructions exist. | The owner's cloud-only correction supersedes laptop Qwen as a required production dependency. Qwen remains an optional local adapter; GoHighLevel remains conditional/deferred. Neither is advertised as production-enabled. The selected connection gate is satisfied for this approved scope. |
-| 7 — Production Operations | Encrypted image/configuration preservation and authenticated PostgreSQL dump parsing passed. Both n8n offline restores, SQLite integrity and credential decryption passed. Daily ABAP backup completed November 4 at 02:16:01 UTC, success/exit 0. Operations, retention and full-check services report success. | Finish the existing isolated ABAP restored-database-to-healthy-application continuation and document its rollback evidence. Qualify the recurring n8n backup service before enabling its timer: current service is failed, timer disabled, protected prior staging must be preserved. The required vulnerability review and approved dependency-only production correction passed; residual-finding triage is documented. No clean production scan is claimed. |
+| 7 — Production Operations | Encrypted image/configuration preservation and authenticated PostgreSQL dump parsing passed. Both n8n offline restores, SQLite integrity and credential decryption passed. Daily ABAP backup completed November 4 at 02:16:01 UTC, success/exit 0. Operations, retention and full-check services report success. | The restored-database-to-healthy-application continuation passed (17.305 seconds, health/readiness/login 200, cleanup and production preservation PASS). Qualify the recurring n8n backup service before enabling its timer: current service is failed, timer disabled, protected prior staging must be preserved. The required vulnerability review and approved dependency-only production correction passed; residual-finding triage is documented. No clean production scan is claimed. |
 | 8 — Cloud Deployment and HTTPS | Production ABAP and HTTPS are live. Web-only replacement preserved data/history and other containers. Health/readiness/login returned 200. Migrations 001–016 and private n8n/RAG configuration were preserved. | Consolidate evidence that the final scheduled signed n8n flow is displayed through the HTTPS application and linked to the existing CRM/invoice demonstration. Do not enable integrations globally or alter real workflows just to claim this gate. |
 | 9 — Final Portfolio Release | Existing README, portfolio, genuine synthetic screenshots, architecture/contracts, deployment/incident/recovery guidance and demonstration below are available. Prior PostgreSQL regression snapshots (896, later 907/928), focused security/isolation tests and live provider checks are reused, not rerun. | Close the outstanding gates above, synchronize appropriate source/docs, then tag the verified release. Do not call an accepted disaster-recovery risk a successful restore. |
 
@@ -22,8 +22,8 @@ admissions, other containers, original environment and key were preserved.
 Runtime differences were mount ordering only, with no material configuration
 changes. No migrations, timers, credentials or B2 operations changed. The earlier
 attempt rolled back successfully. See the security review for residual advisory
-triage. The milestone 7 security promotion item is closed; the recovery startup
-and recurring n8n backup qualification items remain open. No broad tests or scans
+triage. The milestone 7 security promotion item is closed; the recurring n8n backup qualification item remains open. Restored-application
+startup subsequently passed; see the cached-startup execution record. No broad tests or scans
 were repeated.
 
 ## Production status read November 4
@@ -44,7 +44,16 @@ Backblaze Caps & Alerts was read through the owner's authenticated browser:
 The recovery command must bind a fresh observation and retain its 15-minute
 admission deadline; elapsed daily reset alone is insufficient.
 
-## Exact remaining application recovery operation
+## Application recovery continuation — PASS
+
+The owner-executed cached continuation passed: exact rollback image, PostgreSQL 18
+restoration, baseline schema 001–013, read-only application startup and three HTTP
+checks. Isolation, owned-container cleanup and production preservation passed;
+zero B2/image-import/backup/service changes. Details and remaining limitations:
+[cached-startup result](cached-startup-and-final-evidence-20261104.md). Do not
+repeat recovery. Recurring n8n repair and one linked demonstration remain open.
+
+## Historical application recovery operations
 
 ### Latest restore-only result — PASS
 
