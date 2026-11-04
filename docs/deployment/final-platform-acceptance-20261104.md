@@ -33,7 +33,40 @@ admission deadline; elapsed daily reset alone is insufficient.
 
 ## Exact remaining application recovery operation
 
-Reuse `retrieve-and-continue-application-once.py` and its successful private Docker
+### Executed result — consumed; do not rerun
+
+The owner executed the refreshed proof-bound command. Exactly two targeted reads
+completed; both files matched the approved sizes and full SHA-256 values. Cached
+application/PostgreSQL image import and PostgreSQL 18 startup/readiness passed.
+The operation then failed at `restore_postgresql_archive`, command
+`docker_exec_pg_restore`, exit 1. PostgreSQL remained running, not OOM-killed.
+The retained diagnostic contains only `pg_restore_error` and a 231-byte stderr
+length. **Root cause is UNKNOWN**; there is insufficient evidence to attribute
+this to permissions, archive compatibility, initialization timing or dump contents.
+
+A focused local check with the same cached PostgreSQL 18 image, restore arguments
+and a tiny synthetic custom-format dump succeeded. It does not reproduce the
+production-artifact failure and does not prove that artifact can restore.
+
+Configuration/dump/image authentication: PASS. Image restoration: PASS. Database
+restore: FAIL. Application startup and health/readiness: BLOCKED/not reached.
+Identity-verified container/daemon/workspace and RAM-input cleanup: PASS.
+Independent production-state comparisons: PASS. No snapshots were created/deleted,
+assistant migrations applied, production services modified or n8n drills repeated.
+The authenticated plaintext inputs were removed by the approved cleanup, so no
+reusable plaintext recovery copy is claimed. Both single-use recovery receipts
+are consumed. No new B2 request, restore attempt or privileged diagnostic is
+authorized by this result.
+
+The specific remaining recovery gap is successful restore of the authenticated
+dump followed by the preserved application's startup/health checks. Any further
+operation needs separate approval, useful sanitized PostgreSQL error categories,
+and an explicit strategy for avoiding another retrieval after a failed restore.
+Do not repeat completed image import or startup diagnostics as separate gates.
+
+### Historical approved scope (already executed)
+
+The operation used `retrieve-and-continue-application-once.py` and its successful private Docker
 runtime. Only its running-production image admission was updated after deployment:
 current web `bd33abea…` is distinct from restored rollback image `e9b09e43…`.
 The restore inputs and runtime remain pinned. Three new local admission tests
