@@ -182,17 +182,18 @@ that every recurring-operations, monitoring, or final-release gate is complete.
 
 ## Completion Roadmap Status
 
-- Milestones 1–5: complete
-- Milestone 6: capabilities implemented and privately tested; production
-  enablement is intentionally deferred
-- Milestone 7: in progress; the October 8 backup and isolated recovery gate
-  passed, with remaining operations evidence still to close
-- Milestone 8: in progress; the application and HTTPS are live, while remaining
-  monitoring, integration, and acceptance gates continue
-- Milestone 9: not started
+- Milestones 1–5: complete.
+- Milestone 6: complete for the approved cloud/synthetic scope; the Advanced
+  Assistant is live with two selectable free models, EN/JA responses, private
+  history, confirmation-protected demo interactions and automatic validation renewal.
+- Milestone 7: in progress; the application recovery continuation, recurring n8n
+  backup qualification and required vulnerability review remain open.
+- Milestone 8: deployed over HTTPS; linked end-to-end final acceptance remains open.
+- Milestone 9: portfolio finalization in progress; no final release tag yet.
 
-The detailed milestone evidence and remaining exit gates are maintained in the
-[full platform completion roadmap](docs/roadmap/full-platform-completion-roadmap.md).
+The [November 4 final acceptance record](docs/deployment/final-platform-acceptance-20261104.md)
+contains current evidence, the architecture and concise demonstration. Earlier
+backup/restore proofs are retained without claiming the current full restore passed.
 
 ## Verification Evidence
 
@@ -229,8 +230,9 @@ publish demo credentials for the production application.
 5. Show a scheduled workflow, worker execution, task outcomes, and audit trail.
 6. Explain signed webhook replay protection and run the private n8n flow only
    in its isolated demonstration environment.
-7. Explain the provider-neutral AI boundary and local Qwen isolation without
-   presenting it as a production-hosted service.
+7. Open the live Advanced Assistant and explain the two approved free cloud models,
+   synthetic-only boundary, private history and explicit demo confirmation. Local
+   Qwen remains optional and is not a production dependency.
 8. Open `/health` and `/ready`, then review the October 8 recovery evidence and
    the remaining roadmap gates.
 

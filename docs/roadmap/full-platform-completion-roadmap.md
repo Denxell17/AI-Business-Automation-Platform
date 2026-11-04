@@ -172,13 +172,16 @@ The repository already provides:
 ### Deliverables
 
 - Implement only the connections required by the portfolio flow: the existing
-  private n8n demo and the approved local Qwen2.5 3B Instruct Q4_K_M model
-  served by llama.cpp on loopback.
+  private signed n8n demo and the two approved free cloud models through the
+  provider-independent gateway. The owner's November 3–4 cloud-only correction
+  supersedes local Qwen as a production requirement; its loopback adapter remains
+  optional local demonstration support, not a required laptop dependency.
 - Add provider-independent adapters, connection tests, rate-limit handling,
   timeouts, credential validation, and safe error translation.
 - Add integration health and delivery metrics based on real stored events.
-- Keep the local model alias configurable and use conservative context,
-  generation, concurrency, CPU, and GPU-offload limits for the approved laptop.
+- Keep cloud model IDs explicit, free-only and credential-bound; enforce shared
+  quotas, timeouts and synthetic-only production access. Preserve configurable
+  conservative resource limits when the optional local adapter is used.
 - Prepare a GoHighLevel adapter only after webhook contracts and customer
   ownership are stable.
 
@@ -272,15 +275,72 @@ The completion program is finished only when:
 | 3 — n8n End-to-End Automation | Complete | Day 164 adds the private `n8n-demo` Compose profile, pinned n8n `1.121.3`, persistent n8n data, a version-controlled signed workflow export, and a private deterministic provider with no published host ports. ABAP sends only a minimal schedule execution event after its tracked run is created; n8n verifies that HMAC, performs the deterministic provider action, and sends the fixed signed completion callback. Existing focused sender/callback/retry coverage verifies unavailable/timeout, retry, duplicate, invalid-signature, invalid-payload, provider/HTTP failure, and successful-completion handling. On 2026-09-22, isolated synthetic Compose project `abap_m3_verify` started successfully and completed two enabled scheduled runs. Each produced exactly one completed task, one successful outbound delivery with HTTP 202, and one accepted inbound callback. The Milestone 3 exit gate is met without exposing n8n or using real credentials. |
 | 4 — Leads and Customers Domain | Complete | Day 165 adds normalized SQLite and PostgreSQL lead, customer, note, and CRM audit tables; owner and lifecycle validation; duplicate-safe transactional conversion with an immutable source lead; permission-scoped FastAPI forms, search, detail/history screens, and real dashboard counts. Focused SQLite coverage passed 3 tests. The final full local suite passed 692 tests with 5 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. A separate disposable PostgreSQL 18.6 container applied migration 006 and passed the complete authenticated browser lead creation, edit, note, one-time conversion, customer detail/audit, and immutable-source check. Isolated synthetic Compose project `abap_m4_verify` built the current image, applied migration 006, and reported web readiness. All test containers and disposable volumes were removed. The Milestone 4 exit gate is met. |
 | 5 — Invoices and Documents Domain | Complete | Day 166 adds customer-owned USD invoices with immutable line-item snapshots, due dates, explicit half-up Decimal rounding to integer cents, invoice status transitions, and payment-state history. It also adds a private filesystem document-storage abstraction, metadata integrity hashes, safe generated PDF filenames, permission-checked `attachment` downloads with no-store and nosniff headers, and linked manual workflow runs. The portfolio-safe invoice PDF was visually rendered and reviewed. Focused SQLite invoice coverage passed 3 tests; the final full local suite passed 696 tests with 6 optional PostgreSQL tests skipped because `ABAP_TEST_DATABASE_URL` was not configured. A disposable PostgreSQL 18.6 database applied migration 007 and passed invoice creation, protected PDF browser download, and immutable line-item verification. Isolated synthetic Compose project `abap_m5_verify` built the current image with ReportLab, applied migration 007, and reported web readiness. All temporary containers and volumes were removed. The Milestone 5 exit gate is met. |
-| 6 — Selected External Connections | Planned | Qwen2.5 3B Instruct Q4_K_M through a loopback-only llama.cpp server is the approved local AI connection. The provider-independent implementation, deterministic tests, stored metrics, laptop resource verification, repeatable demo, and local-token rotation evidence remain to be completed. |
-| 7 — Production Operations | In progress | The HostHatch backup, restore, and monitoring implementation is prepared for review. The automated B2/Restic backup, systemd timers, Better Stack alerts, first scheduled run, and recurring restore evidence remain uninstalled and unverified on production. |
-| 8 — Cloud Deployment and HTTPS | In progress | ABAP is live on HostHatch behind host Caddy and proxied Cloudflare Full (strict). PostgreSQL and the three named volumes remain private and persistent; the pre-deployment backup and isolated PostgreSQL restore gate passed. Production-operations automation and the separate production n8n design remain outstanding. |
-| 9 — Final Portfolio Release | Not started | Exit gate not evaluated. |
+| 6 — Selected External Connections | Complete for approved scope | Deployed synthetic-only cloud assistant, two validated free models, hourly validation renewal, provider scopes/failures/rotation guidance and previously passed signed private n8n demonstration. Local Qwen is optional under the owner's cloud-only correction; GoHighLevel remains conditional/deferred. See `../deployment/final-platform-acceptance-20261104.md`. |
+| 7 — Production Operations | In progress — specific gates blocked | Daily ABAP backup succeeded November 4; both n8n restores and encrypted rollback preservation passed. Current application restore-to-healthy-web continuation remains unexecuted; recurring n8n backup qualification and the required dependency/container review remain open. No repeated backup/repository scan. See the final acceptance record. |
+| 8 — Cloud Deployment and HTTPS | Live — final acceptance pending | ABAP, HTTPS and synthetic assistant are deployed, data/history survived web replacement and health/readiness/login passed. Consolidate the scheduled signed n8n/CRM/invoice demonstration through the secured application before closing the complete exit gate. No global integration enablement is inferred. |
+| 9 — Final Portfolio Release | In progress | Genuine screenshots, current assistant deployment/renewal evidence, architecture, demonstration script and exact outstanding-gate matrix consolidated. Final tag withheld until every mandatory exit gate passes. |
 
 ## Immediate Next Action
 
-Review the repository-side HostHatch backup, restore, systemd, and monitoring
-artifacts. After approval, install them without changing the Compose project or
-volumes, initialize the encrypted B2 Restic repository, prove one isolated
-restore, verify alerts, and observe the first scheduled backup. Production n8n
-remains deferred until this operations gate passes.
+Complete only the outstanding gates in
+`../deployment/final-platform-acceptance-20261104.md`: use the existing bounded
+recovery continuation after authenticated sudo/fresh B2 capacity confirmation;
+qualify the disabled recurring n8n backup path; complete the already-required
+vulnerability review and linked final demonstration evidence. Finish the approved
+landing-page/portfolio publication and source synchronization, then tag only after
+all exit gates pass. Production synthetic-only restrictions remain mandatory.
+
+The dated entries below are historical records and do not supersede the current
+November 4 status table or final acceptance record.
+
+### Advanced authenticated assistant — local development, November 3, 2026
+
+The advanced assistant now has an opt-in local implementation: explicit model registry,
+scoped read tools, expiring confirmation proposals, private history, EN/JA response
+selection, durable usage budgets and a protected UI. The feature remains disabled by
+default; production was not modified. This is not a completed production milestone.
+
+Architecture, security boundaries, deployment preparation and rollback:
+`../architecture/advanced-assistant.md`. Executed validation and remaining release gates:
+`../architecture/advanced-assistant-validation.md`.
+
+Current task: complete local verification and preserve the existing public RAG deployment.
+Next step: transaction-aware assistant writes and a tested allowlisted n8n outbox bridge,
+then disposable PostgreSQL/provider/browser staging validation. Tenant-aware schema work
+is required before any multi-tenant use. Production activation needs separate authorization.
+
+Advanced assistant follow-up: shared transaction confirmation and allowlisted signed n8n outbox dispatch are implemented. Production remains default-off. Next required step is live isolated PostgreSQL/provider/n8n staging verification; see `../architecture/advanced-assistant-final-validation.md`.
+
+Docker follow-up: complete PostgreSQL-enabled regression passed all 896 tests with no skips; image build, migration reapplication, non-root/default-off checks and HTTP image smoke checks passed. Disposable infrastructure removed. Remaining gates: live providers, real private n8n round trip and staging UI validation. Production remains unchanged.
+
+Final release gates: isolated real n8n round trip/replay checks and graphical desktop/mobile UI validation passed; 82 relevant regression tests passed. Live AI-provider validation remains blocked on credentials/model or running local Qwen settings. See `../architecture/advanced-assistant-release-gates.md`. Production remains default-off and unchanged.
+
+Cloud-only correction: production Advanced Assistant uses free-tier cloud APIs; local Qwen/owner-laptop availability is not required. Fresh free-model evidence, shared daily/minute/concurrency budgets and cooldowns are implemented with additive migration 015. PostgreSQL snapshot: 907 passed; final focused: 76 passed. Real cloud access remains blocked on server credentials/model configuration. See `../architecture/advanced-assistant-cloud-validation.md`. Production stays default-off.
+
+Dedicated OpenRouter $0 key authenticated and supported eight zero-cost synthetic requests. Validated free models: nvidia/nemotron-3.5-lightning:free and cohere/north-mini-code:free. English/Japanese, structured ABAP tool protocol and manual switching passed; 52 relevant tests passed. Production remains disabled and unchanged; controlled release is CONDITIONAL GO subject to explicit deployment approval, server secrets/evidence and privacy review. See `../architecture/advanced-assistant-openrouter-live-validation.md`.
+
+Production preflight only: NO-GO supersedes inference-only conditional readiness. Existing SSH key is accepted but encrypted/locked with agent stopped; production backups/migration ledger/credential installation remain unverified. NVIDIA free endpoint prohibits confidential/personal data; Cohere free-route privacy is not cleared. No production changes. Next: secure SSH unlock and data-scope/provider-policy decision. See `../deployment/advanced-assistant-production-preflight.md`.
+
+Owner selected synthetic/public-only initial release. Server-enforced fixed prompts, fixture-only reads, isolated confirmation-protected demo lead creation and separated history are implemented. Additive migration 016 required; no production migrations applied. PostgreSQL snapshot 928 passed; final focused 69 passed; 8 additional live isolation tests passed. No deployment/activation. Next: unlock existing SSH identity and finish live-server backup/migration/credential preflight. See `../deployment/advanced-assistant-synthetic-release.md`.
+
+Read-only production follow-up: SSH works; ABAP/n8n origin health passed, resource headroom observed, main backup/full-check services report success. Separate n8n-backup service is failed and timer inactive; actual coverage unresolved. Sudo authentication blocks Docker, live ledger, protected snapshots/config and rollback inventory. NO-GO pending privileged verification; production unchanged. See `../deployment/advanced-assistant-live-server-preflight.md`.
+
+Owner's sudo authentication did not carry to automated SSH. Consolidated sanitized, read-only manual diagnostic prepared; local syntax/redaction checks passed, no privileged production execution claimed. Next: owner reviews/pastes the single script in the authenticated VPS session, then review returned metadata. See `../deployment/advanced-assistant-manual-preflight.md`. No deployment or repair authorized.
+
+Diagnostic security review completed: clean subprocess environment, matched-project database selection, metadata allowlists and active-WAL rejection implemented; 13 local mocked tests and Python/shell syntax checks passed. Owner-authorized temporary script upload checksum verified, not executed and no sudo attempted. Await operator execution/returned sanitized output; NO-GO remains. See the manual preflight document for exact path/hash.
+
+Owner executed the diagnostic at 06:58 UTC November 3. Docker inventory returned 11 containers (9 running, 8 healthy) and two web/database projects. Migration query withheld due ambiguity; workflow reads withheld due active WAL. n8n backup still failed/timer inactive; both Restic metadata queries failed with cause unknown. Main backup/check service successes retained. Wrong `.sh` executable assumptions and per-instance key-check overwrite limit the diagnostic. No production changes by agent; NO-GO remains. See `../deployment/advanced-assistant-operator-results.md`.
+
+Targeted read-only continuation: n8n backup main command exited 0, but n8n-ensure-running post-command exited 1. Correct Restic is /usr/local/bin/restic; maintenance retention source 14 daily/8 weekly/12 monthly plus release tag. Consolidated targeted diagnostic fixes production identification (proxy+DB volume), snapshot binary, per-instance keys and committed WAL RAM-only inventory. Eleven new isolated diagnostic tests passed; application regressions not repeated. Temporary upload checksum verified, no privileged execution by agent. Await owner's targeted JSON; NO-GO. See `../deployment/advanced-assistant-targeted-preflight.md`.
+
+Owner's targeted run at 07:26 UTC: authoritative production abap-deploy; web public-rag-0ef5085524b6-r3 (e9b09...), ledger001–013, pending014/015/016. Confirmed recovery helper fails on multiple n8n service containers. Repository accessible (25 snapshots); ABAP latest5.18h, standalone n8n latest75.82h, no exact-source snapshot for current RAG n8n volume. Production RAG has2 active workflows and persistent config key; standalone keys match, inventory size guard blocked. Current public-RAG rollback/recovery proof incomplete. NO-GO; next separate scoped backup repair/coverage plan, preserving all services. No repairs authorized/executed. See `../deployment/advanced-assistant-targeted-results.md`.
+
+Backup repair local implementation: project/volume-scoped standalone+production-RAG targets, no container lifecycle actions, kernel-readonly online SQLite capture (stable stream fallback), protected runtime/key/attachment capture and encrypted snapshot coverage checks. Existing repository/encryption retained; 14/8/12 policy preserved but no forget/prune in repair. 13 backup/recovery +4 installer +10 public-RAG artifact tests pass; full shell Restic restore and actual n8n2.42.3 credential decryption pass for both scopes under concurrent WAL writers. Hash-pinned three-file installer/package prepared locally; production unchanged, timers disabled. Request installation-only approval, then separately authorized backup/recovery validation; assistant remains NO-GO. See `../deployment/n8n-backup-repair-and-recovery.md` and `../deployment/advanced-assistant-rollback-plan.md`.
+
+Owner APPROVED three-file installation only, requiring timestamped verified originals and post-install integrity/syntax checks. Installer envelope updated/tested (8 safety tests); approved backup code hashes unchanged. Package uploaded privately to /tmp/abap-backup-install.Lv9tsnUD; all SHA-256/syntax checks pass. sudo still blocked in automated SSH; production targets NOT replaced. Owner can run the single already-authorized installer command in authenticated VPS terminal; no further install approval needed. Await sanitized result; jobs/timers/restores/assistant changes remain unauthorized. See `../deployment/n8n-backup-installation.md`.
+
+Owner completed installation November 3 at 10:37 UTC: three-files-installed-no-jobs-run. Reported SHA-256 for all three files matches approved versions; root:root0750 and syntax PASS. Two originals checksum-verified before replacement in /var/backups/abap/backup-repair-20261103T103751.961408Z-7e666076; new helper prior absence recorded. Production images/targets/keys validated. No jobs/timers/reloads. Next request separate one-off online backup approval for standalone+production-RAG, then distinct recovery verification approval. Inspect legacy staging before first run; never remove nonempty captures. Assistant remains NO-GO. Evidence: output/backup-repair/production-installation-result.json and installation document.
+
+Owner APPROVED exactly one controlled backup for both production n8n targets; no restore/timer/app changes. Automated sudo still blocked. Reviewed controller uses pinned installed capture helper + same Restic steps, retains nonempty captures (latest empty-only cleanup rule), and uses a private read-only process mount view. Five isolated controller tests pass; checksum/syntax-verified upload /tmp/abap-controlled-backup.ePKmx0nY/controlled-n8n-backup-once.py. Receipt /var/backups/n8n/approved-20261103-n8n-one-run-1.json enforces no repetition. Production backup NOT executed; no snapshot IDs/integrity success claimed. Next operator runs single already-authorized sudo/unshare command; await sanitized final report. See `../deployment/n8n-controlled-backup-once.md`.
+
+Controlled production backup completed by owner November3 12:13UTC: PASS both targets/full Restic read-data integrity. Standalone snapshot6b4243ec... (12:11:05UTC), production-RAG3106fcb450f6... (12:11:50UTC); required contents/manifest hashes verified. All25 previous snapshots retained (27total); tracked web+n8n IDs/restart counters unchanged. Source inventory standalone6 workflows/0active, RAG2/2active; no workflows changed/executed by job. Nonempty captures retained, timer disabled, wrapper/unit failure/heartbeat untouched. Receipt consumed: do not repeat. Next separate approval for isolated recovery of these snapshots; current rollback artifacts still incomplete, assistant NO-GO. See `../deployment/n8n-controlled-backup-results.md`.

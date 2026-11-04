@@ -25,6 +25,20 @@ records. The dated assistant deployment and maintenance results are recorded in
 and [maintenance record](docs/deployment/advanced-assistant-maintenance.md).
 Git synchronization itself does not deploy changes or perform a fresh production audit.
 
+## Advanced ABAP AI Assistant — live synthetic demonstration
+
+[Open the Advanced AI Assistant](https://app.dennisbasadre.com/ai-assistant/advanced)
+with an existing authorized ABAP account. It supports manually selectable free
+cloud models, English/Japanese responses, private account history and explicit
+confirmation for isolated synthetic demo interactions. Shared quotas apply; no
+paid fallback, real customer-data access or live business actions are enabled.
+Automatic model-validation renewal uses the existing server infrastructure;
+no laptop AI server is required. The public knowledge chatbot is separate.
+
+Current delivered scope and remaining final acceptance gates are recorded in
+[the November 4 completion record](docs/deployment/final-platform-acceptance-20261104.md).
+The final portfolio release is not tagged until the outstanding gates pass.
+
 ## The problem it explores
 
 Small teams often run people data and recurring processes through spreadsheets,
