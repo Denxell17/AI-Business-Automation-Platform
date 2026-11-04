@@ -160,6 +160,13 @@ per-service failure metadata. Only a corrected disposable-demo retry remains;
 no previous successful tests or production environment are rebuilt. The first
 scheduled n8n backup result remains pending until observed.
 
+The permission-corrected VPS attempt then PASSED the complete real linked chain,
+PDF generation and authenticated private HTML checks, with one execution/event
+and one successful signed round trip. Only the subsequent public-browser witness
+timed out. Proxy restoration, cleanup and production preservation PASSED. The
+next action is a coordinated browser replay of that failed end-to-end public
+demonstration, reusing all verified evidence; no new code logic or tests are needed.
+
 ## Concise final demonstration
 
 Use isolated synthetic CRM/invoice records and existing private test-provider

@@ -1,5 +1,29 @@
 # Controlled public linked demonstration — approved, corrected execution pending
 
+## VPS chain PASS; public-browser window timed out
+
+The permission-corrected run `approved-public-linked-demonstration-20261105-2`
+completed the real chain on the production VPS's disposable database: one lead,
+customer, invoice, linked run, occurrence, workflow execution and n8n event;
+one worker claim/start; one successful outbound attempt and one accepted inbound
+callback. PDF creation and authenticated private customer/invoice/workflow pages
+also PASSED. This is verified VPS execution, not another local-only result.
+
+Its sole remaining failure was `authenticated_browser_proof_timeout` at
+`await_authenticated_browser`; no public browser page proof was recorded before
+the ten-minute window expired. Original proxy configuration restoration,
+disposable cleanup and production preservation all PASSED with no cleanup errors.
+The prior receipt is consumed and preserved. There is no new implementation
+failure to diagnose or reason to repeat separate tests, scans or recovery work.
+
+The user has now signed into the browser the agent can control. The agent will
+visit all three URLs immediately when the operator supplies the awaiting-browser
+event, while the terminal remains open. A coordinated replay is necessary only
+because the prior disposable dataset was correctly removed. The prepared procedure,
+payload, images, validation logic and ten-minute limit are unchanged; only its
+single-use operation/receipt identifier advances. No new tests were run for this
+identifier-only change. The first scheduled n8n backup remains pending observation.
+
 ## Startup attempt: cleaned up; narrow permission correction
 
 The owner executed the origin-corrected procedure. It stopped at
@@ -114,10 +138,10 @@ public RAG and free-model safeguards remain unchanged.
 
 ## Reviewed package, staged without execution
 
-Controller: `/tmp/abap-public-demo-startup.AVuYx8T7/run-public-linked-demonstration-once.py`.
-SHA-256: `566af041a74077ef9f67cc69fd02a9b0247b9752b080d799c97b5b8720cf94f0`.
+Controller: `/tmp/abap-public-demo-browser.nj3uZRYO/run-public-linked-demonstration-once.py`.
+SHA-256: `746c91851c356fbc27740e533b03cd7a84f4e487dfb0368e508a567ed214ea93`.
 Manifest SHA-256: `1bc12adeec721cfb0d1a5055913196714e92170cc7e304bf064b74f64c724cd1`.
-Package SHA-256: `2d8c4a7a434ead33e946c26ec9b3f7396f7ef92105c6ed9c1b8edb1df1f333d7`.
+Package SHA-256: `6ab51df2245c3d87312edf1a0cae5b67106446735a4fec8092f32e9deffa4486`.
 Local/remote hashes and syntax match. This resumes the already approved scope;
 no privilege bypass or automatic rerun is performed. The sanitized root-only receipt will be
-`/var/backups/abap/approved-public-linked-demonstration-20261105-2.json`.
+`/var/backups/abap/approved-public-linked-demonstration-20261105-3.json`.

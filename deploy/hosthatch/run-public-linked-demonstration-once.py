@@ -26,7 +26,7 @@ import urllib.request
 import uuid
 
 ROOT=Path('/var/backups/abap')
-RECEIPT=ROOT/'approved-public-linked-demonstration-20261105-2.json'
+RECEIPT=ROOT/'approved-public-linked-demonstration-20261105-3.json'
 CURRENT='sha256:e4b1f0fd69637bbbf8201cc4fc3424629fea989f974d1444a88c7863e3eff78c'
 DOCKER_CONFIG_PATH='/nonexistent/.docker'
 LAST_DOCKER_FAILURE=None
@@ -185,7 +185,7 @@ def main():
     baseline=stable(rows,project)
     work=Path('/run')/project;need(not work.exists() and not work.is_symlink(),'disposable_workspace_exists')
     work.mkdir(mode=0o700);identity=(work.stat().st_dev,work.stat().st_ino)
-    report={'operation':'approved-public-linked-demonstration-20261105-2','status':'running','stage':'create_disposable_stack',
+    report={'operation':'approved-public-linked-demonstration-20261105-3','status':'running','stage':'create_disposable_stack',
         'b2_requests':0,'ai_requests':0,'production_database_writes':False,'existing_n8n_workflows_modified':False,
         'production_web_recreated':False,'run':run,'project':project,'temporary_prefix':prefix,
         'baseline_origin_tls_smoke':baseline_origin,'authenticated_public_browser_required':True}
