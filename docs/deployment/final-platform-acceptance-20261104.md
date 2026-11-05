@@ -1,8 +1,34 @@
 # ABAP final acceptance — November 4, 2026
 
+## Final acceptance update — November 5, 2026
+
+The controlled public demonstration PASSED in operation
+`approved-public-linked-demonstration-20261105-4`. The signed-in browser rendered
+the fictional customer, its USD 100 invoice and `WF-PORTFOLIO` through the secured
+public application; all three authenticated HTTPS reads returned 200. The invoice
+showed its completed workflow and the workflow recorded completion by signed
+integration callback. The genuine worker/outbox/n8n chain ran in a disposable
+synthetic database on the production VPS, not against real business records.
+
+The root-owned sanitized receipt confirmed original proxy configuration restored,
+disposable cleanup PASS, production preservation PASS, host proxy process
+preserved and no cleanup errors. No B2 or AI requests were needed. Existing shared
+n8n workflows and unrestricted production integrations remain unchanged/disabled.
+This closes the milestone 8 public demonstration gate. The selected milestone 6
+scope, milestone 7 recovery/security exit gate and milestone 9 evidence package
+are delivered. The first corrected scheduled n8n backup remains **pending
+observation**, not a passed run; the enabled daily timer and previous successful
+backup/recovery evidence are separate facts. This pending operational qualification
+does not invalidate the already passed isolated recovery exit gate.
+
+The dated sections below retain the earlier execution history; this update
+supersedes their outstanding recovery, security, public-demo and approval items.
+The separate landing-page publication still awaits its review approval.
+
 This is the current completion record. Historical preflight NO-GO statements do
 not undo the separately approved synthetic assistant deployment. Unfinished gates
-below are not represented as passed. No final release tag has been created.
+below are not retrospectively represented as passed. The verified portfolio
+release is tagged `v1.0.0`; its pending operational qualification is disclosed above.
 
 ## Delivered scope and reused evidence
 

@@ -1,5 +1,27 @@
 # Controlled public linked demonstration — approved, corrected execution pending
 
+## Direct browser coordination
+
+The next replay also reached the public-browser step but timed out; original
+proxy restoration, disposable cleanup and production preservation again PASSED.
+No new runtime defect is inferred. Coordinating a ten-minute URL window through
+separate chat messages proved unreliable.
+
+The same controller now atomically publishes a small root-owned 0444 status file
+at `/run/abap-public-demo-20261105-4.browser.json`. It contains only the public demo
+URLs while ready and whitelisted outcome flags afterward; no configuration,
+credentials, cookies, business records or raw logs are copied. The agent can read
+this non-secret local signal without sudo and visit the already authorized HTTPS
+pages immediately, while the operator's terminal stays open. The ten-minute
+window, authentication gate, disposable scope and cleanup behavior are unchanged.
+The final non-secret status file is retained as evidence; the authoritative full
+receipt remains root-private. Prior receipts are never reset or overwritten.
+
+One focused local check passed for atomic publication/update, root ownership,
+0444 mode and exclusion of a secret sentinel. No database/n8n server, previous
+suite, backup, scan or recovery was run. The signed-in browser is ready, and the
+agent remains active during the operator start rather than ending the turn.
+
 ## VPS chain PASS; public-browser window timed out
 
 The permission-corrected run `approved-public-linked-demonstration-20261105-2`
@@ -136,12 +158,30 @@ public RAG and free-model safeguards remain unchanged.
   app upstream, compatible unit network policy, available resources and Compose
   availability without registry credentials. No production change was made.
 
-## Reviewed package, staged without execution
+## Final execution — PASS
 
-Controller: `/tmp/abap-public-demo-browser.nj3uZRYO/run-public-linked-demonstration-once.py`.
-SHA-256: `746c91851c356fbc27740e533b03cd7a84f4e487dfb0368e508a567ed214ea93`.
+Operation `approved-public-linked-demonstration-20261105-4` completed successfully.
+The signed-in public browser rendered the fictional customer, linked USD 100
+invoice and `WF-PORTFOLIO`; all three gateway-authenticated HTTPS reads returned
+200. The invoice showed a completed run, and the workflow displayed completion
+by signed integration callback. This closes the previously timed-out browser
+witness without claiming the earlier attempts passed that gate.
+
+The root-owned sanitized receipt at
+`/run/abap-public-demo-20261105-4.browser.json` reported
+`PASS-public-linked-demonstration`, original proxy configuration restored, cleanup
+PASS, production preservation PASS, host proxy process preserved and no cleanup
+errors. The private full receipt is
+`/var/backups/abap/approved-public-linked-demonstration-20261105-4.json`.
+The temporary demo has been removed. Existing production database and n8n
+workflows were preserved; permanent live integrations were not enabled.
+
+## Executed package — single-use command consumed
+
+Controller: `/tmp/abap-public-demo-direct.86O8SCfx/run-public-linked-demonstration-once.py`.
+SHA-256: `faee25a1ea109185b6faec0a5ab048921500b1e1a485768feab6c1696ee51edc`.
 Manifest SHA-256: `1bc12adeec721cfb0d1a5055913196714e92170cc7e304bf064b74f64c724cd1`.
-Package SHA-256: `6ab51df2245c3d87312edf1a0cae5b67106446735a4fec8092f32e9deffa4486`.
+Package SHA-256: `6c433c49639581f2ec54ce371bad7870dfe55d27a17d3e29574875c8c4ac4c2b`.
 Local/remote hashes and syntax match. This resumes the already approved scope;
 no privilege bypass or automatic rerun is performed. The sanitized root-only receipt will be
-`/var/backups/abap/approved-public-linked-demonstration-20261105-3.json`.
+`/var/backups/abap/approved-public-linked-demonstration-20261105-4.json`.

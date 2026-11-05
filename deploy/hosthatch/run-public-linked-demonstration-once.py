@@ -26,7 +26,8 @@ import urllib.request
 import uuid
 
 ROOT=Path('/var/backups/abap')
-RECEIPT=ROOT/'approved-public-linked-demonstration-20261105-3.json'
+RECEIPT=ROOT/'approved-public-linked-demonstration-20261105-4.json'
+HANDOFF=Path('/run/abap-public-demo-20261105-4.browser.json')
 CURRENT='sha256:e4b1f0fd69637bbbf8201cc4fc3424629fea989f974d1444a88c7863e3eff78c'
 DOCKER_CONFIG_PATH='/nonexistent/.docker'
 LAST_DOCKER_FAILURE=None
@@ -41,6 +42,37 @@ def save(report,first=False):
     flags=os.O_WRONLY|os.O_CREAT|os.O_NOFOLLOW|(os.O_EXCL if first else os.O_TRUNC)
     with os.fdopen(os.open(RECEIPT,flags,0o600),'w') as f:
         os.fchmod(f.fileno(),0o600);json.dump(report,f,indent=2);f.flush();os.fsync(f.fileno())
+def browser_status(report):
+    # Publish only the same non-secret URLs already printed to the operator,
+    # plus outcome flags. Never copy configuration, credentials or raw logs.
+    result={key:report[key] for key in ['operation','status','stage']}
+    if report['status']=='running' and report['stage']=='await_authenticated_browser':
+        prefix=report['temporary_prefix'];need(re.fullmatch('/portfolio-demo-[0-9a-f]{16}',prefix),'invalid_handoff_prefix')
+        urls=report['public_urls'];need(set(urls)=={'customer','invoice','workflow'},'invalid_handoff_links')
+        for url in urls.values():
+            part=urllib.parse.urlsplit(url)
+            need(part.scheme=='https' and part.netloc=='app.dennisbasadre.com' and not part.query and not part.fragment
+                 and part.path.startswith(prefix+'/'),'invalid_handoff_destination')
+        result['public_urls']=urls
+    if report['status']!='running':
+        for key in ['authenticated_https_pages','original_proxy_configuration_restored','disposable_cleanup',
+                    'production_state_preservation','host_proxy_process_preserved','cleanup_errors']:
+            result[key]=report.get(key)
+        if report.get('failure'):result['failure']={k:report['failure'].get(k) for k in ['stage','code']}
+    return result
+def publish_browser_status(report,first=False):
+    parent=HANDOFF.parent;info=parent.lstat()
+    need(parent.resolve()==Path('/run') and stat.S_ISDIR(info.st_mode) and info.st_uid==0 and not info.st_mode&0o022,'untrusted_handoff_parent')
+    if not first:
+        info=HANDOFF.lstat()
+        need(HANDOFF.resolve()==HANDOFF and stat.S_ISREG(info.st_mode) and info.st_uid==0 and stat.S_IMODE(info.st_mode)==0o444,'handoff_identity_changed')
+    temporary=parent/(HANDOFF.name+'.'+uuid.uuid4().hex+'.tmp')
+    try:
+        write_new(temporary,(json.dumps(browser_status(report))+'\n').encode(),0o444)
+        if first:os.link(temporary,HANDOFF) # Exclusive first publication, no overwrite.
+        else:os.replace(temporary,HANDOFF)
+    finally:
+        if temporary.exists():temporary.unlink()
 def load_module(path,data,name):
     module=types.ModuleType(name);module.__file__=str(path)
     exec(compile(data,str(path),'exec'),module.__dict__);return module
@@ -160,6 +192,7 @@ def main():
     os.umask(0o077)
     need(ROOT.resolve()==ROOT and ROOT.stat().st_uid==0 and stat.S_IMODE(ROOT.stat().st_mode)==0o700,'private_receipt_parent_required')
     need(not RECEIPT.exists() and not RECEIPT.is_symlink(),'single_use_command_consumed')
+    need(not HANDOFF.exists() and not HANDOFF.is_symlink(),'handoff_already_exists')
     source=Path(__file__).resolve().parent
     raw=(source/'reviewed-manifest.json').read_bytes()
     need(sha(raw)==globals().get('__manifest_sha256__'),'reviewed_manifest_mismatch')
@@ -185,7 +218,7 @@ def main():
     baseline=stable(rows,project)
     work=Path('/run')/project;need(not work.exists() and not work.is_symlink(),'disposable_workspace_exists')
     work.mkdir(mode=0o700);identity=(work.stat().st_dev,work.stat().st_ino)
-    report={'operation':'approved-public-linked-demonstration-20261105-3','status':'running','stage':'create_disposable_stack',
+    report={'operation':'approved-public-linked-demonstration-20261105-4','status':'running','stage':'create_disposable_stack',
         'b2_requests':0,'ai_requests':0,'production_database_writes':False,'existing_n8n_workflows_modified':False,
         'production_web_recreated':False,'run':run,'project':project,'temporary_prefix':prefix,
         'baseline_origin_tls_smoke':baseline_origin,'authenticated_public_browser_required':True}
@@ -193,6 +226,7 @@ def main():
     def compose(*args,data=None,timeout=60):
         return docker('compose','--env-file','/dev/null','-p',project,'-f',str(work/'compose.json'),*args,data=data,timeout=timeout)
     try:
+        publish_browser_status(report,first=True)
         (work/'.docker').mkdir(mode=0o700);DOCKER_CONFIG_PATH=str(work/'.docker')
         for name,data in payload.items():
             path=work/name;path.parent.mkdir(mode=0o755,parents=True,exist_ok=True);write_new(path,data,0o444)
@@ -252,6 +286,7 @@ def main():
         status,_=origin_https(urls['invoice']);need(status in {302,303,401,403},'anonymous_demo_access_not_denied')
         report.update(stage='await_authenticated_browser',anonymous_origin_access_denied=True,
             public_urls={k:'https://app.dennisbasadre.com'+v for k,v in urls.items()});save(report)
+        publish_browser_status(report)
         print(json.dumps({'event':'awaiting_authenticated_browser','public_urls':report['public_urls'],
             'instructions':'Keep this terminal open. Visit all three links while signed in to the existing ABAP account. Automatic cleanup follows verification or 10-minute timeout.'}),flush=True)
         deadline=time.monotonic()+600
@@ -300,6 +335,9 @@ def main():
         except BaseException:errors.append('final_production_verification_blocked')
         if errors or report.get('original_proxy_configuration_restored') is False:report['status']='BLOCKED-final-cleanup-or-production-comparison'
         report['cleanup_errors']=errors;report['duration_seconds']=round(time.monotonic()-started,3);save(report)
+        try:publish_browser_status(report)
+        except BaseException:
+            report['browser_handoff_finalization_unavailable']=True;save(report)
     return report
 if __name__=='__main__':
     def interrupted(*_):raise Stop('operator_interrupted')

@@ -178,7 +178,7 @@ that every recurring-operations, monitoring, or final-release gate is complete.
 | Local Qwen through llama.cpp | Implemented and privately tested | Provider-neutral loopback adapter; kept outside public cloud deployment |
 | Optional OpenAI adapter | Implemented, not production-enabled | Environment-configured provider boundary; no public availability claim |
 | Recurring operations evidence | In progress | Continue observing scheduled backup, retention, and monitoring behavior |
-| Final portfolio release | Planned | Final evidence consolidation, release checklist, and verified release tag |
+| Final portfolio release | Delivered for approved scope | `v1.0.0`; public linked demonstration and recovery evidence consolidated; first corrected scheduled n8n backup observation pending |
 
 ## Completion Roadmap Status
 
@@ -192,14 +192,19 @@ that every recurring-operations, monitoring, or final-release gate is complete.
   Restored-application startup, isolation and health checks passed November 4.
   The required vulnerability review and approved
   dependency-only production correction passed November 4.
-- Milestone 8: deployed over HTTPS; the complete linked CRM/invoice/scheduled n8n
-  demonstration passed in isolated Docker. The live public-flow gate remains open
-  pending an explicit scope decision; production integration stays disabled.
-- Milestone 9: portfolio finalization in progress; no final release tag yet.
+- Milestone 8: complete for the approved scope. On November 5 the linked synthetic
+  CRM/invoice/scheduled n8n demonstration passed on the production VPS and all three
+  signed-in public HTTPS pages returned 200. The workflow recorded signed callback
+  completion. Temporary routing and disposable services were removed; production
+  preservation passed. Shared production integrations stay disabled.
+- Milestone 9: acceptance evidence consolidated for the portfolio release. The
+  first corrected scheduled n8n backup remains pending observation; it is not
+  represented as a successful run.
 
 The [November 4 final acceptance record](docs/deployment/final-platform-acceptance-20261104.md)
 contains current evidence, the architecture and concise demonstration. Earlier
-backup/restore proofs are retained without claiming the current full restore passed.
+backup/restore proofs retain their dated scope; the current restored-application
+startup also passed. No host disaster recovery or live production rollback is claimed.
 
 ## Verification Evidence
 
