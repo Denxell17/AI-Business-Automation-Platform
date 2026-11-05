@@ -1,5 +1,18 @@
 # ABAP final acceptance — November 4, 2026
 
+## Scheduled qualification closed — November 5, 2026
+
+**Milestones 6–9: COMPLETE for the approved cloud/synthetic portfolio scope.**
+Read-only systemd evidence confirms the natural `n8n-backup.timer` trigger at
+05:30:04 UTC (13:30:04 Philippine time), followed by service completion at
+05:30:58 UTC: `Result=success`, `ExecMainStatus=0`, inactive/dead after completion.
+The timer remains active/enabled; next event November 6 at 05:30 UTC.
+The recurring n8n backup requirement is PASSED. No manual backup, repository
+request, timer change or recovery test was performed to obtain this evidence.
+Detailed journal/snapshot receipts were inaccessible without authenticated sudo;
+no fresh snapshot IDs or additional repository verification are claimed.
+This closes the pending scheduled qualification mentioned in earlier sections.
+
 ## Final acceptance update — November 5, 2026
 
 The controlled public demonstration PASSED in operation

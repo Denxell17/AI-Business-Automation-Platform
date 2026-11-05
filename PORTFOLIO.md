@@ -177,8 +177,8 @@ that every recurring-operations, monitoring, or final-release gate is complete.
 | n8n automation | Implemented and privately tested | Pinned private Compose demo; not production-enabled |
 | Local Qwen through llama.cpp | Implemented and privately tested | Provider-neutral loopback adapter; kept outside public cloud deployment |
 | Optional OpenAI adapter | Implemented, not production-enabled | Environment-configured provider boundary; no public availability claim |
-| Recurring operations evidence | In progress | Continue observing scheduled backup, retention, and monitoring behavior |
-| Final portfolio release | Delivered for approved scope | `v1.0.0`; public linked demonstration and recovery evidence consolidated; first corrected scheduled n8n backup observation pending |
+| Recurring operations evidence | Passed | Corrected n8n scheduled service completed November 5 at 05:30:58 UTC, success/exit 0; existing recovery/retention/monitoring evidence retained |
+| Final portfolio release | Complete for approved scope | `v1.0.0`; public linked demonstration, recovery evidence and successful recurring backup qualification consolidated |
 
 ## Completion Roadmap Status
 
@@ -188,7 +188,7 @@ that every recurring-operations, monitoring, or final-release gate is complete.
   history, confirmation-protected demo interactions and automatic validation renewal.
 - Milestone 7: recovery/security gates passed; corrected n8n backup files are
   installed and the recurring timer is active. Its first scheduled execution
-  remains unobserved (November 5, 05:30 UTC); no new backup success is claimed.
+  passed November 5, 05:30:04–05:30:58 UTC, success/exit 0.
   Restored-application startup, isolation and health checks passed November 4.
   The required vulnerability review and approved
   dependency-only production correction passed November 4.
@@ -197,9 +197,8 @@ that every recurring-operations, monitoring, or final-release gate is complete.
   signed-in public HTTPS pages returned 200. The workflow recorded signed callback
   completion. Temporary routing and disposable services were removed; production
   preservation passed. Shared production integrations stay disabled.
-- Milestone 9: acceptance evidence consolidated for the portfolio release. The
-  first corrected scheduled n8n backup remains pending observation; it is not
-  represented as a successful run.
+- Milestone 9: complete for the approved portfolio scope. Acceptance evidence,
+  release `v1.0.0` and successful recurring backup qualification are recorded.
 
 The [November 4 final acceptance record](docs/deployment/final-platform-acceptance-20261104.md)
 contains current evidence, the architecture and concise demonstration. Earlier

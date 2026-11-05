@@ -177,16 +177,17 @@ and [environment configuration contract](docs/deployment/environment-configurati
 ## Project status and learning story
 
 ABAP is an actively developed, production-hosted portfolio project, not a
-finished commercial platform. Completion-roadmap Milestones 1–9 are delivered
-for the approved portfolio scope, with the operational qualification below.
+finished commercial platform. Completion-roadmap Milestones 1–9 are complete
+for the approved portfolio scope.
 Milestone 6 is complete for the approved cloud/synthetic scope: the authenticated
 Advanced AI Assistant is live with two selectable free models and automatic
 validation renewal. Isolated application recovery and the dependency-only security
 update passed. On November 5, the controlled synthetic CRM → invoice → signed n8n
 demonstration passed through authenticated public HTTPS pages; cleanup restored
 the original proxy and preserved production. Shared production integrations remain
-disabled. The corrected daily n8n backup timer is enabled, but its first scheduled
-run remains pending observation; no new scheduled backup success is claimed. See the
+disabled. The corrected daily n8n backup completed its November 5 scheduled run
+successfully at 05:30:58 UTC (13:30:58 Philippine time), exit 0; the timer remains
+enabled and active. See the
 [current acceptance record](docs/deployment/final-platform-acceptance-20261104.md).
 The detailed build journey has been preserved in a separate
 learning-history export so this repository can stay focused on the product and

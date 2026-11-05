@@ -16,6 +16,17 @@ The remaining linked production demonstration therefore needs a separately
 approved narrow integration path. Assistant availability and private RAG are
 unaffected; integration readiness is not permission to activate them globally.
 
+## First natural scheduled execution — PASS
+
+Read-only systemd inspection on November 5 confirmed the timer triggered at
+05:30:04 UTC (13:30:04 Philippine time). The service completed at 05:30:58 UTC,
+`Result=success`, `ExecMainStatus=0`; inactive/dead is its normal completed
+oneshot state. Timer active/enabled, next event November 6 at 05:30 UTC.
+Recurring backup qualification is PASSED. No backup was manually dispatched and
+no timer or repository operation was performed. Detailed journal receipts were
+unavailable without authenticated sudo; no new snapshot IDs are claimed.
+This supersedes earlier statements that the first scheduled run was unobserved.
+
 ## Historical reviewed activation scope (already executed)
 
 The staging correction is installed and verified; recovery proofs for both n8n
